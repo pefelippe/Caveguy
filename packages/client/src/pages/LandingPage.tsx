@@ -126,37 +126,97 @@ function Header() {
 
 // ---------------------------------------------------------------- hero
 
+/** Words in the seal's light red, underlined by a stroke drawn by hand. */
+function Highlight({ children }: { children: ReactNode }) {
+  return (
+    <span className="relative inline-block text-(--l-seal-light)">
+      {children}
+      <svg
+        aria-hidden
+        className="absolute -bottom-[0.12em] left-0 h-[0.18em] w-full"
+        preserveAspectRatio="none"
+        viewBox="0 0 300 12"
+      >
+        <path
+          d="M2 8 C 60 3, 140 3, 200 6 S 280 9, 298 4"
+          fill="none"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeWidth="3"
+        />
+      </svg>
+    </span>
+  );
+}
+
+/** One dark section with the fine grid, centered: the hero and the close. */
+function DarkSection({
+  children,
+  className,
+  title,
+}: {
+  children: ReactNode;
+  className?: string;
+  title: string;
+}) {
+  return (
+    <section
+      aria-labelledby={title}
+      className={cn('bg-(--l-dark) px-5 text-center text-white', className)}
+      style={GRID}
+    >
+      {children}
+    </section>
+  );
+}
+
+function Checks({ items }: { items: string[] }) {
+  return (
+    <ul className="mt-8 flex flex-wrap justify-center gap-x-8 gap-y-2 text-[15px] text-white/70">
+      {items.map(item => (
+        <li className="flex items-center gap-2" key={item}>
+          <Check aria-hidden className="size-4 text-(--l-seal-light)" />
+          {item}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function Hero() {
   return (
-    <section aria-labelledby="hero-title" className="py-16 md:py-24">
-      <Container className="grid items-center gap-12 lg:grid-cols-[1.1fr_0.9fr]">
-        <div>
-          <h1
-            className="font-display text-(length:--step-head) leading-[0.98] font-light tracking-[-0.025em]"
-            id="hero-title"
-          >
-            Suas finanças organizadas. Sem planilha.
-          </h1>
-          <p className="mt-6 max-w-[48ch] text-(length:--step-lead) text-(--l-muted)">
-            Mande o extrato e veja seu mês inteiro. Tire dúvidas pelo WhatsApp.
-          </p>
-          <div className="mt-8 flex flex-wrap items-center gap-3">
-            <Button asChild className="h-12 px-6 text-[15px]">
-              <Link to={SIGN_UP}>
-                Começar grátis <ArrowRight />
-              </Link>
-            </Button>
-            <Button asChild className="h-12 px-6 text-[15px]" variant="outline">
-              <a href="#precos">Ver preços</a>
-            </Button>
-          </div>
-          <p className="mt-4 text-(length:--step-small) text-(--l-muted)">
-            Plano gratuito para sempre. Pro por R$ 19 por mês. Sem cartão para começar.
-          </p>
-        </div>
+    <DarkSection className="pt-20 pb-20 md:pt-32 md:pb-28" title="hero-title">
+      <p className="text-[15px] font-medium text-(--l-seal-light)">Finanças pessoais com IA</p>
+      <h1
+        className="mx-auto mt-6 font-display text-(length:--step-head) leading-[1.02] font-light tracking-[-0.025em]"
+        id="hero-title"
+      >
+        Suas finanças organizadas.
+        <br />
+        <Highlight>Sem planilha</Highlight>.
+      </h1>
+      <p className="mx-auto mt-8 text-(length:--step-lead) text-white/75">
+        Mande o extrato e veja seu mês inteiro. Tire dúvidas pelo WhatsApp.
+      </p>
+      <div className="mt-10 flex flex-wrap justify-center gap-3">
+        <Button asChild className="h-14 bg-white px-8 text-[16px] text-(--l-ink) hover:bg-white/90">
+          <Link to={SIGN_UP}>
+            Começar grátis <ArrowRight />
+          </Link>
+        </Button>
+        <Button
+          asChild
+          className="h-14 border-white/25 bg-transparent px-8 text-[16px] text-white hover:bg-white/10 hover:text-white"
+          variant="outline"
+        >
+          <a href="#precos">Ver preços</a>
+        </Button>
+      </div>
+      <Checks items={['Pro por R$ 19 por mês', 'Sem cartão de crédito', 'Sem senha de banco']} />
+      <div className="mt-16 text-left text-(--l-ink) md:mt-20">
         <ChatMock />
-      </Container>
-    </section>
+      </div>
+    </DarkSection>
   );
 }
 
@@ -562,14 +622,10 @@ const GRID = {
   backgroundSize: '60px 60px',
 };
 
-/** The close: full width on the ink, centered, the promise underlined in the seal's red. */
+/** The close: like the hero, the promise underlined in the seal's red. */
 function Close() {
   return (
-    <section
-      aria-labelledby="comece-title"
-      className="bg-(--l-dark) px-5 py-24 text-center text-white md:py-36"
-      style={GRID}
-    >
+    <DarkSection className="py-24 md:py-36" title="comece-title">
       <p className="text-[15px] font-medium text-(--l-seal-light)">Comece hoje</p>
       <h2
         className="mx-auto mt-6 font-display text-(length:--step-head) leading-[1.02] font-light tracking-[-0.025em]"
@@ -577,25 +633,7 @@ function Close() {
       >
         Seu dinheiro merece mais
         <br />
-        que uma{' '}
-        <span className="relative inline-block text-(--l-seal-light)">
-          planilha esquecida
-          <svg
-            aria-hidden
-            className="absolute -bottom-[0.12em] left-0 h-[0.18em] w-full"
-            preserveAspectRatio="none"
-            viewBox="0 0 300 12"
-          >
-            <path
-              d="M2 8 C 60 3, 140 3, 200 6 S 280 9, 298 4"
-              fill="none"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeWidth="3"
-            />
-          </svg>
-        </span>
-        .
+        que uma <Highlight>planilha esquecida</Highlight>.
       </h2>
       <p className="mx-auto mt-8 text-(length:--step-lead) text-white/75">
         Mande o extrato e veja seu mês inteiro. Você só decide.
@@ -614,15 +652,8 @@ function Close() {
           <a href="#precos">Ver planos</a>
         </Button>
       </div>
-      <ul className="mt-8 flex flex-wrap justify-center gap-x-8 gap-y-2 text-[15px] text-white/70">
-        {PROMISES.map(promise => (
-          <li className="flex items-center gap-2" key={promise}>
-            <Check aria-hidden className="size-4 text-(--l-seal-light)" />
-            {promise}
-          </li>
-        ))}
-      </ul>
-    </section>
+      <Checks items={PROMISES} />
+    </DarkSection>
   );
 }
 
