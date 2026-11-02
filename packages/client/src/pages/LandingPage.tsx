@@ -82,12 +82,12 @@ export function LandingPage() {
     <div className="landing min-h-svh overflow-x-clip bg-(--l-bg) text-(--l-ink)">
       <a
         className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded-md focus:bg-(--l-ink) focus:px-4 focus:py-2 focus:text-white"
-        href="#conteudo"
+        href="#content"
       >
         {t('landing.skip')}
       </a>
       <Header />
-      <main id="conteudo">
+      <main id="content">
         <Hero />
         <Features />
         <Chat />
@@ -127,28 +127,68 @@ function SectionTitle({ children, id, lead }: { children: ReactNode; id: string;
 // ---------------------------------------------------------------- header
 
 interface MenuEntry {
+  href: string;
   icon: LucideIcon;
   text: StringKey;
   title: StringKey | string;
 }
 
-/** The Funcionalidades menu, by area; every entry leads to Recursos. Empresas is still coming. */
+/**
+ * The Funcionalidades menu, by area; each entry leads to the section that shows it. Empresas is
+ * still coming.
+ */
 const MENU: { entries: MenuEntry[]; soon?: boolean; title: StringKey }[] = [
   {
     entries: [
-      { icon: LayoutDashboard, text: 'landing.menu.home.text', title: 'landing.menu.home' },
-      { icon: Bot, text: 'landing.menu.agent.text', title: 'landing.menu.agent' },
+      {
+        href: '#features',
+        icon: LayoutDashboard,
+        text: 'landing.menu.home.text',
+        title: 'landing.menu.home',
+      },
+      {
+        href: '#chat',
+        icon: Bot,
+        text: 'landing.menu.agent.text',
+        title: 'landing.menu.agent',
+      },
     ],
     title: 'landing.menu.overview',
   },
   {
     entries: [
-      { icon: LineChart, text: 'landing.menu.flow.text', title: 'landing.menu.flow' },
-      { icon: FileUp, text: 'landing.menu.statements.text', title: 'landing.menu.statements' },
-      { icon: Repeat, text: 'landing.menu.recurring.text', title: 'landing.menu.recurring' },
-      { icon: CreditCard, text: 'landing.menu.cards.text', title: 'landing.menu.cards' },
-      { icon: TrendingDown, text: 'landing.menu.debts.text', title: 'landing.menu.debts' },
       {
+        href: '#features',
+        icon: LineChart,
+        text: 'landing.menu.flow.text',
+        title: 'landing.menu.flow',
+      },
+      {
+        href: '#features',
+        icon: FileUp,
+        text: 'landing.menu.statements.text',
+        title: 'landing.menu.statements',
+      },
+      {
+        href: '#features',
+        icon: Repeat,
+        text: 'landing.menu.recurring.text',
+        title: 'landing.menu.recurring',
+      },
+      {
+        href: '#features',
+        icon: CreditCard,
+        text: 'landing.menu.cards.text',
+        title: 'landing.menu.cards',
+      },
+      {
+        href: '#features',
+        icon: TrendingDown,
+        text: 'landing.menu.debts.text',
+        title: 'landing.menu.debts',
+      },
+      {
+        href: '#features',
         icon: Calculator,
         text: 'landing.menu.calculators.text',
         title: 'landing.menu.calculators',
@@ -158,24 +198,64 @@ const MENU: { entries: MenuEntry[]; soon?: boolean; title: StringKey }[] = [
   },
   {
     entries: [
-      { icon: CalendarDays, text: 'landing.menu.calendar.text', title: 'landing.menu.calendar' },
-      { icon: ListTodo, text: 'landing.menu.tasks.text', title: 'landing.menu.tasks' },
-      { icon: NotebookPen, text: 'landing.menu.notes.text', title: 'landing.menu.notes' },
+      {
+        href: '#integrations',
+        icon: CalendarDays,
+        text: 'landing.menu.calendar.text',
+        title: 'landing.menu.calendar',
+      },
+      {
+        href: '#integrations',
+        icon: ListTodo,
+        text: 'landing.menu.tasks.text',
+        title: 'landing.menu.tasks',
+      },
+      {
+        href: '#integrations',
+        icon: NotebookPen,
+        text: 'landing.menu.notes.text',
+        title: 'landing.menu.notes',
+      },
     ],
     title: 'landing.menu.organize',
   },
   {
     entries: [
-      { icon: WhatsAppLogo, text: 'landing.menu.whatsapp.text', title: 'WhatsApp' },
-      { icon: TelegramLogo, text: 'landing.menu.telegram.text', title: 'Telegram' },
-      { icon: Workflow, text: 'landing.menu.automation.text', title: 'landing.menu.automation' },
+      {
+        href: '#chat',
+        icon: WhatsAppLogo,
+        text: 'landing.menu.whatsapp.text',
+        title: 'WhatsApp',
+      },
+      {
+        href: '#chat',
+        icon: TelegramLogo,
+        text: 'landing.menu.telegram.text',
+        title: 'Telegram',
+      },
+      {
+        href: '#integrations',
+        icon: Workflow,
+        text: 'landing.menu.automation.text',
+        title: 'landing.menu.automation',
+      },
     ],
     title: 'landing.menu.channels',
   },
   {
     entries: [
-      { icon: Building2, text: 'landing.menu.contracts.text', title: 'landing.menu.contracts' },
-      { icon: FileBarChart, text: 'landing.menu.reports.text', title: 'landing.menu.reports' },
+      {
+        href: '#pricing',
+        icon: Building2,
+        text: 'landing.menu.contracts.text',
+        title: 'landing.menu.contracts',
+      },
+      {
+        href: '#pricing',
+        icon: FileBarChart,
+        text: 'landing.menu.reports.text',
+        title: 'landing.menu.reports',
+      },
     ],
     soon: true,
     title: 'landing.menu.business',
@@ -187,7 +267,7 @@ const isKey = (value: string): value is StringKey => value.includes('.');
 function Header() {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
-  const link = 'rounded-md px-3 py-2 text-[15px] hover:bg-(--l-surface)';
+  const link = 'rounded-md px-3.5 py-2 text-[16px] hover:bg-(--l-surface)';
 
   useEffect(() => {
     if (!open) return;
@@ -201,21 +281,21 @@ function Header() {
       className="sticky top-0 z-40 border-b border-(--l-sand) bg-(--l-bg)/95 backdrop-blur"
       onMouseLeave={() => setOpen(false)}
     >
-      <Container className="flex h-16 items-center gap-2">
+      <Container className="flex h-[76px] max-w-[1680px] items-center gap-2 md:px-12">
         <Link
           aria-label="Caishen"
-          className="mr-auto flex items-center gap-2 text-[18px] font-medium"
+          className="mr-auto flex items-center gap-2.5 text-[22px] font-medium tracking-[-0.01em] sm:text-[26px]"
           to="/landing"
         >
-          <Logo size={26} />
+          <Logo size={32} />
           Caishen
         </Link>
-        <nav aria-label={t('landing.nav.sections')} className="hidden items-center lg:flex">
+        <nav aria-label={t('landing.nav.sections')} className="hidden items-center gap-1 lg:flex">
           <Button
             aria-controls="features-menu"
             aria-expanded={open}
             className={cn(
-              'h-auto gap-1 px-3 py-2 text-[15px] font-normal hover:bg-(--l-surface)',
+              'h-auto gap-1.5 px-3.5 py-2 text-[16px] font-normal hover:bg-(--l-surface)',
               open && 'bg-(--l-surface)'
             )}
             onClick={() => setOpen(value => !value)}
@@ -228,13 +308,13 @@ function Header() {
               className={cn('size-4 transition-transform', open && 'rotate-180')}
             />
           </Button>
-          <a className={link} href="#integracoes" onMouseEnter={() => setOpen(false)}>
+          <a className={link} href="#integrations" onMouseEnter={() => setOpen(false)}>
             {t('landing.nav.integrations')}
           </a>
-          <a className={link} href="#precos">
+          <a className={link} href="#pricing">
             {t('landing.nav.pricing')}
           </a>
-          <a className={link} href="#perguntas">
+          <a className={link} href="#faq">
             {t('landing.nav.questions')}
           </a>
           <Link className={link} to="/sign-in">
@@ -242,7 +322,10 @@ function Header() {
           </Link>
         </nav>
         <LanguageSwitch />
-        <Button asChild className="ml-1 h-10 px-5">
+        <Button
+          asChild
+          className="ml-2 h-11 px-6 text-[16px] font-semibold max-sm:ml-0 max-sm:h-10 max-sm:px-3.5 max-sm:text-[14px]"
+        >
           <Link to={SIGN_UP}>{t('landing.nav.signUp')}</Link>
         </Button>
       </Container>
@@ -262,7 +345,7 @@ function Header() {
 function FeaturesMenu({ onPick }: { onPick: () => void }) {
   const { t } = useI18n();
   return (
-    <div className="mx-auto grid max-w-[1120px] grid-cols-5 gap-6 px-8 py-8">
+    <div className="mx-auto grid max-w-[1680px] grid-cols-5 gap-6 px-12 py-8">
       {MENU.map(group => (
         <div key={group.title}>
           <p className="flex items-center gap-2 text-[13px] font-medium text-(--l-muted)">
@@ -274,14 +357,14 @@ function FeaturesMenu({ onPick }: { onPick: () => void }) {
             )}
           </p>
           <ul className="mt-4 flex flex-col gap-1">
-            {group.entries.map(({ icon: Icon, text, title }) => (
+            {group.entries.map(({ href, icon: Icon, text, title }) => (
               <li key={title}>
                 <a
                   className={cn(
                     'flex items-start gap-3 rounded-lg p-2 hover:bg-(--l-surface)',
                     group.soon && 'opacity-60'
                   )}
-                  href="#recursos"
+                  href={href}
                   onClick={onPick}
                 >
                   <span className="grid size-9 shrink-0 place-items-center rounded-lg border border-(--l-sand) bg-white">
@@ -330,7 +413,11 @@ function LanguageSwitch() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button aria-label={t('landing.language')} className="gap-2 px-2.5" variant="ghost">
+        <Button
+          aria-label={t('landing.language')}
+          className="gap-2 px-2.5 text-[16px]"
+          variant="ghost"
+        >
           <Flag language={language} />
           {language.toUpperCase()}
         </Button>
@@ -450,7 +537,7 @@ function Hero() {
           </Link>
         </Button>
         <Button asChild className="h-14 bg-white px-8 text-[16px]" variant="outline">
-          <a href="#precos">{t('landing.hero.pricing')}</a>
+          <a href="#pricing">{t('landing.hero.pricing')}</a>
         </Button>
       </div>
       <Checks
@@ -488,7 +575,7 @@ function Preview() {
           <p className="text-[15px] text-(--l-muted)">{t('landing.preview.month')}</p>
           <p className="text-[13px] text-(--l-muted)">{t('landing.preview.sample')}</p>
         </div>
-        <p className="-mt-4 font-display text-[3.25rem] leading-none font-light tracking-[-0.02em] tabular-nums">
+        <p className="-mt-4 font-display text-[clamp(2.5rem,1.9rem+2vw,3.25rem)] leading-none font-light tracking-[-0.02em] whitespace-nowrap tabular-nums">
           R$ 1.330,00
         </p>
         <p className="-mt-3 text-[15px] text-(--l-muted) tabular-nums">
@@ -588,10 +675,26 @@ const FEATURES: { icon: LucideIcon; text: StringKey; title: StringKey }[] = [
     text: 'landing.features.statements.text',
     title: 'landing.features.statements',
   },
-  { icon: LineChart, text: 'landing.features.flow.text', title: 'landing.menu.flow' },
-  { icon: Repeat, text: 'landing.features.recurring.text', title: 'landing.menu.recurring' },
-  { icon: CreditCard, text: 'landing.features.cards.text', title: 'landing.menu.cards' },
-  { icon: TrendingDown, text: 'landing.features.debts.text', title: 'landing.menu.debts' },
+  {
+    icon: LineChart,
+    text: 'landing.features.flow.text',
+    title: 'landing.menu.flow',
+  },
+  {
+    icon: Repeat,
+    text: 'landing.features.recurring.text',
+    title: 'landing.menu.recurring',
+  },
+  {
+    icon: CreditCard,
+    text: 'landing.features.cards.text',
+    title: 'landing.menu.cards',
+  },
+  {
+    icon: TrendingDown,
+    text: 'landing.features.debts.text',
+    title: 'landing.menu.debts',
+  },
   {
     icon: Calculator,
     text: 'landing.features.calculators.text',
@@ -602,9 +705,9 @@ const FEATURES: { icon: LucideIcon; text: StringKey; title: StringKey }[] = [
 function Features() {
   const { t } = useI18n();
   return (
-    <section aria-labelledby="recursos-title" className="scroll-mt-16 py-16 md:py-24" id="recursos">
+    <section aria-labelledby="features-title" className="scroll-mt-16 py-16 md:py-24" id="features">
       <Container>
-        <SectionTitle id="recursos-title" lead={t('landing.features.lead')}>
+        <SectionTitle id="features-title" lead={t('landing.features.lead')}>
           {t('landing.features.title')}
         </SectionTitle>
         <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -624,16 +727,32 @@ function Features() {
 // ---------------------------------------------------------------- chat
 
 const CHAT_POINTS: { icon: LucideIcon; text: StringKey; title: StringKey }[] = [
-  { icon: MessageSquareText, text: 'landing.chat.note.text', title: 'landing.chat.note' },
+  {
+    icon: MessageSquareText,
+    text: 'landing.chat.note.text',
+    title: 'landing.chat.note',
+  },
   { icon: Search, text: 'landing.chat.ask.text', title: 'landing.chat.ask' },
-  { icon: Paperclip, text: 'landing.chat.files.text', title: 'landing.chat.files' },
-  { icon: ShieldCheck, text: 'landing.chat.confirm.text', title: 'landing.chat.confirm' },
+  {
+    icon: Paperclip,
+    text: 'landing.chat.files.text',
+    title: 'landing.chat.files',
+  },
+  {
+    icon: ShieldCheck,
+    text: 'landing.chat.confirm.text',
+    title: 'landing.chat.confirm',
+  },
 ];
 
 function Chat() {
   const { t } = useI18n();
   return (
-    <section aria-labelledby="chat-title" className="bg-(--l-surface) py-16 md:py-24">
+    <section
+      aria-labelledby="chat-title"
+      className="scroll-mt-16 bg-(--l-surface) py-16 md:py-24"
+      id="chat"
+    >
       <Container className="text-center">
         <div className="flex justify-center gap-3">
           <span className="grid size-12 place-items-center rounded-full bg-[#25D366]/12">
@@ -722,12 +841,12 @@ function Integrations() {
   const { t } = useI18n();
   return (
     <section
-      aria-labelledby="integracoes-title"
+      aria-labelledby="integrations-title"
       className="scroll-mt-16 py-16 md:py-24"
-      id="integracoes"
+      id="integrations"
     >
       <Container>
-        <SectionTitle id="integracoes-title" lead={t('landing.integrations.lead')}>
+        <SectionTitle id="integrations-title" lead={t('landing.integrations.lead')}>
           {t('landing.integrations.title')}
         </SectionTitle>
         <div className="mt-12 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
@@ -772,9 +891,9 @@ const POINTS = ['start', 'import', 'due', 'debts', 'phone'] as const;
 function Comparison() {
   const { t } = useI18n();
   return (
-    <section aria-labelledby="comparacao-title" className="py-16 md:py-24">
+    <section aria-labelledby="compare-title" className="py-16 md:py-24">
       <Container>
-        <SectionTitle id="comparacao-title">{t('landing.compare.title')}</SectionTitle>
+        <SectionTitle id="compare-title">{t('landing.compare.title')}</SectionTitle>
         <div className="mt-10 grid gap-4 md:grid-cols-2">
           <div className="rounded-[24px] bg-(--l-surface) p-8">
             <h3 className="text-[18px] font-medium text-(--l-muted)">
@@ -871,12 +990,12 @@ function Pricing() {
   const { t } = useI18n();
   return (
     <section
-      aria-labelledby="precos-title"
+      aria-labelledby="pricing-title"
       className="scroll-mt-16 bg-(--l-surface) py-16 md:py-24"
-      id="precos"
+      id="pricing"
     >
       <Container>
-        <SectionTitle id="precos-title" lead={t('landing.pricing.lead')}>
+        <SectionTitle id="pricing-title" lead={t('landing.pricing.lead')}>
           {t('landing.pricing.title')}
         </SectionTitle>
         <div className="mt-12 grid gap-4 lg:grid-cols-3">
@@ -948,13 +1067,9 @@ const QUESTIONS: { answer: StringKey; question: StringKey }[] = [
 function Questions() {
   const { t } = useI18n();
   return (
-    <section
-      aria-labelledby="perguntas-title"
-      className="scroll-mt-16 py-16 md:py-24"
-      id="perguntas"
-    >
+    <section aria-labelledby="faq-title" className="scroll-mt-16 py-16 md:py-24" id="faq">
       <Container className="grid gap-10 lg:grid-cols-[1fr_1.4fr]">
-        <SectionTitle id="perguntas-title">{t('landing.questions.title')}</SectionTitle>
+        <SectionTitle id="faq-title">{t('landing.questions.title')}</SectionTitle>
         <Accordion collapsible type="single">
           {QUESTIONS.map(item => (
             <AccordionItem key={item.question} value={item.question}>
@@ -992,11 +1107,11 @@ const LIGHT_GRID = {
 function Close() {
   const { t } = useI18n();
   return (
-    <DarkSection className="py-24 md:py-36" title="comece-title">
+    <DarkSection className="py-24 md:py-36" title="start-title">
       <p className="text-[15px] font-medium text-(--l-seal-light)">{t('landing.close.kicker')}</p>
       <h2
         className="mx-auto mt-6 font-display text-(length:--step-head) leading-[1.02] font-light tracking-[-0.025em]"
-        id="comece-title"
+        id="start-title"
       >
         {t('landing.close.title')}
         <br />
@@ -1022,32 +1137,34 @@ function Close() {
 
 // ---------------------------------------------------------------- footer
 
-const FOOTER_GROUPS: { links: { href: string; label: StringKey }[]; title: StringKey | string }[] =
-  [
-    {
-      links: [
-        { href: '#recursos', label: 'landing.nav.features' },
-        { href: '#integracoes', label: 'landing.nav.integrations' },
-        { href: '#precos', label: 'landing.nav.pricing' },
-        { href: '#perguntas', label: 'landing.nav.questions' },
-      ],
-      title: 'landing.footer.product',
-    },
-    {
-      links: [
-        { href: '/sign-in', label: 'landing.nav.signIn' },
-        { href: SIGN_UP, label: 'landing.footer.signUp' },
-      ],
-      title: 'Caishen',
-    },
-    {
-      links: [
-        { href: '/terms', label: 'landing.footer.terms' },
-        { href: '/privacy', label: 'landing.footer.privacy' },
-      ],
-      title: 'landing.footer.legal',
-    },
-  ];
+const FOOTER_GROUPS: {
+  links: { href: string; label: StringKey }[];
+  title: StringKey | string;
+}[] = [
+  {
+    links: [
+      { href: '#features', label: 'landing.nav.features' },
+      { href: '#integrations', label: 'landing.nav.integrations' },
+      { href: '#pricing', label: 'landing.nav.pricing' },
+      { href: '#faq', label: 'landing.nav.questions' },
+    ],
+    title: 'landing.footer.product',
+  },
+  {
+    links: [
+      { href: '/sign-in', label: 'landing.nav.signIn' },
+      { href: SIGN_UP, label: 'landing.footer.signUp' },
+    ],
+    title: 'Caishen',
+  },
+  {
+    links: [
+      { href: '/terms', label: 'landing.footer.terms' },
+      { href: '/privacy', label: 'landing.footer.privacy' },
+    ],
+    title: 'landing.footer.legal',
+  },
+];
 
 function FooterLink({ href, label }: { href: string; label: StringKey }) {
   const { t } = useI18n();
