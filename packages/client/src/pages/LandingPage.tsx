@@ -139,9 +139,7 @@ function Hero() {
             Suas finanças organizadas. Sem planilha.
           </h1>
           <p className="mt-6 max-w-[48ch] text-(length:--step-lead) text-(--l-muted)">
-            Mande o extrato do banco e veja o mês inteiro: o que entrou, o que saiu, o que vence e
-            quanto falta para quitar suas dívidas. E pergunte o que quiser ao Caishen, no app, no
-            WhatsApp ou no Telegram.
+            Mande o extrato e veja seu mês inteiro. Tire dúvidas pelo WhatsApp.
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <Button asChild className="h-12 px-6 text-[15px]">
@@ -556,26 +554,56 @@ function Questions() {
 
 // ---------------------------------------------------------------- close
 
+const STEPS = [
+  'Crie a conta grátis',
+  'Mande o extrato do seu banco',
+  'Veja o mês inteiro organizado',
+];
+
+/** The close: one big block on the seal's red, the three steps beside the button. */
 function Close() {
   return (
-    <section aria-labelledby="comece-title" className="bg-(--l-seal) py-16 text-white md:py-20">
-      <Container className="flex flex-col items-start gap-6 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h2
-            className="font-display text-[clamp(2rem,1.4rem+2vw,3rem)] leading-[1.05] font-light tracking-[-0.02em]"
-            id="comece-title"
-          >
-            Comece pelo extrato.
-          </h2>
-          <p className="mt-3 text-(length:--step-body) text-white/85">
-            Crie a conta grátis e veja o seu mês organizado em poucos minutos.
-          </p>
+    <section aria-labelledby="comece-title" className="py-16 md:py-24">
+      <Container>
+        <div className="grid min-h-[480px] gap-12 rounded-[32px] bg-(--l-seal) p-8 text-white sm:p-12 md:min-h-[560px] md:p-16 lg:grid-cols-2">
+          <div className="flex flex-col justify-between gap-10">
+            <div>
+              <h2
+                className="font-display text-(length:--step-head) leading-[0.98] font-light tracking-[-0.025em]"
+                id="comece-title"
+              >
+                Comece pelo extrato.
+              </h2>
+              <p className="mt-5 max-w-[36ch] text-(length:--step-lead) text-white/85">
+                Em poucos minutos você sabe para onde foi o seu dinheiro e quanto sobra até o fim do
+                mês.
+              </p>
+            </div>
+            <div>
+              <Button
+                asChild
+                className="h-14 bg-white px-8 text-[16px] text-(--l-ink) hover:bg-white/90"
+              >
+                <Link to={SIGN_UP}>
+                  Criar conta grátis <ArrowRight />
+                </Link>
+              </Button>
+              <p className="mt-3 text-(length:--step-small) text-white/75">
+                Sem cartão de crédito. Sem senha de banco.
+              </p>
+            </div>
+          </div>
+          <ol className="flex flex-col justify-end gap-6 lg:border-l lg:border-white/25 lg:pl-12">
+            {STEPS.map((step, index) => (
+              <li className="flex items-baseline gap-5" key={step}>
+                <span className="font-display text-[clamp(3rem,2rem+3vw,5rem)] leading-none font-light tabular-nums text-white/60">
+                  {index + 1}
+                </span>
+                <span className="text-(length:--step-lead)">{step}</span>
+              </li>
+            ))}
+          </ol>
         </div>
-        <Button asChild className="h-12 bg-white px-6 text-[15px] text-(--l-ink) hover:bg-white/90">
-          <Link to={SIGN_UP}>
-            Criar conta grátis <ArrowRight />
-          </Link>
-        </Button>
       </Container>
     </section>
   );
@@ -592,27 +620,25 @@ const FOOTER_LINKS = [
 
 function Footer() {
   return (
-    <footer className="py-10 text-(length:--step-small)">
-      <Container>
-        <p className="flex max-w-[70ch] gap-2 text-(--l-muted)">
-          <ShieldCheck aria-hidden className="mt-0.5 size-4 shrink-0" />
-          O Caishen não é uma instituição financeira, não oferece crédito nem recomenda
-          investimentos, e nunca movimenta dinheiro. Os cálculos partem dos dados que você informa;
-          confira sempre os valores com a sua instituição.
+    <footer className="px-5 py-10 text-(length:--step-small) md:px-8">
+      <p className="flex gap-2 text-(--l-muted)">
+        <ShieldCheck aria-hidden className="mt-0.5 size-4 shrink-0" />
+        O Caishen não é uma instituição financeira, não oferece crédito nem recomenda investimentos,
+        e nunca movimenta dinheiro. Os cálculos partem dos dados que você informa; confira sempre os
+        valores com a sua instituição.
+      </p>
+      <div className="mt-8 flex flex-col gap-3 border-t border-(--l-sand) pt-6 md:flex-row md:items-center md:justify-between">
+        <p className="text-(--l-muted)">
+          © {new Date().getFullYear()} {COMPANY.name}, CNPJ {COMPANY.cnpj}
         </p>
-        <div className="mt-8 flex flex-col gap-3 border-t border-(--l-sand) pt-6 md:flex-row md:items-center md:justify-between">
-          <p className="text-(--l-muted)">
-            © {new Date().getFullYear()} {COMPANY.name}, CNPJ {COMPANY.cnpj}
-          </p>
-          <nav aria-label="Rodapé" className="flex flex-wrap gap-x-6 gap-y-1">
-            {FOOTER_LINKS.map(link => (
-              <Link className="underline-offset-4 hover:underline" key={link.href} to={link.href}>
-                {link.label}
-              </Link>
-            ))}
-          </nav>
-        </div>
-      </Container>
+        <nav aria-label="Rodapé" className="flex flex-wrap gap-x-6 gap-y-1">
+          {FOOTER_LINKS.map(link => (
+            <Link className="underline-offset-4 hover:underline" key={link.href} to={link.href}>
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+      </div>
     </footer>
   );
 }
