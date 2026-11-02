@@ -8,7 +8,6 @@ import {
   MessageCircle,
   Repeat,
   Send,
-  ShieldCheck,
   TrendingDown,
   X,
   type LucideIcon,
@@ -554,91 +553,163 @@ function Questions() {
 
 // ---------------------------------------------------------------- close
 
-const STEPS = [
-  'Crie a conta grátis',
-  'Mande o extrato do seu banco',
-  'Veja o mês inteiro organizado',
-];
+const PROMISES = ['Plano gratuito para sempre', 'Sem cartão de crédito', 'Cancele quando quiser'];
 
-/** The close: one big block on the seal's red, the three steps beside the button. */
+/** The fine grid behind the close, drawn in the paper's tone over the ink. */
+const GRID = {
+  backgroundImage:
+    'linear-gradient(to right, rgb(255 255 255 / 0.05) 1px, transparent 1px), linear-gradient(to bottom, rgb(255 255 255 / 0.05) 1px, transparent 1px)',
+  backgroundSize: '60px 60px',
+};
+
+/** The close: full width on the ink, centered, the promise underlined in the seal's red. */
 function Close() {
   return (
-    <section aria-labelledby="comece-title" className="py-16 md:py-24">
-      <Container>
-        <div className="grid min-h-[480px] gap-12 rounded-[32px] bg-(--l-seal) p-8 text-white sm:p-12 md:min-h-[560px] md:p-16 lg:grid-cols-2">
-          <div className="flex flex-col justify-between gap-10">
-            <div>
-              <h2
-                className="font-display text-(length:--step-head) leading-[0.98] font-light tracking-[-0.025em]"
-                id="comece-title"
-              >
-                Comece pelo extrato.
-              </h2>
-              <p className="mt-5 max-w-[36ch] text-(length:--step-lead) text-white/85">
-                Em poucos minutos você sabe para onde foi o seu dinheiro e quanto sobra até o fim do
-                mês.
-              </p>
-            </div>
-            <div>
-              <Button
-                asChild
-                className="h-14 bg-white px-8 text-[16px] text-(--l-ink) hover:bg-white/90"
-              >
-                <Link to={SIGN_UP}>
-                  Criar conta grátis <ArrowRight />
-                </Link>
-              </Button>
-              <p className="mt-3 text-(length:--step-small) text-white/75">
-                Sem cartão de crédito. Sem senha de banco.
-              </p>
-            </div>
-          </div>
-          <ol className="flex flex-col justify-end gap-6 lg:border-l lg:border-white/25 lg:pl-12">
-            {STEPS.map((step, index) => (
-              <li className="flex items-baseline gap-5" key={step}>
-                <span className="font-display text-[clamp(3rem,2rem+3vw,5rem)] leading-none font-light tabular-nums text-white/60">
-                  {index + 1}
-                </span>
-                <span className="text-(length:--step-lead)">{step}</span>
-              </li>
-            ))}
-          </ol>
-        </div>
-      </Container>
+    <section
+      aria-labelledby="comece-title"
+      className="bg-(--l-dark) px-5 py-24 text-center text-white md:py-36"
+      style={GRID}
+    >
+      <p className="text-[15px] font-medium text-(--l-seal-light)">Comece hoje</p>
+      <h2
+        className="mx-auto mt-6 font-display text-(length:--step-head) leading-[1.02] font-light tracking-[-0.025em]"
+        id="comece-title"
+      >
+        Seu dinheiro merece mais
+        <br />
+        que uma{' '}
+        <span className="relative inline-block text-(--l-seal-light)">
+          planilha esquecida
+          <svg
+            aria-hidden
+            className="absolute -bottom-[0.12em] left-0 h-[0.18em] w-full"
+            preserveAspectRatio="none"
+            viewBox="0 0 300 12"
+          >
+            <path
+              d="M2 8 C 60 3, 140 3, 200 6 S 280 9, 298 4"
+              fill="none"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeWidth="3"
+            />
+          </svg>
+        </span>
+        .
+      </h2>
+      <p className="mx-auto mt-8 text-(length:--step-lead) text-white/75">
+        Mande o extrato e veja seu mês inteiro. Você só decide.
+      </p>
+      <div className="mt-10 flex flex-wrap justify-center gap-3">
+        <Button asChild className="h-14 bg-white px-8 text-[16px] text-(--l-ink) hover:bg-white/90">
+          <Link to={SIGN_UP}>
+            Criar conta grátis <ArrowRight />
+          </Link>
+        </Button>
+        <Button
+          asChild
+          className="h-14 border-white/25 bg-transparent px-8 text-[16px] text-white hover:bg-white/10 hover:text-white"
+          variant="outline"
+        >
+          <a href="#precos">Ver planos</a>
+        </Button>
+      </div>
+      <ul className="mt-8 flex flex-wrap justify-center gap-x-8 gap-y-2 text-[15px] text-white/70">
+        {PROMISES.map(promise => (
+          <li className="flex items-center gap-2" key={promise}>
+            <Check aria-hidden className="size-4 text-(--l-seal-light)" />
+            {promise}
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }
 
 // ---------------------------------------------------------------- footer
 
-const FOOTER_LINKS = [
-  { href: '/sign-in', label: 'Entrar' },
-  { href: SIGN_UP, label: 'Criar conta' },
-  { href: '/terms', label: 'Termos' },
-  { href: '/privacy', label: 'Privacidade' },
+const FOOTER_GROUPS: { links: { href: string; label: string }[]; title: string }[] = [
+  {
+    links: [
+      { href: '#recursos', label: 'Recursos' },
+      { href: '#precos', label: 'Preços' },
+      { href: '#perguntas', label: 'Perguntas' },
+    ],
+    title: 'Produto',
+  },
+  {
+    links: [
+      { href: '/sign-in', label: 'Entrar' },
+      { href: SIGN_UP, label: 'Criar conta' },
+    ],
+    title: 'Caishen',
+  },
+  {
+    links: [
+      { href: '/terms', label: 'Termos de Uso' },
+      { href: '/privacy', label: 'Privacidade' },
+    ],
+    title: 'Legal',
+  },
 ];
+
+function FooterLink({ href, label }: { href: string; label: string }) {
+  const className = 'text-(--l-muted) hover:text-(--l-ink)';
+  return href.startsWith('#') ? (
+    <a className={className} href={href}>
+      {label}
+    </a>
+  ) : (
+    <Link className={className} to={href}>
+      {label}
+    </Link>
+  );
+}
 
 function Footer() {
   return (
-    <footer className="px-5 py-10 text-(length:--step-small) md:px-8">
-      <p className="flex gap-2 text-(--l-muted)">
-        <ShieldCheck aria-hidden className="mt-0.5 size-4 shrink-0" />
-        O Caishen não é uma instituição financeira, não oferece crédito nem recomenda investimentos,
-        e nunca movimenta dinheiro. Os cálculos partem dos dados que você informa; confira sempre os
-        valores com a sua instituição.
-      </p>
-      <div className="mt-8 flex flex-col gap-3 border-t border-(--l-sand) pt-6 md:flex-row md:items-center md:justify-between">
-        <p className="text-(--l-muted)">
-          © {new Date().getFullYear()} {COMPANY.name}, CNPJ {COMPANY.cnpj}
-        </p>
-        <nav aria-label="Rodapé" className="flex flex-wrap gap-x-6 gap-y-1">
-          {FOOTER_LINKS.map(link => (
-            <Link className="underline-offset-4 hover:underline" key={link.href} to={link.href}>
-              {link.label}
+    <footer className="px-5 pt-16 pb-10 md:px-8">
+      <Container className="px-0 md:px-0">
+        <div className="flex flex-col gap-12 md:flex-row md:justify-between">
+          <div className="max-w-[380px]">
+            <Link className="flex items-center gap-2 text-[20px] font-medium" to="/landing">
+              <Logo size={28} />
+              Caishen
             </Link>
-          ))}
-        </nav>
-      </div>
+            <p className="mt-4 text-[15px] leading-relaxed text-(--l-muted)">
+              Finanças organizadas para quem não quer viver de planilha.
+            </p>
+          </div>
+          <nav aria-label="Rodapé" className="grid grid-cols-2 gap-10 sm:grid-cols-3 md:gap-16">
+            {FOOTER_GROUPS.map(group => (
+              <div key={group.title}>
+                <p className="text-[15px] font-medium">{group.title}</p>
+                <ul className="mt-4 flex flex-col gap-3 text-[15px]">
+                  {group.links.map(link => (
+                    <li key={link.href}>
+                      <FooterLink {...link} />
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </nav>
+        </div>
+        <div className="mt-14 flex flex-col gap-4 border-t border-(--l-sand) pt-6 text-(length:--step-small) text-(--l-muted) md:flex-row md:items-end md:justify-between">
+          <div className="flex flex-col gap-1">
+            <p>
+              {COMPANY.name} · CNPJ {COMPANY.cnpj} · {COMPANY.city}
+            </p>
+            <p>
+              O Caishen não é uma instituição financeira, não oferece crédito nem recomenda
+              investimentos, e nunca movimenta dinheiro.
+            </p>
+          </div>
+          <p className="shrink-0">
+            © {new Date().getFullYear()} Caishen. Todos os direitos reservados.
+          </p>
+        </div>
+      </Container>
     </footer>
   );
 }
