@@ -127,9 +127,11 @@ function Header() {
 // ---------------------------------------------------------------- hero
 
 /** Words in the seal's light red, underlined by a stroke drawn by hand. */
-function Highlight({ children }: { children: ReactNode }) {
+function Highlight({ children, dark }: { children: ReactNode; dark?: boolean }) {
   return (
-    <span className="relative inline-block text-(--l-seal-light)">
+    <span
+      className={cn('relative inline-block', dark ? 'text-(--l-seal-light)' : 'text-(--l-seal)')}
+    >
       {children}
       <svg
         aria-hidden
@@ -149,7 +151,7 @@ function Highlight({ children }: { children: ReactNode }) {
   );
 }
 
-/** One dark section with the fine grid, centered: the hero and the close. */
+/** The dark section with the fine grid, centered: the close. */
 function DarkSection({
   children,
   className,
@@ -170,12 +172,20 @@ function DarkSection({
   );
 }
 
-function Checks({ items }: { items: string[] }) {
+function Checks({ dark, items }: { dark?: boolean; items: string[] }) {
   return (
-    <ul className="mt-8 flex flex-wrap justify-center gap-x-8 gap-y-2 text-[15px] text-white/70">
+    <ul
+      className={cn(
+        'mt-8 flex flex-wrap justify-center gap-x-8 gap-y-2 text-[15px]',
+        dark ? 'text-white/70' : 'text-(--l-muted)'
+      )}
+    >
       {items.map(item => (
         <li className="flex items-center gap-2" key={item}>
-          <Check aria-hidden className="size-4 text-(--l-seal-light)" />
+          <Check
+            aria-hidden
+            className={cn('size-4', dark ? 'text-(--l-seal-light)' : 'text-(--l-seal)')}
+          />
           {item}
         </li>
       ))}
@@ -185,8 +195,12 @@ function Checks({ items }: { items: string[] }) {
 
 function Hero() {
   return (
-    <DarkSection className="pt-20 pb-20 md:pt-32 md:pb-28" title="hero-title">
-      <p className="text-[15px] font-medium text-(--l-seal-light)">Finanças pessoais com IA</p>
+    <section
+      aria-labelledby="hero-title"
+      className="px-5 pt-20 pb-20 text-center md:pt-28 md:pb-28"
+      style={LIGHT_GRID}
+    >
+      <p className="text-[15px] font-medium text-(--l-seal)">Finanças pessoais com IA</p>
       <h1
         className="mx-auto mt-6 font-display text-(length:--step-head) leading-[1.02] font-light tracking-[-0.025em]"
         id="hero-title"
@@ -195,28 +209,85 @@ function Hero() {
         <br />
         <Highlight>Sem planilha</Highlight>.
       </h1>
-      <p className="mx-auto mt-8 text-(length:--step-lead) text-white/75">
+      <p className="mx-auto mt-8 text-(length:--step-lead) text-(--l-muted)">
         Mande o extrato e veja seu mês inteiro. Tire dúvidas pelo WhatsApp.
       </p>
       <div className="mt-10 flex flex-wrap justify-center gap-3">
-        <Button asChild className="h-14 bg-white px-8 text-[16px] text-(--l-ink) hover:bg-white/90">
+        <Button asChild className="h-14 px-8 text-[16px]">
           <Link to={SIGN_UP}>
             Começar grátis <ArrowRight />
           </Link>
         </Button>
-        <Button
-          asChild
-          className="h-14 border-white/25 bg-transparent px-8 text-[16px] text-white hover:bg-white/10 hover:text-white"
-          variant="outline"
-        >
+        <Button asChild className="h-14 bg-white px-8 text-[16px]" variant="outline">
           <a href="#precos">Ver preços</a>
         </Button>
       </div>
       <Checks items={['Pro por R$ 19 por mês', 'Sem cartão de crédito', 'Sem senha de banco']} />
-      <div className="mt-16 text-left text-(--l-ink) md:mt-20">
-        <ChatMock />
+      <Preview />
+    </section>
+  );
+}
+
+const SAMPLE_DUES = [
+  { amount: 'R$ 1.850,00', day: '05/03', label: 'Aluguel' },
+  { amount: 'R$ 2.140,00', day: '10/03', label: 'Fatura do cartão' },
+  { amount: 'R$ 39,90', day: '12/03', label: 'Internet' },
+];
+
+const SAMPLE_CATEGORIES = [
+  { label: 'Moradia', share: 0.82 },
+  { label: 'Mercado', share: 0.46 },
+  { label: 'Transporte', share: 0.28 },
+  { label: 'Lazer', share: 0.17 },
+];
+
+/** The product at a glance: a sample month beside a sample conversation. */
+function Preview() {
+  return (
+    <div className="mx-auto mt-16 grid max-w-[1040px] gap-4 rounded-[32px] border border-(--l-sand) bg-(--l-surface) p-3 text-left shadow-[0_40px_80px_-40px_rgb(0_0_0/0.35)] md:mt-20 md:p-4 lg:grid-cols-[1.25fr_1fr]">
+      <div
+        aria-label="Exemplo do resumo do mês"
+        className="flex flex-col gap-6 rounded-[24px] bg-white p-6 md:p-8"
+        role="img"
+      >
+        <div className="flex items-baseline justify-between">
+          <p className="text-[15px] text-(--l-muted)">Sobra em março</p>
+          <p className="text-[13px] text-(--l-muted)">exemplo</p>
+        </div>
+        <p className="-mt-4 font-display text-[3.25rem] leading-none font-light tracking-[-0.02em] tabular-nums">
+          R$ 1.330,00
+        </p>
+        <p className="-mt-3 text-[15px] text-(--l-muted) tabular-nums">
+          Entrou R$ 6.200,00 · Saiu R$ 4.870,00
+        </p>
+        <ul className="flex flex-col gap-3 border-t border-(--l-sand) pt-5">
+          {SAMPLE_CATEGORIES.map(category => (
+            <li
+              className="grid grid-cols-[96px_1fr] items-center gap-3 text-[14px]"
+              key={category.label}
+            >
+              <span className="text-(--l-muted)">{category.label}</span>
+              <span className="h-2 rounded-full bg-(--l-surface)">
+                <span
+                  className="block h-full rounded-full bg-(--l-seal)"
+                  style={{ width: `${category.share * 100}%` }}
+                />
+              </span>
+            </li>
+          ))}
+        </ul>
+        <ul className="flex flex-col gap-2.5 border-t border-(--l-sand) pt-5 text-[14px]">
+          {SAMPLE_DUES.map(due => (
+            <li className="flex items-center gap-3" key={due.label}>
+              <span className="w-11 text-(--l-muted) tabular-nums">{due.day}</span>
+              <span className="flex-1">{due.label}</span>
+              <span className="tabular-nums">{due.amount}</span>
+            </li>
+          ))}
+        </ul>
       </div>
-    </DarkSection>
+      <ChatMock />
+    </div>
   );
 }
 
@@ -225,7 +296,7 @@ function ChatMock() {
   return (
     <div
       aria-label="Exemplo de conversa com o Caishen"
-      className="mx-auto w-full max-w-[400px] rounded-[28px] border border-(--l-sand) bg-(--l-surface) p-4 shadow-[0_24px_60px_-28px_rgb(0_0_0/0.35)]"
+      className="w-full rounded-[24px] bg-(--l-sand)/40 p-4"
       role="img"
     >
       <div className="flex items-center gap-3 border-b border-(--l-sand) px-2 pb-3">
@@ -622,6 +693,13 @@ const GRID = {
   backgroundSize: '60px 60px',
 };
 
+/** The same grid on the paper, for the hero. */
+const LIGHT_GRID = {
+  backgroundImage:
+    'linear-gradient(to right, rgb(0 0 0 / 0.045) 1px, transparent 1px), linear-gradient(to bottom, rgb(0 0 0 / 0.045) 1px, transparent 1px)',
+  backgroundSize: '60px 60px',
+};
+
 /** The close: like the hero, the promise underlined in the seal's red. */
 function Close() {
   return (
@@ -633,7 +711,7 @@ function Close() {
       >
         Seu dinheiro merece mais
         <br />
-        que uma <Highlight>planilha esquecida</Highlight>.
+        que uma <Highlight dark>planilha esquecida</Highlight>.
       </h2>
       <p className="mx-auto mt-8 text-(length:--step-lead) text-white/75">
         Mande o extrato e veja seu mês inteiro. Você só decide.
@@ -652,7 +730,7 @@ function Close() {
           <a href="#precos">Ver planos</a>
         </Button>
       </div>
-      <Checks items={PROMISES} />
+      <Checks dark items={PROMISES} />
     </DarkSection>
   );
 }
