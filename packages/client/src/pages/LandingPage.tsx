@@ -17,7 +17,7 @@ import {
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 
-import { TelegramLogo, WhatsAppLogo } from '@zapbots/ui/blocks/brand-logos';
+import { WhatsAppLogo } from '@zapbots/ui/blocks/brand-logos';
 import { Logo } from '@zapbots/ui/blocks/logo';
 import {
   Accordion,
@@ -430,9 +430,6 @@ function Chat() {
         <div className="flex justify-center gap-3">
           <span className="grid size-12 place-items-center rounded-full bg-[#25D366]/12">
             <WhatsAppLogo aria-hidden className="size-6 text-[#25D366]" />
-          </span>
-          <span className="grid size-12 place-items-center rounded-full bg-[#26A5E4]/12">
-            <TelegramLogo aria-hidden className="size-6 text-[#26A5E4]" />
           </span>
         </div>
         <h2
