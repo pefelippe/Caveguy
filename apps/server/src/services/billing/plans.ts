@@ -13,7 +13,7 @@ export interface PlanInfo {
 /** The Plans and their Limits (docs/adr/0011). The Pro Price lives in Stripe (STRIPE_PRICE_PRO). */
 export const PLANS: Record<PlanKey, PlanInfo> = {
   FREE: { jobs: 30, key: 'FREE', messages: 300, name: 'Gratuito', priceCents: 0 },
-  PRO: { jobs: 500, key: 'PRO', messages: 5000, name: 'Pro', priceCents: 4900 },
+  PRO: { jobs: 500, key: 'PRO', messages: 5000, name: 'Pro', priceCents: 1900 },
 };
 
 /** Stripe statuses in which a paid Plan is in force. */

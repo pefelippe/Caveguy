@@ -185,7 +185,7 @@ const TERMS: Clause[] = [
         <p>
           O plano <strong>Gratuito</strong> tem limites mensais de mensagens e Workflows. O plano{' '}
           <strong>Pro</strong> custa o valor mostrado na página Plano no momento da assinatura
-          (hoje, R$ 49,00 por mês) e amplia esses limites. Os pagamentos são processados pelo
+          (hoje, R$ 19,00 por mês) e amplia esses limites. Os pagamentos são processados pelo
           Stripe; não guardamos os dados do seu cartão.
         </p>
         <ul>

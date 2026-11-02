@@ -7,4 +7,4 @@ export const COMPANY = {
 } as const;
 
 /** When the current Termos de Uso and Política de Privacidade took effect. */
-export const LEGAL_UPDATED = '28 de outubro de 2026';
+export const LEGAL_UPDATED = '2 de novembro de 2026';

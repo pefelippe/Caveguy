@@ -103,23 +103,3 @@
   --step-head: clamp(2.5rem, 1.3rem + 4vw, 5rem);
   color-scheme: light;
 }
-
-/* The god of wealth drifts closer, slowly, while the letter is read. */
-.landing .landing-drift {
-  animation: landing-drift 18s ease-in-out infinite alternate;
-}
-
-@keyframes landing-drift {
-  from {
-    transform: scale(1);
-  }
-  to {
-    transform: scale(1.06) translateY(-1.5%);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .landing .landing-drift {
-    animation: none;
-  }
-}

@@ -23,7 +23,7 @@ const TITLES: [RegExp, string][] = [
   [/^\/sign-in/, 'Entrar'],
   [/^\/terms/, 'Termos de Uso'],
   [/^\/privacy/, 'Política de Privacidade'],
-  [/^\/landing/, 'Saia das dívidas'],
+  [/^\/landing/, 'Finanças organizadas, sem planilha'],
 ];
 
 /** Names the browser tab after the screen open, as "Lançamentos · Caishen". */
