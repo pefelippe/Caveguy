@@ -201,25 +201,39 @@ export const LANDING_STRINGS = {
   },
 
   'landing.compare.title': { en: 'Better than a spreadsheet', pt: 'Melhor que a planilha' },
-  'landing.compare.sheet': { en: 'Spreadsheet', pt: 'Planilha' },
-  'landing.compare.yes': { en: 'Yes', pt: 'Sim' },
-  'landing.compare.no': { en: 'No', pt: 'Não' },
-  'landing.compare.start': { en: 'Time to start', pt: 'Tempo para começar' },
-  'landing.compare.start.caishen': { en: 'Minutes', pt: 'Minutos' },
-  'landing.compare.start.sheet': { en: 'Hours setting up', pt: 'Horas montando' },
-  'landing.compare.import': { en: 'Imports the bank statement', pt: 'Importa o extrato do banco' },
-  'landing.compare.import.sheet': { en: 'Copy and paste', pt: 'Copiar e colar' },
-  'landing.compare.due': {
-    en: 'Sorts what is due each month',
-    pt: 'Separa o que vence em cada mês',
+  'landing.compare.sheet': { en: 'With a spreadsheet', pt: 'Na planilha' },
+  'landing.compare.caishen': { en: 'With the Caishen', pt: 'No Caishen' },
+  'landing.compare.sheet.start': { en: 'Hours setting it up', pt: 'Horas montando antes de usar' },
+  'landing.compare.sheet.import': {
+    en: 'Copying the statement line by line',
+    pt: 'Copiar o extrato linha por linha',
   },
-  'landing.compare.debts': { en: 'A plan to pay off debts', pt: 'Plano para quitar as dívidas' },
-  'landing.compare.chat': {
-    en: 'Answers on WhatsApp and Telegram',
-    pt: 'Responde no WhatsApp e no Telegram',
+  'landing.compare.sheet.due': {
+    en: 'You work out what is due',
+    pt: 'Você mesmo descobre o que vence',
   },
-  'landing.compare.phone': { en: 'Works on the phone', pt: 'Funciona no celular' },
-  'landing.compare.phone.sheet': { en: 'Sort of', pt: 'Mais ou menos' },
+  'landing.compare.sheet.debts': {
+    en: 'No plan for your debts',
+    pt: 'Nenhum plano para as dívidas',
+  },
+  'landing.compare.sheet.phone': { en: 'Awkward on the phone', pt: 'Difícil de usar no celular' },
+  'landing.compare.caishen.start': { en: 'Ready in minutes', pt: 'Pronto em minutos' },
+  'landing.compare.caishen.import': {
+    en: 'Reads the bank statement for you',
+    pt: 'Lê o extrato do banco para você',
+  },
+  'landing.compare.caishen.due': {
+    en: 'Shows what is due each month',
+    pt: 'Mostra o que vence em cada mês',
+  },
+  'landing.compare.caishen.debts': {
+    en: 'A plan to pay off every debt',
+    pt: 'Um plano para quitar cada dívida',
+  },
+  'landing.compare.caishen.phone': {
+    en: 'Answers on WhatsApp, on the phone',
+    pt: 'Responde no WhatsApp, no celular',
+  },
 
   'landing.pricing.title': { en: 'Simple pricing', pt: 'Preços simples' },
   'landing.pricing.lead': {

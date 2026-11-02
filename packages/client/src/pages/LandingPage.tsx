@@ -62,14 +62,6 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from '@zapbots/ui/components/dropdown-menu';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@zapbots/ui/components/table';
 import { cn } from '@zapbots/ui/lib/utils';
 
 import { isLanguage, LANGUAGES, useI18n, type Language, type StringKey } from '../lib/i18n';
@@ -774,62 +766,47 @@ function Integrations() {
 
 // ---------------------------------------------------------------- comparison
 
-type Mark = boolean | StringKey;
+const POINTS = ['start', 'import', 'due', 'debts', 'phone'] as const;
 
-const ROWS: { caishen: Mark; label: StringKey; sheet: Mark }[] = [
-  {
-    caishen: 'landing.compare.start.caishen',
-    label: 'landing.compare.start',
-    sheet: 'landing.compare.start.sheet',
-  },
-  { caishen: true, label: 'landing.compare.import', sheet: 'landing.compare.import.sheet' },
-  { caishen: true, label: 'landing.compare.due', sheet: false },
-  { caishen: true, label: 'landing.compare.debts', sheet: false },
-  { caishen: true, label: 'landing.compare.chat', sheet: false },
-  { caishen: true, label: 'landing.compare.phone', sheet: 'landing.compare.phone.sheet' },
-];
-
-function Cell({ value }: { value: Mark }) {
-  const { t } = useI18n();
-  if (typeof value === 'string') return <>{t(value)}</>;
-  return value ? (
-    <Check aria-label={t('landing.compare.yes')} className="size-5 text-(--l-seal)" />
-  ) : (
-    <X aria-label={t('landing.compare.no')} className="size-5 text-(--l-rule)" />
-  );
-}
-
+/** The same five points, side by side: the spreadsheet in grey, the Caishen on the ink. */
 function Comparison() {
   const { t } = useI18n();
   return (
     <section aria-labelledby="comparacao-title" className="py-16 md:py-24">
       <Container>
         <SectionTitle id="comparacao-title">{t('landing.compare.title')}</SectionTitle>
-        <div className="mt-10 overflow-hidden rounded-[20px] border border-(--l-sand)">
-          <Table className="text-[15px]">
-            <TableHeader>
-              <TableRow className="bg-(--l-surface) hover:bg-(--l-surface)">
-                <TableHead className="h-12 px-5" />
-                <TableHead className="h-12 px-5 font-medium text-(--l-ink)">Caishen</TableHead>
-                <TableHead className="h-12 px-5 font-medium text-(--l-muted)">
-                  {t('landing.compare.sheet')}
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {ROWS.map(row => (
-                <TableRow key={row.label}>
-                  <TableCell className="px-5 py-4 whitespace-normal">{t(row.label)}</TableCell>
-                  <TableCell className="px-5 py-4">
-                    <Cell value={row.caishen} />
-                  </TableCell>
-                  <TableCell className="px-5 py-4 text-(--l-muted)">
-                    <Cell value={row.sheet} />
-                  </TableCell>
-                </TableRow>
+        <div className="mt-10 grid gap-4 md:grid-cols-2">
+          <div className="rounded-[24px] bg-(--l-surface) p-8">
+            <h3 className="text-[18px] font-medium text-(--l-muted)">
+              {t('landing.compare.sheet')}
+            </h3>
+            <ul className="mt-6 flex flex-col gap-4 text-[16px] text-(--l-muted)">
+              {POINTS.map(point => (
+                <li className="flex items-center gap-3" key={point}>
+                  <span className="grid size-7 shrink-0 place-items-center rounded-full bg-white">
+                    <X aria-hidden className="size-4 text-(--l-rule)" />
+                  </span>
+                  {t(`landing.compare.sheet.${point}`)}
+                </li>
               ))}
-            </TableBody>
-          </Table>
+            </ul>
+          </div>
+          <div className="rounded-[24px] bg-(--l-dark) p-8 text-white">
+            <h3 className="flex items-center gap-2 text-[18px] font-medium">
+              <Logo className="text-white" size={22} />
+              {t('landing.compare.caishen')}
+            </h3>
+            <ul className="mt-6 flex flex-col gap-4 text-[16px]">
+              {POINTS.map(point => (
+                <li className="flex items-center gap-3" key={point}>
+                  <span className="grid size-7 shrink-0 place-items-center rounded-full bg-(--l-seal)">
+                    <Check aria-hidden className="size-4 text-white" />
+                  </span>
+                  {t(`landing.compare.caishen.${point}`)}
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </Container>
     </section>
