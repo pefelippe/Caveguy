@@ -5,6 +5,7 @@ import {
   Calculator,
   CalendarDays,
   Check,
+  ChevronDown,
   CreditCard,
   FileBarChart,
   FileUp,
@@ -23,7 +24,7 @@ import {
   X,
   type LucideIcon,
 } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 
 import { TelegramLogo, WhatsAppLogo } from '@zapbots/ui/blocks/brand-logos';
@@ -44,14 +45,6 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from '@zapbots/ui/components/dropdown-menu';
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-} from '@zapbots/ui/components/navigation-menu';
 import {
   Table,
   TableBody,
@@ -183,9 +176,21 @@ const isKey = (value: string): value is StringKey => value.includes('.');
 
 function Header() {
   const { t } = useI18n();
+  const [open, setOpen] = useState(false);
   const link = 'rounded-md px-3 py-2 text-[15px] hover:bg-(--l-surface)';
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (event: KeyboardEvent) => event.key === 'Escape' && setOpen(false);
+    window.addEventListener('keydown', close);
+    return () => window.removeEventListener('keydown', close);
+  }, [open]);
+
   return (
-    <header className="sticky top-0 z-40 border-b border-(--l-sand) bg-(--l-bg)/95 backdrop-blur">
+    <header
+      className="sticky top-0 z-40 border-b border-(--l-sand) bg-(--l-bg)/95 backdrop-blur"
+      onMouseLeave={() => setOpen(false)}
+    >
       <Container className="flex h-16 items-center gap-2">
         <Link
           aria-label="Caishen"
@@ -195,24 +200,25 @@ function Header() {
           <Logo size={26} />
           Caishen
         </Link>
-        <NavigationMenu
-          aria-label={t('landing.nav.sections')}
-          className="static hidden flex-none lg:flex"
-          viewport={false}
-        >
-          <NavigationMenuList>
-            <NavigationMenuItem className="static">
-              <NavigationMenuTrigger className="bg-transparent text-[15px] font-normal hover:bg-(--l-surface) data-[state=open]:bg-(--l-surface)">
-                {t('landing.nav.features')}
-              </NavigationMenuTrigger>
-              <NavigationMenuContent className="top-full! left-0! mt-0! w-full rounded-none! border-x-0! border-t-0! bg-(--l-bg)! shadow-[0_24px_40px_-24px_rgb(0_0_0/0.25)]!">
-                <FeaturesMenu />
-              </NavigationMenuContent>
-            </NavigationMenuItem>
-          </NavigationMenuList>
-        </NavigationMenu>
-        <nav className="hidden items-center lg:flex">
-          <a className={link} href="#precos">
+        <nav aria-label={t('landing.nav.sections')} className="hidden items-center lg:flex">
+          <Button
+            aria-controls="features-menu"
+            aria-expanded={open}
+            className={cn(
+              'h-auto gap-1 px-3 py-2 text-[15px] font-normal hover:bg-(--l-surface)',
+              open && 'bg-(--l-surface)'
+            )}
+            onClick={() => setOpen(value => !value)}
+            onMouseEnter={() => setOpen(true)}
+            variant="ghost"
+          >
+            {t('landing.nav.features')}
+            <ChevronDown
+              aria-hidden
+              className={cn('size-4 transition-transform', open && 'rotate-180')}
+            />
+          </Button>
+          <a className={link} href="#precos" onMouseEnter={() => setOpen(false)}>
             {t('landing.nav.pricing')}
           </a>
           <a className={link} href="#perguntas">
@@ -227,15 +233,23 @@ function Header() {
           <Link to={SIGN_UP}>{t('landing.nav.signUp')}</Link>
         </Button>
       </Container>
+      {open && (
+        <div
+          className="absolute inset-x-0 top-full hidden border-b border-(--l-sand) bg-(--l-bg) shadow-[0_24px_40px_-24px_rgb(0_0_0/0.25)] lg:block"
+          id="features-menu"
+        >
+          <FeaturesMenu onPick={() => setOpen(false)} />
+        </div>
+      )}
     </header>
   );
 }
 
 /** The open Funcionalidades menu: one column per area, each entry an icon, a name and a line. */
-function FeaturesMenu() {
+function FeaturesMenu({ onPick }: { onPick: () => void }) {
   const { t } = useI18n();
   return (
-    <div className="mx-auto grid max-w-[1120px] grid-cols-5 gap-8 px-8 py-8">
+    <div className="mx-auto grid max-w-[1120px] grid-cols-5 gap-6 px-8 py-8">
       {MENU.map(group => (
         <div key={group.title}>
           <p className="flex items-center gap-2 text-[13px] font-medium text-(--l-muted)">
@@ -249,27 +263,26 @@ function FeaturesMenu() {
           <ul className="mt-4 flex flex-col gap-1">
             {group.entries.map(({ icon: Icon, text, title }) => (
               <li key={title}>
-                <NavigationMenuLink asChild>
-                  <a
-                    className={cn(
-                      'flex flex-row items-start gap-3 rounded-lg p-2',
-                      group.soon && 'opacity-60'
-                    )}
-                    href="#recursos"
-                  >
-                    <span className="grid size-9 shrink-0 place-items-center rounded-lg border border-(--l-sand) bg-white">
-                      <Icon aria-hidden className="size-4 text-(--l-ink)" />
+                <a
+                  className={cn(
+                    'flex items-start gap-3 rounded-lg p-2 hover:bg-(--l-surface)',
+                    group.soon && 'opacity-60'
+                  )}
+                  href="#recursos"
+                  onClick={onPick}
+                >
+                  <span className="grid size-9 shrink-0 place-items-center rounded-lg border border-(--l-sand) bg-white">
+                    <Icon aria-hidden className="size-4 text-(--l-ink)" />
+                  </span>
+                  <span>
+                    <span className="block text-[14px] font-medium text-(--l-ink)">
+                      {isKey(title) ? t(title) : title}
                     </span>
-                    <span>
-                      <span className="block text-[14px] font-medium text-(--l-ink)">
-                        {isKey(title) ? t(title) : title}
-                      </span>
-                      <span className="block text-[13px] leading-snug text-(--l-muted)">
-                        {t(text)}
-                      </span>
+                    <span className="block text-[13px] leading-snug text-(--l-muted)">
+                      {t(text)}
                     </span>
-                  </a>
-                </NavigationMenuLink>
+                  </span>
+                </a>
               </li>
             ))}
           </ul>
