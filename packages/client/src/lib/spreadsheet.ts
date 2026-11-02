@@ -28,6 +28,8 @@ export interface ExpenseLine {
   description: string;
   /** The line's key at its source (an OFX FITID, an Open Finance id), so importing again adds nothing. */
   externalId?: string;
+  /** Sent to an account of the Titular's own: brought in, but not counted. */
+  ownTransfer?: boolean;
 }
 
 export interface Reading {
@@ -38,7 +40,7 @@ export interface Reading {
   billPayments: number;
   /** Money moved to or from the Titular's investments (a CDB, a caixinha), left out. */
   investments: number;
-  /** Money the Titular sent to an account of their own, left out: it is spent from there. */
+  /** Money the Titular sent to an account of their own: brought in, not counted, as it is spent from there. */
   ownTransfers: number;
   /** Lines without a readable date, description or amount, left out. */
   invalid: number;
@@ -207,7 +209,8 @@ export function readCents(cell: unknown): number | null {
  * The Gastos in a Table. In a bank statement, with money in and out, only the negative lines are
  * Gastos and the positive ones (salary, transfers in) are left out, and so are the payments of a
  * Fatura; a sheet of expenses only, all of one sign, is taken whole. Money moved to the Titular's
- * own investments, or to an account of their own (`owner` is their name), is never a Gasto. A line
+ * own investments is never a Gasto, and what goes to an account of their own (`owner` is their
+ * name) comes marked `ownTransfer`, not counted. A line
  * without a description takes its kind's; a Pix with no category is filed under "Pix".
  */
 export function readExpenses(table: Table, columns: Columns, owner = ''): Reading {
@@ -230,21 +233,21 @@ export function readExpenses(table: Table, columns: Columns, owner = ''): Readin
   const statement = usable.some(line => line.amount! < 0) && usable.some(line => line.amount! > 0);
   const spent = usable.filter(line => !statement || line.amount! < 0);
   const invested = spent.filter(line => !isInvestmentMove(line.said));
-  const kept = invested.filter(line => !owner || !isOwnTransfer(line.description, owner));
-  const lines = kept
+  const lines = invested
     .filter(line => !statement || !isBillPayment(line.said))
     .map(line => ({
       amountCents: Math.abs(line.amount!),
       category: line.category,
       date: line.date!,
       description: line.description,
+      ...(owner && isOwnTransfer(line.description, owner) && { ownTransfer: true }),
     }));
   return {
-    billPayments: kept.length - lines.length,
+    billPayments: invested.length - lines.length,
     credits: statement ? usable.filter(line => line.amount! > 0).length : 0,
     invalid: parsed.length - usable.length,
     investments: spent.length - invested.length,
     lines,
-    ownTransfers: invested.length - kept.length,
+    ownTransfers: lines.filter(line => line.ownTransfer).length,
   };
 }

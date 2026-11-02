@@ -69,7 +69,7 @@ function Ask({ name }: { name: string }) {
         <h1 className="text-4xl md:text-5xl">{t('welcome.hello', { name })}</h1>
       </div>
       <form
-        className="flex h-14 w-full items-center gap-2 rounded-full bg-card pr-2 pl-3 ring-seal/40 transition-shadow focus-within:ring-2"
+        className="flex h-14 w-full items-center gap-2 rounded-full border bg-card pr-2 pl-3 ring-seal/40 transition-shadow focus-within:ring-2"
         onSubmit={onSubmit}
       >
         <AttachMenu

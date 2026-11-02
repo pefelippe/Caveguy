@@ -1,0 +1,1 @@
+ALTER TABLE "holder" ADD CONSTRAINT "holder_organization_user_unique" UNIQUE("organization_id","user_id");

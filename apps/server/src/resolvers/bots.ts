@@ -1,5 +1,5 @@
 import type { Viewer } from '@zapbots/auth';
-import { db, schema } from '@zapbots/database';
+import { db, schema, type RoutineRow } from '@zapbots/database';
 import type { Resolvers } from '@zapbots/graphql/server';
 import { and, asc, desc, eq, inArray } from 'drizzle-orm';
 import { GraphQLError } from 'graphql';
@@ -8,7 +8,13 @@ import { PlanLimitError, requireWithinLimit } from '../services/billing/billing'
 import { markAlerts, viewerAlerts } from '../services/bots/alerts';
 import { CATALOG, ensureBots, type BotKey } from '../services/bots/catalog';
 import { isReplying, stopReply } from '../services/bots/chat';
-import { cancelJob, failStaleJobs, handOverJob, type JobFile } from '../services/bots/jobs';
+import {
+  cancelJob,
+  failStaleJobs,
+  handOverJob,
+  type JobFile,
+  type JobTransaction,
+} from '../services/bots/jobs';
 import {
   cancelProposal,
   confirmProposal,
@@ -52,11 +58,12 @@ function validInstructions(raw: string): string {
   return instructions;
 }
 
-/** Refuses new work while the Organization already has the most Jobs in progress. */
-async function requireRoom(viewer: Viewer) {
-  // On Vercel a Job that outlived its function would hold a place forever.
-  if (process.env.VERCEL) await failStaleJobs();
-  const working = await db
+/**
+ * Refuses new work while the Organization already has the most Jobs in progress. Read inside
+ * `handOverJob`'s lock, so two requests at once cannot both take the last place.
+ */
+async function requireRoom(viewer: Viewer, tx: JobTransaction) {
+  const working = await tx
     .select({ id: schema.job.id })
     .from(schema.job)
     .where(and(owned(schema.job, viewer), inArray(schema.job.status, ['QUEUED', 'RUNNING'])));
@@ -79,12 +86,19 @@ async function requireAllowance(viewer: Viewer) {
   }
 }
 
+/** On Vercel a Job that outlived its function would hold a place forever. */
+async function freeStalePlaces() {
+  if (process.env.VERCEL) await failStaleJobs();
+}
+
 /** Saves a Job and starts it; refused while the server has no Model provider. */
 async function handOver(viewer: Viewer, botId: string, instructions: string, files: JobFile[]) {
   await requireAi(viewer);
-  await requireRoom(viewer);
-  await requireAllowance(viewer);
-  return handOverJob(viewer, { botId, files, instructions });
+  await freeStalePlaces();
+  return handOverJob(viewer, { botId, files, instructions }, async tx => {
+    await requireRoom(viewer, tx);
+    await requireAllowance(viewer);
+  });
 }
 
 async function botById(id: string) {
@@ -188,27 +202,31 @@ export const botResolvers: Resolvers = {
       const bot = await findBot(viewer, input.botId);
       const instructions = validInstructions(input.instructions);
       await requireAi(viewer);
-      await requireRoom(viewer);
-      const existing = await db
-        .select({ id: schema.routine.id })
-        .from(schema.routine)
-        .where(owned(schema.routine, viewer));
-      if (existing.length >= MAX_ROUTINES) badInput(`Mantenha até ${MAX_ROUTINES} Rotinas`);
-      await requireAllowance(viewer);
-      const now = new Date();
-      const [routine] = await db
-        .insert(schema.routine)
-        .values({
-          botId: bot.id,
-          cadence: input.cadence,
-          createdById: viewer.userId,
-          instructions,
-          nextRunAt: nextRunAfter(input.cadence, now),
-          organizationId: viewer.organizationId,
-        })
-        .returning();
+      await freeStalePlaces();
+      let routine: RoutineRow | undefined;
       // The first run is now, so the User sees the Deliverable without waiting a week or a month.
-      await handOverJob(viewer, { botId: bot.id, files: [], instructions, routineId: routine!.id });
+      // The Routine is saved with it, under the same lock that counts the Routines.
+      await handOverJob(viewer, { botId: bot.id, files: [], instructions }, async tx => {
+        await requireRoom(viewer, tx);
+        const existing = await tx
+          .select({ id: schema.routine.id })
+          .from(schema.routine)
+          .where(owned(schema.routine, viewer));
+        if (existing.length >= MAX_ROUTINES) badInput(`Mantenha até ${MAX_ROUTINES} Rotinas`);
+        await requireAllowance(viewer);
+        [routine] = await tx
+          .insert(schema.routine)
+          .values({
+            botId: bot.id,
+            cadence: input.cadence,
+            createdById: viewer.userId,
+            instructions,
+            nextRunAt: nextRunAfter(input.cadence, new Date()),
+            organizationId: viewer.organizationId,
+          })
+          .returning();
+        return { routineId: routine!.id };
+      });
       return routine!;
     },
     confirmProposal: (_, { id }, context) => confirmProposal(requireViewer(context), id),

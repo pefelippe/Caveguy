@@ -99,11 +99,19 @@ export async function setTaskDone(viewer: Viewer, id: string, done: boolean): Pr
   const current = await findTask(viewer, id);
   if (Boolean(current.doneAt) === done) return current;
   return db.transaction(async tx => {
+    // Only the change that finds the Tarefa still as it was counts, so two clicks at once on a
+    // repeating one make its next occurrence once.
     const [row] = await tx
       .update(schema.task)
       .set({ doneAt: done ? new Date() : null })
-      .where(owned(schema.task, viewer, id))
+      .where(
+        and(
+          owned(schema.task, viewer, id),
+          done ? isNull(schema.task.doneAt) : isNotNull(schema.task.doneAt)
+        )
+      )
       .returning();
+    if (!row) return findTask(viewer, id);
     if (done && current.repeat && current.dueOn) {
       const { createdAt: _, doneAt: __, id: ___, updatedAt: ____, ...rest } = current;
       await tx

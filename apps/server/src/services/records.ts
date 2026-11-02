@@ -241,6 +241,8 @@ export interface ImportedExpense {
   date: string;
   description: string;
   externalId?: string | null;
+  /** Sent to the Titular's own account: kept, but not counted. */
+  ownTransfer?: boolean | null;
 }
 
 export type ImportSource = (typeof schema.importSource.enumValues)[number];
@@ -287,7 +289,7 @@ export async function importExpenses(
       seen.set(key, nth + 1);
       externalId = lineFingerprint(values, nth);
     }
-    return { ...values, externalId };
+    return { ...values, externalId, ownTransfer: row.ownTransfer ?? false };
   });
 
   return db.transaction(async tx => {
@@ -366,6 +368,25 @@ export async function updateExpenseImport(
     }
     return row!;
   });
+}
+
+/**
+ * Says whether a Gasto was money the Titular sent to an account of their own: then it is shown in
+ * the month but not counted, as it is spent from the other account. The import guesses it by the
+ * Titular's name; the User has the last word.
+ */
+export async function setExpenseOwnTransfer(
+  viewer: Viewer,
+  id: string,
+  ownTransfer: boolean
+): Promise<boolean> {
+  const updated = await db
+    .update(schema.expense)
+    .set({ ownTransfer, updatedAt: new Date() })
+    .where(owned(schema.expense, viewer, id))
+    .returning({ id: schema.expense.id });
+  if (!updated.length) notFound('Gasto');
+  return true;
 }
 
 /** Deletes an Importação and, with it, every Gasto it brought in. */

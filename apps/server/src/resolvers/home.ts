@@ -7,7 +7,6 @@ import { badInput, requireViewer } from './guards';
 /** Every card the Página inicial knows; a saved key that is no longer here is left out. */
 const CARD_KEYS = {
   AGENDA: true,
-  CHATS: true,
   DUES: true,
   FINANCE: true,
   FITNESS: true,
@@ -15,7 +14,6 @@ const CARD_KEYS = {
   MEASURES: true,
   MARKET: true,
   MONTH: true,
-  NOTES: true,
   OVERVIEW: true,
   TODAY: true,
 } satisfies Record<HomeCardKey, true>;

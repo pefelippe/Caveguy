@@ -31,11 +31,15 @@ const OVERLAP_DAYS = 7;
  * commercial use, and its one key reads every item it has: so only the e-mails in
  * `OPEN_FINANCE_EMAILS` may, never anyone else.
  */
-async function allowedEmail(viewer: Viewer): Promise<boolean> {
-  const allowed = (process.env.OPEN_FINANCE_EMAILS ?? '')
+export function openFinanceEmails(): string[] {
+  return (process.env.OPEN_FINANCE_EMAILS ?? '')
     .split(',')
     .map(email => email.trim().toLowerCase())
     .filter(Boolean);
+}
+
+async function allowedEmail(viewer: Viewer): Promise<boolean> {
+  const allowed = openFinanceEmails();
   if (!allowed.length) return false;
   const [user] = await db
     .select({ email: schema.user.email })
@@ -139,30 +143,30 @@ export async function linkBank(viewer: Viewer, itemId: string) {
   await requireOpenFinance(viewer);
   const externalId = itemId.trim();
   if (!externalId) badInput('Cole o id do item da Pluggy');
-  const [taken] = await db
-    .select()
-    .from(schema.bankLink)
-    .where(
-      and(eq(schema.bankLink.provider, provider.key), eq(schema.bankLink.externalId, externalId))
-    );
-  if (taken) {
+  const linked = async () => {
+    const [taken] = await db
+      .select()
+      .from(schema.bankLink)
+      .where(
+        and(eq(schema.bankLink.provider, provider.key), eq(schema.bankLink.externalId, externalId))
+      );
+    if (!taken) return null;
     if (taken.organizationId !== viewer.organizationId) badInput('Esse banco já está conectado');
     return syncBankLink(viewer, taken.id);
-  }
+  };
+  const before = await linked();
+  if (before) return before;
   const item = await provider.item(externalId);
   if (!item) badInput('A Pluggy não conhece esse item. Confira o id copiado do painel.');
 
   const holder = await viewerHolder(viewer);
+  // The link goes in first: of two requests at once, only one gets it (and its consent); the
+  // other finds it taken and reads it as the first did.
   const link = await db.transaction(async tx => {
-    const [consent] = await tx
-      .insert(schema.consent)
-      .values({ grantedById: viewer.userId, holderId: holder.id, source: 'OPEN_FINANCE' })
-      .returning({ id: schema.consent.id });
     const [row] = await tx
       .insert(schema.bankLink)
       .values({
         consentExpiresAt: item.consentExpiresAt,
-        consentId: consent!.id,
         error: item.error,
         externalId,
         holderId: holder.id,
@@ -171,17 +175,30 @@ export async function linkBank(viewer: Viewer, itemId: string) {
         provider: provider.key,
         status: item.status,
       })
+      .onConflictDoNothing({ target: [schema.bankLink.provider, schema.bankLink.externalId] })
       .returning();
-    return row!;
+    if (!row) return null;
+    const [consent] = await tx
+      .insert(schema.consent)
+      .values({ grantedById: viewer.userId, holderId: holder.id, source: 'OPEN_FINANCE' })
+      .returning({ id: schema.consent.id });
+    const [withConsent] = await tx
+      .update(schema.bankLink)
+      .set({ consentId: consent!.id })
+      .where(eq(schema.bankLink.id, row.id))
+      .returning();
+    return withConsent!;
   });
+  if (!link) return (await linked()) ?? notFound('Vínculo bancário');
   return syncBankLink(viewer, link.id);
 }
 
 /**
  * Reads a Vínculo bancário again: its state, its accounts and the accounts' new lines. Money out
  * of an account becomes Gastos, but not paying a Fatura, which the Fatura already counts, nor
- * money moved to the Titular's investments or own accounts; money in is left out (salary is a
- * Fonte de Renda). A card becomes a Cartão, its limit and Faturas read from the bank.
+ * money moved to the Titular's investments; what they send to an account of their own comes in
+ * marked `ownTransfer`, shown but not counted. Money in is left out (salary is a Fonte de Renda).
+ * A card becomes a Cartão, its limit and Faturas read from the bank.
  */
 export async function syncBankLink(viewer: Viewer, id: string) {
   await requireOpenFinance(viewer);
@@ -241,8 +258,7 @@ export async function syncBankLink(viewer: Viewer, id: string) {
             line.direction === 'OUT' &&
             line.amountCents > 0 &&
             !isBillPayment(line.description) &&
-            !isInvestmentMove(line.description) &&
-            !isOwnTransfer(line.description, owner)
+            !isInvestmentMove(line.description)
         )
         .map(line => ({
           amountCents: line.amountCents,
@@ -250,6 +266,7 @@ export async function syncBankLink(viewer: Viewer, id: string) {
           date: line.date,
           description: line.description,
           externalId: `${provider.key.toLowerCase()}:${line.externalId}`,
+          ownTransfer: isOwnTransfer(line.description, owner),
         }));
       for (let start = 0; start < rows.length; start += MAX_IMPORTED_EXPENSES) {
         const batch = rows.slice(start, start + MAX_IMPORTED_EXPENSES);

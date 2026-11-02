@@ -32,8 +32,8 @@ const sum = (lines: { amountCents: number }[]) =>
 /**
  * A Holder's month (`YYYY-MM`): the Receitas (Fontes de Renda in force and Receitas avulsas), the
  * Compromissos that fall due (Installments, Statements, Impostos and Gastos recorrentes not paid on
- * a Cartão; those are listed apart, in `onCard`, as their Fatura counts them) and the Gastos, with their
- * totals in whole cents (docs/adr/0004) and what is left.
+ * a Cartão; those are listed apart, in `onCard`, as their Fatura counts them) and the Gastos (those
+ * sent to the Titular's own accounts apart, in `transfers`, not counted), with their totals in whole cents (docs/adr/0004) and what is left.
  */
 export async function monthStatement(holderId: string, yearMonth: string) {
   const first = `${yearMonth}-01`;
@@ -162,7 +162,7 @@ export async function monthStatement(holderId: string, yearMonth: string) {
   commitments.sort(byDate);
   onCard.sort(byDate);
 
-  const expenses = await db
+  const spent = await db
     .select()
     .from(schema.expense)
     .where(
@@ -173,6 +173,9 @@ export async function monthStatement(holderId: string, yearMonth: string) {
       )
     )
     .orderBy(asc(schema.expense.date), asc(schema.expense.createdAt));
+  // Money sent to the Titular's own accounts is listed apart, not counted.
+  const expenses = spent.filter(row => !row.ownTransfer);
+  const transfers = spent.filter(row => row.ownTransfer);
 
   const incomeCents = sum(incomes);
   const commitmentsCents = sum(commitments);
@@ -187,6 +190,7 @@ export async function monthStatement(holderId: string, yearMonth: string) {
     incomes,
     month: yearMonth,
     onCard,
+    transfers,
   };
 }
 
@@ -210,6 +214,7 @@ export async function periodStatement(holderId: string, from: string, to: string
   const commitments = inside(statements.flatMap(statement => statement.commitments));
   const onCard = inside(statements.flatMap(statement => statement.onCard));
   const expenses = inside(statements.flatMap(statement => statement.expenses));
+  const transfers = inside(statements.flatMap(statement => statement.transfers));
   const incomeCents = sum(incomes);
   const commitmentsCents = sum(commitments);
   const expensesCents = sum(expenses);
@@ -223,5 +228,6 @@ export async function periodStatement(holderId: string, from: string, to: string
     incomes,
     month: `${from}..${to}`,
     onCard,
+    transfers,
   };
 }

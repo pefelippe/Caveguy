@@ -4,7 +4,7 @@ import { and, count, eq, gte, sum } from 'drizzle-orm';
 
 import { monthStart, monthUsage } from '../usage';
 import { PLANS, planInForce } from './plans';
-import type { StripeEvent } from './stripe';
+import { fetchSubscription, type StripeEvent } from './stripe';
 
 export class PlanLimitError extends Error {}
 
@@ -116,11 +116,14 @@ function periodEnd(object: Record<string, unknown>): Date | null {
   return typeof seconds === 'number' ? new Date(seconds * 1000) : null;
 }
 
+type Executor = Pick<typeof db, 'insert' | 'select'>;
+
 async function upsertSubscription(
+  tx: Executor,
   organizationId: string,
   values: Partial<typeof schema.subscription.$inferInsert>
 ) {
-  await db
+  await tx
     .insert(schema.subscription)
     .values({ organizationId, ...values })
     .onConflictDoUpdate({ set: values, target: schema.subscription.organizationId });
@@ -128,10 +131,31 @@ async function upsertSubscription(
 
 /**
  * Applies a verified Stripe event to the Organization's Subscription, once per event id. Unknown
- * event types and Organizations are ignored.
+ * event types and Organizations are ignored. The id is recorded in the same transaction as what the
+ * event changes: if applying it fails, neither stays, and Stripe's next try applies it. A copy
+ * arriving at the same time waits on the id and then finds it taken.
  */
 export async function handleStripeEvent(event: StripeEvent): Promise<void> {
-  const [fresh] = await db
+  // An event tells that a subscription changed, not how it is now: an older one can arrive after a
+  // newer one. So the subscription is read from Stripe, and what is kept is how it is now.
+  const current = SUBSCRIPTION_EVENTS.includes(event.type)
+    ? await fetchSubscription(String(event.data.object.id))
+    : undefined;
+  return db.transaction(tx => applyStripeEvent(tx, event, current));
+}
+
+const SUBSCRIPTION_EVENTS = [
+  'customer.subscription.created',
+  'customer.subscription.updated',
+  'customer.subscription.deleted',
+];
+
+async function applyStripeEvent(
+  tx: Executor,
+  event: StripeEvent,
+  current: Record<string, unknown> | null | undefined
+): Promise<void> {
+  const [fresh] = await tx
     .insert(schema.stripeEvent)
     .values({ id: event.id, type: event.type })
     .onConflictDoNothing()
@@ -142,34 +166,29 @@ export async function handleStripeEvent(event: StripeEvent): Promise<void> {
   const metadata = (object.metadata ?? {}) as Record<string, unknown>;
   const organizationId = str(metadata.organizationId) ?? str(object.client_reference_id);
   if (!organizationId) return;
-  const [organization] = await db
+  const [organization] = await tx
     .select({ id: schema.organization.id })
     .from(schema.organization)
     .where(eq(schema.organization.id, organizationId));
   if (!organization) return;
 
   if (event.type === 'checkout.session.completed') {
-    await upsertSubscription(organizationId, {
+    await upsertSubscription(tx, organizationId, {
       stripeCustomerId: str(object.customer),
       stripeSubscriptionId: str(object.subscription),
     });
     return;
   }
-  if (
-    event.type === 'customer.subscription.created' ||
-    event.type === 'customer.subscription.updated' ||
-    event.type === 'customer.subscription.deleted'
-  ) {
-    await upsertSubscription(organizationId, {
-      cancelAtPeriodEnd: object.cancel_at_period_end === true,
-      currentPeriodEnd: periodEnd(object),
+  if (SUBSCRIPTION_EVENTS.includes(event.type)) {
+    // One Stripe no longer has is over.
+    const now = current ?? { ...object, status: 'canceled' };
+    await upsertSubscription(tx, organizationId, {
+      cancelAtPeriodEnd: now.cancel_at_period_end === true,
+      currentPeriodEnd: periodEnd(now),
       plan: 'PRO',
-      status:
-        event.type === 'customer.subscription.deleted'
-          ? 'canceled'
-          : (str(object.status) ?? 'incomplete'),
-      stripeCustomerId: str(object.customer),
-      stripeSubscriptionId: str(object.id),
+      status: str(now.status) ?? 'incomplete',
+      stripeCustomerId: str(now.customer),
+      stripeSubscriptionId: str(now.id),
     });
   }
 }

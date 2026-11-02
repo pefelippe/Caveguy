@@ -88,6 +88,10 @@ export function OpenFinanceLinker() {
           <li>Copie o id em Itens Conectados e cole aqui.</li>
         </ol>
         <p className="text-sm text-muted-foreground">
+          Com o webhook da Pluggy ligado (evento item/created), o banco conectado na aba Demo
+          aparece aqui sozinho, sem colar o id.
+        </p>
+        <p className="text-sm text-muted-foreground">
           Os primeiros 90 dias entram como Gastos; o que já entrou não se repete.
         </p>
         {linking.error && <FormError error={linking.error} />}

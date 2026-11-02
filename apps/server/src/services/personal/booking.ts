@@ -34,6 +34,11 @@ export interface BookingTypeInput {
 
 /** At most this many bookings ahead one e-mail can hold on one link, so nobody fills a week. */
 const MAX_AHEAD_PER_GUEST = 2;
+/**
+ * At most this many bookings an hour reach one owner, whoever makes them: each sends an e-mail to
+ * the address typed in, so the public form cannot be used to send many.
+ */
+const MAX_BOOKINGS_PER_HOUR = 10;
 /** An Evento with an hour and no end takes this long out of the free slots. */
 const DEFAULT_EVENT_MINUTES = 60;
 
@@ -251,8 +256,9 @@ export interface BookInput {
 }
 
 /**
- * Books a slot for a guest: checked again inside a lock on the link, so two guests never take the
- * same one. The slot becomes an Evento in the owner's Agenda, and both get an e-mail.
+ * Books a slot for a guest: checked again inside a lock on the owner, so two guests never take the
+ * same hour, even through two of their links. The slot becomes an Evento in the owner's Agenda,
+ * and both get an e-mail.
  */
 export async function book(input: BookInput, now = new Date()) {
   const type = await activeType(input.slug);
@@ -267,7 +273,19 @@ export async function book(input: BookInput, now = new Date()) {
   const endsAt = new Date(startsAt.getTime() + type.durationMinutes * 60_000);
 
   const booked = await db.transaction(async tx => {
-    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${type.id}))`);
+    // The free slots are the owner's, across all their links: so is the lock.
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${type.userId}))`);
+    const [{ lastHour }] = (await tx
+      .select({ lastHour: count() })
+      .from(schema.booking)
+      .where(
+        and(
+          eq(schema.booking.organizationId, type.organizationId),
+          gte(schema.booking.createdAt, new Date(now.getTime() - 3_600_000))
+        )
+      )) as [{ lastHour: number }];
+    if (lastHour >= MAX_BOOKINGS_PER_HOUR)
+      badInput('Muitos horários marcados agora há pouco. Tente de novo em uma hora.');
     const [{ ahead }] = (await tx
       .select({ ahead: count() })
       .from(schema.booking)
@@ -374,14 +392,20 @@ export async function bookingByToken(token: string) {
   };
 }
 
-/** Marks a booking cancelled and takes its Evento out of the Agenda. */
-async function cancel(bookingId: string, eventId: null | string) {
-  await db.transaction(async tx => {
-    await tx
+/**
+ * Marks a booking cancelled and takes its Evento out of the Agenda. Only one of two cancellations
+ * at the same time finds it still open, and only that one returns true (and has the e-mail sent).
+ */
+async function cancel(bookingId: string, eventId: null | string): Promise<boolean> {
+  return db.transaction(async tx => {
+    const [cancelled] = await tx
       .update(schema.booking)
       .set({ cancelledAt: new Date() })
-      .where(eq(schema.booking.id, bookingId));
+      .where(and(eq(schema.booking.id, bookingId), isNull(schema.booking.cancelledAt)))
+      .returning({ id: schema.booking.id });
+    if (!cancelled) return false;
     if (eventId) await tx.delete(schema.event).where(eq(schema.event.id, eventId));
+    return true;
   });
 }
 
@@ -391,7 +415,7 @@ export async function cancelBookingByToken(token: string): Promise<boolean> {
   if (!row) notFound('Agendamento');
   // A booking that already happened stays in the owner's Agenda.
   if (row.booking.cancelledAt || row.booking.startsAt <= new Date()) return false;
-  await cancel(row.booking.id, row.booking.eventId);
+  if (!(await cancel(row.booking.id, row.booking.eventId))) return false;
   const owner = await ownerOf(row.type);
   await sendEmail({
     paragraphs: [
@@ -421,7 +445,7 @@ export async function cancelBooking(viewer: Viewer, id: string): Promise<boolean
   const row = await bookingWithType(eq(schema.booking.id, id));
   if (!row || row.booking.organizationId !== viewer.organizationId) notFound('Agendamento');
   if (row.booking.cancelledAt) return false;
-  await cancel(row.booking.id, row.booking.eventId);
+  if (!(await cancel(row.booking.id, row.booking.eventId))) return false;
   await tellGuest(row);
   return true;
 }
@@ -433,9 +457,10 @@ export async function cancelBooking(viewer: Viewer, id: string): Promise<boolean
 export async function cancelBookingsOfEvent(eventId: string): Promise<void> {
   const row = await bookingWithType(eq(schema.booking.eventId, eventId));
   if (!row || row.booking.cancelledAt) return;
-  await db
+  const [cancelled] = await db
     .update(schema.booking)
     .set({ cancelledAt: new Date() })
-    .where(eq(schema.booking.id, row.booking.id));
-  await tellGuest(row);
+    .where(and(eq(schema.booking.id, row.booking.id), isNull(schema.booking.cancelledAt)))
+    .returning({ id: schema.booking.id });
+  if (cancelled) await tellGuest(row);
 }

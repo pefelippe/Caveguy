@@ -1,7 +1,6 @@
 import { useQuery } from '@apollo/client/react';
 import { today } from '@zapbots/finance';
 import {
-  ConversationsDocument,
   HomeDuesDocument,
   HomeMarketDocument,
   HomeMonthDocument,
@@ -9,7 +8,7 @@ import {
   type HomeCardKey,
   type HomeMarketQuery,
 } from '@zapbots/graphql/client';
-import { ArrowRightIcon, MessageSquareIcon } from 'lucide-react';
+import { ArrowRightIcon } from 'lucide-react';
 import { motion, type Variants } from 'motion/react';
 import type { ComponentType, ReactNode } from 'react';
 import { Link } from 'react-router-dom';
@@ -25,7 +24,7 @@ import { useI18n, type Language, type StringKey } from '../lib/i18n';
 import type { CardSetting } from './layout';
 import { FitnessCard, MeasuresCard } from './fitnessCards';
 import { Empty, Lines, Panel } from './panel';
-import { AgendaCard, GoalsCard, NotesCard, TodayCard } from './personalCards';
+import { AgendaCard, GoalsCard, TodayCard } from './personalCards';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -266,7 +265,8 @@ function FinanceCard() {
           <strong
             className={cn(
               'font-display text-4xl font-light tracking-[-0.022em] tabular-nums',
-              figures.balanceCents < 0 && 'text-destructive'
+              figures.balanceCents < 0 && 'text-destructive',
+              figures.balanceCents > 0 && 'text-success'
             )}
           >
             {formatCents(Math.abs(figures.balanceCents))}
@@ -294,39 +294,6 @@ function FinanceCard() {
   );
 }
 
-/** The latest Conversations, each opening on the Agente page. */
-function ChatsCard() {
-  const { t } = useI18n();
-  const { data } = useQuery(ConversationsDocument, { fetchPolicy: 'cache-and-network' });
-  return (
-    <Panel link={{ label: t('home.chats.open'), to: '/chat' }} title={t('home.chats')}>
-      {!data ? (
-        <Lines count={3} />
-      ) : data.conversations.length === 0 ? (
-        <Empty>{t('home.chats.empty')}</Empty>
-      ) : (
-        <ul className="flex flex-col gap-3">
-          {data.conversations.slice(0, 4).map(conversation => (
-            <li key={conversation.id}>
-              <Link className="flex gap-3 hover:text-primary" to={`/chat?c=${conversation.id}`}>
-                <MessageSquareIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                <span className="grid min-w-0 text-sm">
-                  <span className="truncate font-medium">{conversation.title}</span>
-                  {conversation.lastMessage && (
-                    <span className="truncate text-muted-foreground">
-                      {conversation.lastMessage.content}
-                    </span>
-                  )}
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-    </Panel>
-  );
-}
-
 /**
  * Every card the Página inicial can show. A new one goes here, in `HomeCardKey` on the server and
  * in `DEFAULT_LAYOUT`; Users who arranged their page get it in its default place.
@@ -334,7 +301,6 @@ function ChatsCard() {
 export const HOME_CARDS: Record<HomeCardKey, HomeCard> = {
   AGENDA: { Component: AgendaCard, area: 'personal', size: 'third', title: 'home.card.agenda' },
   GOALS: { Component: GoalsCard, area: 'personal', size: 'twoThirds', title: 'nav.goals' },
-  NOTES: { Component: NotesCard, area: 'personal', size: 'third', title: 'home.card.notes' },
   TODAY: { Component: TodayCard, area: 'personal', size: 'twoThirds', title: 'home.card.today' },
   FITNESS: {
     Component: FitnessCard,
@@ -348,7 +314,6 @@ export const HOME_CARDS: Record<HomeCardKey, HomeCard> = {
     size: 'third',
     title: 'home.card.measures',
   },
-  CHATS: { Component: ChatsCard, area: 'general', size: 'third', title: 'home.chats' },
   FINANCE: { Component: FinanceCard, area: 'finance', size: 'third', title: 'home.card.finance' },
   DUES: { Component: DuesCard, area: 'finance', size: 'twoThirds', title: 'home.dues' },
   MARKET: { Component: MarketCard, area: 'finance', size: 'full', title: 'home.card.market' },
@@ -363,14 +328,12 @@ export const HOME_CARDS: Record<HomeCardKey, HomeCard> = {
 
 /**
  * The Página inicial of a User who never arranged it: kept clean, what the day needs (Hoje, the
- * Agenda, the finances at a glance, Notas, the Conversations); the rest waits in Personalizar.
+ * Agenda and the finances at a glance); the rest waits in Personalizar.
  */
 export const DEFAULT_LAYOUT: CardSetting<HomeCardKey>[] = [
   { hidden: false, key: 'TODAY' },
   { hidden: false, key: 'AGENDA' },
   { hidden: false, key: 'FINANCE' },
-  { hidden: false, key: 'NOTES' },
-  { hidden: false, key: 'CHATS' },
   { hidden: true, key: 'GOALS' },
   { hidden: true, key: 'FITNESS' },
   { hidden: true, key: 'MEASURES' },

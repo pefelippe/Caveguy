@@ -1,6 +1,7 @@
 import { useMutation, useQuery } from '@apollo/client/react';
 import {
   DeleteExpenseDocument,
+  SetExpenseOwnTransferDocument,
   DeleteOneOffIncomeDocument,
   ExpenseImportsDocument,
   ImportExpensesDocument,
@@ -13,6 +14,7 @@ import {
 import { addDays, addMonths } from '@zapbots/finance';
 import {
   ArrowDownLeftIcon,
+  ArrowLeftRightIcon,
   ArrowUpRightIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -65,10 +67,11 @@ import { ConfirmDelete } from '../components/ConfirmDelete';
 import { EditRecordDialog } from '../components/EditRecordDialog';
 import { ACCOUNT_KINDS, ImportsCard } from '../components/ImportsCard';
 import { QueryError } from '../components/QueryError';
-import { useUndoableDelete } from '../components/Toaster';
+import { useToast, useUndoableDelete } from '../components/Toaster';
 import { AddEntryButton } from './FinancePage';
 import { FormError } from '../components/FormError';
 import { localToday } from '../lib/bots';
+import { friendlyError } from '../lib/errors';
 import { formatCents, formatDate } from '../lib/format';
 import { ofxExpenses, parseOfx, readOfxText, type OfxStatement } from '../lib/ofx';
 import { PdfError, readPdfTable } from '../lib/pdf';
@@ -213,8 +216,13 @@ interface Entry {
     id: string;
     kind: 'CREDIT_OPERATION' | 'INCOME_SOURCE' | 'RECURRING_EXPENSE';
   } | null;
-  /** A Gasto recorrente on a Cartão: shown, but its Fatura is what counts. */
-  informative?: boolean;
+  /**
+   * Shown, not counted: a Gasto recorrente on a Cartão, as its Fatura is what counts, or money sent
+   * to the Titular's own account, as it is spent from there. `label` stands for the category.
+   */
+  informative?: { label: string; reason: string };
+  /** A Gasto the User may say was, or was not, money sent to an account of their own. */
+  transfer?: { id: string; ownTransfer: boolean };
 }
 
 function entriesOf(statement: Statement): Entry[] {
@@ -263,7 +271,7 @@ function entriesOf(statement: Statement): Entry[] {
       date: line.date,
       description: line.label,
       direction: 'OUT' as const,
-      informative: true,
+      informative: { label: 'No cartão', reason: 'Já contado na Fatura do cartão' },
       owner: line.id ? { id: line.id, kind: 'RECURRING_EXPENSE' as const } : null,
       removable: null,
       source: 'No cartão',
@@ -279,6 +287,23 @@ function entriesOf(statement: Statement): Entry[] {
       source: item.imported ? 'Importado' : 'Gasto',
       to: null,
       owner: null,
+      transfer: { id: item.id, ownTransfer: false },
+    })),
+    ...statement.transfers.map(item => ({
+      amountCents: item.amountCents,
+      category: item.category ?? 'Sem categoria',
+      date: item.date,
+      description: item.description,
+      direction: 'OUT' as const,
+      informative: {
+        label: 'Entre suas contas · não conta',
+        reason: 'Dinheiro para uma conta sua: conta como gasto quando sai de lá',
+      },
+      removable: { id: item.id, kind: 'EXPENSE' as const },
+      source: item.imported ? 'Importado' : 'Gasto',
+      to: null,
+      owner: null,
+      transfer: { id: item.id, ownTransfer: true },
     })),
   ].sort((a, b) => a.date.localeCompare(b.date));
 }
@@ -736,6 +761,10 @@ function Ledger({ head, statement }: { head: ReactNode; statement: Statement }) 
   const [removeIncome] = useMutation(DeleteOneOffIncomeDocument, {
     refetchQueries: [PeriodDocument],
   });
+  const [markTransfer] = useMutation(SetExpenseOwnTransferDocument, {
+    refetchQueries: [PeriodDocument],
+  });
+  const toast = useToast();
   /** Ids of the typed or imported lines picked to delete together. */
   const [selected, setSelected] = useState<Set<string>>(new Set());
   /** A Fonte de Renda or Operação about to be deleted from one of its lines. */
@@ -780,6 +809,22 @@ function Ledger({ head, statement }: { head: ReactNode; statement: Statement }) 
     return entry.removable!.kind === 'EXPENSE'
       ? removeExpense({ variables })
       : removeIncome({ variables });
+  };
+
+  /** Says a Gasto was, or was not, money sent to an account of the Titular's own. */
+  const toggleTransfer = async (entry: Entry) => {
+    if (!entry.transfer) return;
+    const ownTransfer = !entry.transfer.ownTransfer;
+    try {
+      await markTransfer({ variables: { id: entry.transfer.id, ownTransfer } });
+      toast({
+        message: ownTransfer
+          ? `${entry.description} não conta mais: foi para uma conta sua`
+          : `${entry.description} conta como gasto`,
+      });
+    } catch (error) {
+      toast({ message: friendlyError(error), tone: 'error' });
+    }
   };
 
   /** Deletes a typed or imported line, with a few seconds to undo it. */
@@ -977,9 +1022,9 @@ function Ledger({ head, statement }: { head: ReactNode; statement: Statement }) 
                     )}
                     <p
                       className="truncate text-sm text-muted-foreground"
-                      title={entry.informative ? 'Já contado na Fatura do cartão' : undefined}
+                      title={entry.informative?.reason}
                     >
-                      {entry.source} · {entry.informative ? 'No cartão' : entry.category}
+                      {entry.source} · {entry.informative?.label ?? entry.category}
                     </p>
                   </div>
                   <span
@@ -995,6 +1040,32 @@ function Ledger({ head, statement }: { head: ReactNode; statement: Statement }) 
                     {into ? '+' : '−'}
                     {formatCents(entry.amountCents)}
                   </span>
+                  {entry.transfer && (
+                    <span className="flex shrink-0 print:hidden">
+                      {entry.transfer.ownTransfer ? (
+                        // Left out by the import's guess: one click says it was spent after all.
+                        <Button
+                          onClick={() => void toggleTransfer(entry)}
+                          size="sm"
+                          title="Não foi para uma conta sua: contar como gasto"
+                          variant="outline"
+                        >
+                          Contar
+                        </Button>
+                      ) : (
+                        <Button
+                          aria-label={`Não contar ${entry.description}: foi para uma conta sua`}
+                          className="pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100 pointer-fine:group-focus-within:opacity-100"
+                          onClick={() => void toggleTransfer(entry)}
+                          size="icon-sm"
+                          title="Foi para uma conta sua: não contar"
+                          variant="ghost"
+                        >
+                          <ArrowLeftRightIcon />
+                        </Button>
+                      )}
+                    </span>
+                  )}
                   <span className="flex w-8 shrink-0 justify-end print:hidden">
                     {(own || entry.owner) && (
                       // Out of sight until the line is pointed at or reached by keyboard.
@@ -1231,7 +1302,7 @@ function ImportDialog({
               {reading.investments > 0 &&
                 `, ${reading.investments} aplicações em investimentos e caixinhas deixadas de fora`}
               {reading.ownTransfers > 0 &&
-                `, ${reading.ownTransfers} transferências para contas suas deixadas de fora (o gasto conta de onde ele sai)`}
+                `, ${reading.ownTransfers} transferências para contas suas, que entram sem contar (o gasto conta de onde ele sai)`}
               {reading.invalid > 0 && `, ${reading.invalid} linhas sem data, descrição ou valor`}.
             </p>
             {reading.lines.length > 0 && (

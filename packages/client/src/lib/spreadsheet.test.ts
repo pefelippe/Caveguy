@@ -110,6 +110,26 @@ describe('readExpenses', () => {
     expect(reading.invalid).toBe(1);
   });
 
+  it('brings a Pix to an account of the Titular own in, marked as not counted', () => {
+    const reading = readExpenses(
+      {
+        headers: [],
+        rows: [
+          ['02/10/2026', 'Pix enviado Pedro Felippe Fernandes', '-500,00'],
+          ['03/10/2026', 'Mercado', '-80,00'],
+          ['04/10/2026', 'Pix recebido', '100,00'],
+        ],
+      },
+      columns,
+      'Pedro Felippe Fernandes'
+    );
+    expect(reading.lines.map(line => [line.description, line.ownTransfer ?? false])).toEqual([
+      ['Pix enviado Pedro Felippe Fernandes', true],
+      ['Mercado', false],
+    ]);
+    expect(reading.ownTransfers).toBe(1);
+  });
+
   it('takes a sheet of expenses whole when every amount has one sign', () => {
     const reading = readExpenses(
       { headers: [], rows: [['01/10/2026', 'Aluguel', '2.500,00']] },

@@ -3,10 +3,8 @@ import {
   GoalsDocument,
   HomeAgendaDocument,
   HomeTodayDocument,
-  NotesDocument,
   SetTaskDoneDocument,
 } from '@zapbots/graphql/client';
-import { PinIcon } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { Checkbox } from '@zapbots/ui/components/checkbox';
@@ -201,49 +199,6 @@ export function GoalsCard() {
                       target: amountOf(goal, goal.target),
                     })}
               </span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </Panel>
-  );
-}
-
-/** The pinned Notas, each opening on Notas. */
-export function NotesCard() {
-  const { t } = useI18n();
-  const { data } = useQuery(NotesDocument, {
-    fetchPolicy: 'cache-and-network',
-    variables: { pinned: true, search: null },
-  });
-  const notes = data?.notes ?? [];
-
-  return (
-    <Panel
-      link={{ label: t('home.notes.open'), to: '/personal/notes' }}
-      title={t('home.card.notes')}
-    >
-      {!data ? (
-        <Lines count={3} />
-      ) : notes.length === 0 ? (
-        <Empty>{t('home.notes.empty')}</Empty>
-      ) : (
-        <ul className="flex flex-col gap-3">
-          {notes.slice(0, 4).map(note => (
-            <li key={note.id}>
-              <Link className="flex gap-3 hover:text-primary" to={`/personal/notes?n=${note.id}`}>
-                <PinIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                <span className="grid min-w-0 text-sm">
-                  <span className="truncate font-medium">
-                    {note.title || note.body.split('\n')[0] || t('personal.notes.untitled')}
-                  </span>
-                  {note.title && note.body && (
-                    <span className="truncate text-muted-foreground">
-                      {note.body.split('\n')[0]}
-                    </span>
-                  )}
-                </span>
-              </Link>
             </li>
           ))}
         </ul>

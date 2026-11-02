@@ -38,3 +38,18 @@ export function cancelHandler(): { cancelled: string[]; handler: HttpHandler } {
   });
   return { cancelled, handler };
 }
+
+/** Stripe's subscriptions as they are now, by id, changed by the test; one missing answers 404. */
+export function subscriptionsHandler(): {
+  handler: HttpHandler;
+  subscriptions: Map<string, Record<string, unknown>>;
+} {
+  const subscriptions = new Map<string, Record<string, unknown>>();
+  const handler = http.get(`${API}/subscriptions/:id`, ({ params }) => {
+    const subscription = subscriptions.get(String(params.id));
+    return subscription
+      ? HttpResponse.json(subscription)
+      : HttpResponse.json({ error: { message: 'No such subscription' } }, { status: 404 });
+  });
+  return { handler, subscriptions };
+}

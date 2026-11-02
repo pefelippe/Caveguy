@@ -21,15 +21,30 @@ const running = new Map<string, AbortController>();
 
 export type JobFile = Pick<AttachmentRow, 'fileId' | 'mimeType' | 'name' | 'url'>;
 
+/** What the checks before a Job may read and write: the transaction the Job is saved in. */
+export type JobTransaction = Pick<typeof db, 'insert' | 'select'>;
+
 /**
  * Saves a Job with its files and starts it in the background (docs/adr/0010); the client polls
- * `job` until it is DONE or FAILED. Callers validate the input first.
+ * `job` until it is DONE or FAILED. Callers validate the input first. `admit` runs first, in the
+ * same transaction and under a lock on the Organization, so limits it checks (how many Jobs at
+ * once, how many Routines) hold for two requests at once; it may save the Routine the Job is for.
  */
 export async function handOverJob(
   viewer: Viewer,
-  input: { botId: string; files: JobFile[]; instructions: string; routineId?: string }
+  input: { botId: string; files: JobFile[]; instructions: string; routineId?: string },
+  admit?: (tx: JobTransaction) => Promise<{ routineId?: string } | void>
 ) {
   const job = await db.transaction(async tx => {
+    let routineId = input.routineId ?? null;
+    if (admit) {
+      await tx
+        .select({ id: schema.organization.id })
+        .from(schema.organization)
+        .where(eq(schema.organization.id, viewer.organizationId))
+        .for('update');
+      routineId = (await admit(tx))?.routineId ?? routineId;
+    }
     const [row] = await tx
       .insert(schema.job)
       .values({
@@ -37,7 +52,7 @@ export async function handOverJob(
         createdById: viewer.userId,
         instructions: input.instructions,
         organizationId: viewer.organizationId,
-        routineId: input.routineId ?? null,
+        routineId,
       })
       .returning();
     if (input.files.length) {

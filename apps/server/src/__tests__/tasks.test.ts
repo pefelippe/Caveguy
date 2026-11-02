@@ -62,6 +62,24 @@ describe('Tarefas', () => {
     expect((await gql(viewer, TASKS)).data.tasks).toHaveLength(1);
   });
 
+  it('makes the next one once when a repeating Tarefa is done twice at the same time', async () => {
+    const viewer = await createViewer();
+    const created = await gql(viewer, CREATE, {
+      input: { dueOn: '2026-10-05', repeat: { every: 'MONTH', interval: 1 }, title: 'Pagar a luz' },
+    });
+    const id = created.data.createTask.id;
+
+    const results = await Promise.all([
+      gql(viewer, DONE, { done: true, id }),
+      gql(viewer, DONE, { done: true, id }),
+    ]);
+
+    expect(results.map(result => result.errors)).toEqual([[], []]);
+    const open = (await gql(viewer, TASKS)).data.tasks;
+    expect(open).toHaveLength(1);
+    expect(open[0]).toMatchObject({ dueOn: '2026-11-05' });
+  });
+
   it('keeps Lists, counts their open Tarefas and frees them when a List goes', async () => {
     const viewer = await createViewer();
     const list = (

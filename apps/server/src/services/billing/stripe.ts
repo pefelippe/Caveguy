@@ -86,6 +86,24 @@ export async function createCheckoutSession(input: {
 }
 
 /**
+ * A subscription as Stripe has it now, or null when Stripe has no such one. Webhook events can
+ * arrive late and out of order, so what they say is read again from here before it is kept.
+ */
+export async function fetchSubscription(id: string): Promise<Record<string, unknown> | null> {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) throw new StripeError('A cobrança não está configurada no servidor.');
+  const response = await fetch(`${API}/subscriptions/${encodeURIComponent(id)}`, {
+    headers: { Authorization: `Bearer ${key}` },
+  });
+  if (response.status === 404) return null;
+  if (!response.ok) {
+    console.error('stripe did not answer the subscription:', response.status);
+    throw new StripeError('O Stripe não respondeu a assinatura.');
+  }
+  return (await response.json()) as Record<string, unknown>;
+}
+
+/**
  * Ends a subscription now, with no more charges: for an Organization deleted with its account.
  * One already gone at Stripe counts as ended.
  */

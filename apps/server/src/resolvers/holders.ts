@@ -26,6 +26,7 @@ import {
   deleteRecord,
   findIncomeSource,
   readRecord,
+  setExpenseOwnTransfer,
   updateRecord,
 } from '../services/records';
 import { viewerHolder } from '../services/viewerHolder';
@@ -272,6 +273,8 @@ export const holderResolvers: Resolvers = {
         .returning({ id: schema.expense.id });
       return deleted.length > 0;
     },
+    setExpenseOwnTransfer: (_, { id, ownTransfer }, context) =>
+      setExpenseOwnTransfer(requireViewer(context), id, ownTransfer),
     deleteTax: async (_, { id }, context) => {
       const deleted = await db
         .delete(schema.tax)

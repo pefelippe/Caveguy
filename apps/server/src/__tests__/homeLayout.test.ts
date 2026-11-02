@@ -52,11 +52,13 @@ describe('Página inicial', () => {
       cards: [
         { hidden: false, key: 'GONE' },
         { hidden: true, key: 'CHATS' },
+        { hidden: false, key: 'NOTES' },
+        { hidden: true, key: 'MARKET' },
       ],
       organizationId: viewer.organizationId,
       userId: viewer.userId,
     });
-    expect((await gql(viewer, LAYOUT)).data.homeLayout).toEqual([{ hidden: true, key: 'CHATS' }]);
+    expect((await gql(viewer, LAYOUT)).data.homeLayout).toEqual([{ hidden: true, key: 'MARKET' }]);
   });
 
   it("is each User's own", async () => {

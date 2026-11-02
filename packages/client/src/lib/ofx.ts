@@ -92,20 +92,20 @@ export interface OfxReading {
   /** Money moved to the Titular's investments (a CDB, a caixinha), left out. */
   investments: number;
   lines: ExpenseLine[];
-  /** Money the Titular sent to an account of their own, left out. */
+  /** Money the Titular sent to an account of their own: brought in, not counted. */
   ownTransfers: number;
 }
 
 /**
  * The Gastos of bank statements: the debits, but not the payments of a Fatura nor money moved to
- * the Titular's investments or own accounts (`owner` is their name). A Pix is filed under "Pix".
+ * the Titular's investments; what goes to an account of their own (`owner` is their name) comes
+ * marked `ownTransfer`, not counted. A Pix is filed under "Pix".
  */
 export function ofxExpenses(statements: OfxStatement[], owner = ''): OfxReading {
   const all = statements.filter(item => item.kind === 'BANK').flatMap(item => item.transactions);
   const debits = all.filter(line => line.amountCents < 0);
   const invested = debits.filter(line => !isInvestmentMove(line.description));
-  const kept = invested.filter(line => !owner || !isOwnTransfer(line.description, owner));
-  const lines = kept
+  const lines = invested
     .filter(line => !isBillPayment(line.description))
     .map(line => ({
       amountCents: -line.amountCents,
@@ -113,13 +113,14 @@ export function ofxExpenses(statements: OfxStatement[], owner = ''): OfxReading 
       date: line.date,
       description: line.description,
       externalId: line.externalId,
+      ...(owner && isOwnTransfer(line.description, owner) && { ownTransfer: true }),
     }));
   return {
-    billPayments: kept.length - lines.length,
+    billPayments: invested.length - lines.length,
     credits: all.length - debits.length,
     investments: debits.length - invested.length,
     lines,
-    ownTransfers: invested.length - kept.length,
+    ownTransfers: lines.filter(line => line.ownTransfer).length,
   };
 }
 

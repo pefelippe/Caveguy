@@ -327,6 +327,8 @@ type Mutation {
   "Deletes an Importação and every Gasto it brought in."
   deleteExpenseImport(id: ID!): Boolean!
   deleteExpense(id: ID!): Boolean!
+  "Says whether a Gasto was money sent to the Titular's own account, which is not counted."
+  setExpenseOwnTransfer(id: ID!, ownTransfer: Boolean!): Boolean!
   "Rewrites a saved record with the same checks as creating it."
   updateRecord(kind: RecordKind!, id: ID!, values: [RecordValueInput!]!): Boolean!
   "Deletes a saved record; an Income Source or Operation goes from every month."
@@ -360,11 +362,9 @@ enum HomeCardKey {
   OVERVIEW
   MONTH
   DUES
-  CHATS
   TODAY
   AGENDA
   GOALS
-  NOTES
   FITNESS
   MEASURES
 }
@@ -914,7 +914,10 @@ type MonthStatement {
   commitments: [MonthLine!]!
   "Gastos recorrentes charged to a Cartão this month: shown, not counted, as their Fatura counts them."
   onCard: [MonthLine!]!
+  "Gastos counted."
   expenses: [Expense!]!
+  "Gastos sent to the Titular's own accounts: shown, not counted, as the money is spent from there."
+  transfers: [Expense!]!
   incomeCents: Cents!
   commitmentsCents: Cents!
   expensesCents: Cents!
@@ -930,6 +933,8 @@ type Expense {
   category: String
   amountCents: Cents!
   imported: Boolean!
+  "Sent to an account of the Titular's own: not counted."
+  ownTransfer: Boolean!
 }
 
 type CreditOperation {
@@ -1173,6 +1178,8 @@ input ExpenseRowInput {
   amountCents: Cents!
   "The line's key at its source (an OFX FITID), so importing it again adds nothing."
   externalId: String
+  "Sent to the Titular's own account: kept, but not counted."
+  ownTransfer: Boolean
 }
 
 input AddTaxInput {

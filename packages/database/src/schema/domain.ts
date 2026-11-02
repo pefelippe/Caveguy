@@ -44,7 +44,11 @@ export const holder = pgTable(
     userId: text('user_id').references(() => user.id, { onDelete: 'set null' }),
     ...timestamps,
   },
-  table => [index('holder_organization_idx').on(table.organizationId)]
+  table => [
+    index('holder_organization_idx').on(table.organizationId),
+    // One Holder per User in an Organization; those of no User (null) are not counted.
+    unique('holder_organization_user_unique').on(table.organizationId, table.userId),
+  ]
 );
 
 export const currency = pgEnum('currency', ['BRL', 'USD']);
@@ -268,6 +272,11 @@ export const expense = pgTable(
     /** The Importação it came in with; deleting the Importação takes it along. */
     importId: uuid('import_id').references(() => expenseImport.id, { onDelete: 'cascade' }),
     organizationId: organizationId(),
+    /**
+     * Money the Titular sent to an account of their own: shown, but not counted, as it is spent
+     * from the other account. Set when the import reads it so; the User can say otherwise.
+     */
+    ownTransfer: boolean('own_transfer').notNull().default(false),
     ...timestamps,
   },
   table => [

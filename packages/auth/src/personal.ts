@@ -16,6 +16,19 @@ export async function ensurePersonalOrganization(userId: string, name: string): 
 
   const organizationId = crypto.randomUUID();
   await db.transaction(async tx => {
+    // Two sign-ins at once (a double click, a callback repeated) would both find no membership:
+    // the User's row is locked and the question asked again, so only one makes the Organization.
+    await tx
+      .select({ id: schema.user.id })
+      .from(schema.user)
+      .where(eq(schema.user.id, userId))
+      .for('update');
+    const [made] = await tx
+      .select({ id: schema.member.id })
+      .from(schema.member)
+      .where(eq(schema.member.userId, userId))
+      .limit(1);
+    if (made) return;
     await tx
       .insert(schema.organization)
       .values({ id: organizationId, name, slug: `pessoal-${organizationId}` });

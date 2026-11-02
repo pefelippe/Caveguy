@@ -5,18 +5,12 @@ export const PERSONAL_STRINGS = {
   'home.agenda.empty': { en: 'Nothing in the next 7 days.', pt: 'Nada nos próximos 7 dias.' },
   'home.agenda.open': { en: 'Open the calendar', pt: 'Abrir a agenda' },
   'home.card.agenda': { en: 'Next 7 days', pt: 'Próximos 7 dias' },
-  'home.card.notes': { en: 'Pinned notes', pt: 'Notas fixadas' },
   'home.card.today': { en: 'Today', pt: 'Hoje' },
   'home.goals.empty': {
     en: 'No goals yet. Set one in Goals.',
     pt: 'Nenhuma meta ainda. Crie uma em Metas.',
   },
   'home.goals.open': { en: 'See goals', pt: 'Ver metas' },
-  'home.notes.empty': {
-    en: 'Pin a note to keep it here.',
-    pt: 'Fixe uma nota para ela aparecer aqui.',
-  },
-  'home.notes.open': { en: 'See notes', pt: 'Ver notas' },
   'home.today.allDay': { en: 'All day', pt: 'Dia todo' },
   'home.today.empty': {
     en: 'Nothing for today. Enjoy it.',

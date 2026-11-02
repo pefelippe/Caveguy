@@ -2,9 +2,9 @@ import { timingSafeEqual } from 'node:crypto';
 
 import type { Viewer } from '@zapbots/auth';
 import { db, schema } from '@zapbots/database';
-import { and, eq } from 'drizzle-orm';
+import { and, asc, eq, inArray, sql } from 'drizzle-orm';
 
-import { openFinanceUnavailable, syncBankLink } from '.';
+import { linkBank, openFinanceEmails, openFinanceUnavailable, syncBankLink } from '.';
 
 /** What Pluggy posts: the event's name and, for items and their lines, the item's id. */
 export interface PluggyEvent {
@@ -34,7 +34,8 @@ export function pluggyWebhookAuthorized(token: string | undefined): boolean {
 /**
  * Reads a Vínculo bancário again when Pluggy says its item changed. The event's body is never
  * trusted: only its item id, to pick a link we already have, which is then read from Pluggy as
- * "Ler de novo" does, on behalf of the User who linked it and only while they may (docs/adr/0020).
+ * "Ler de novo" does, on behalf of the User who linked it and only while they may (docs/adr/0020);
+ * an `item/created` with no link yet links it (`linkNewItem`).
  * Returns how many Gastos came in, or `null` when nothing was read.
  */
 export async function handlePluggyEvent(payload: PluggyEvent): Promise<number | null> {
@@ -46,7 +47,8 @@ export async function handlePluggyEvent(payload: PluggyEvent): Promise<number | 
     .select()
     .from(schema.bankLink)
     .where(and(eq(schema.bankLink.provider, 'PLUGGY'), eq(schema.bankLink.externalId, itemId)));
-  if (!link?.consentId) return null;
+  if (!link) return event === 'item/created' ? linkNewItem(itemId) : null;
+  if (!link.consentId) return null;
   if (
     event.startsWith('transactions/') &&
     link.lastSyncedAt &&
@@ -71,5 +73,33 @@ export async function handlePluggyEvent(payload: PluggyEvent): Promise<number | 
   if (await openFinanceUnavailable(viewer)) return null;
 
   const { added } = await syncBankLink(viewer, link.id);
+  return added;
+}
+
+/**
+ * A bank just connected in Pluggy's dashboard is linked on its own, as if its id were pasted on
+ * Integrações, but only for the one User whose e-mail is in `OPEN_FINANCE_EMAILS`: with more,
+ * whose bank it is cannot be told, and it waits to be pasted. It goes to the Organization they
+ * sign in to. Only `item/created`: a bank unlinked here does not come back on its next update.
+ */
+async function linkNewItem(itemId: string): Promise<number | null> {
+  const emails = openFinanceEmails();
+  if (!emails.length) return null;
+  const users = await db
+    .select({ id: schema.user.id })
+    .from(schema.user)
+    .where(inArray(sql`lower(${schema.user.email})`, emails));
+  if (users.length !== 1) return null;
+  const [membership] = await db
+    .select({ organizationId: schema.member.organizationId, role: schema.member.role })
+    .from(schema.member)
+    .where(eq(schema.member.userId, users[0]!.id))
+    .orderBy(asc(schema.member.createdAt))
+    .limit(1);
+  if (!membership) return null;
+  const viewer: Viewer = { ...membership, userId: users[0]!.id };
+  if (await openFinanceUnavailable(viewer)) return null;
+
+  const { added } = await linkBank(viewer, itemId);
   return added;
 }

@@ -273,12 +273,6 @@ const STRINGS = {
   },
   'home.customize.reset': { en: 'Restore default', pt: 'Restaurar padrão' },
   'home.customize.up': { en: 'Move {card} up', pt: 'Subir {card}' },
-  'home.chats': { en: 'Recent conversations', pt: 'Conversas recentes' },
-  'home.chats.empty': {
-    en: 'No conversations yet. Ask something above.',
-    pt: 'Nenhuma conversa ainda. Pergunte algo acima.',
-  },
-  'home.chats.open': { en: 'Open the Agent', pt: 'Abrir o Agente' },
   'home.dues': { en: 'Coming due', pt: 'Próximos vencimentos' },
   'home.dues.empty': {
     en: 'Nothing falls due in the next 30 days.',

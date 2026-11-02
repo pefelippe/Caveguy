@@ -1,11 +1,19 @@
 import { closeDb, db, schema } from '@zapbots/database';
 import { addDays } from '@zapbots/finance';
 import { dateIn } from '@zapbots/personal';
-import { afterAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import { createViewer, gql } from '../../test/helpers';
+import { mswServer } from '../../test/msw/openrouter';
+import { resendHandler } from '../../test/msw/resend';
 
+beforeAll(() => mswServer.listen());
+afterEach(() => {
+  mswServer.resetHandlers();
+  delete process.env.RESEND_API_KEY;
+});
 afterAll(async () => {
+  mswServer.close();
   await closeDb();
 });
 
@@ -32,8 +40,8 @@ const BOOK = /* GraphQL */ `
 const AGENDA = `query ($from: Date!, $to: Date!) { agenda(from: $from, to: $to) { kind title date startTime } }`;
 
 /** A link open every day 9 to 12, 30 minutes each, bookable from now on. */
-async function linkOf(slug: string) {
-  const owner = await createViewer('Ana');
+async function linkOf(slug: string, owner?: Awaited<ReturnType<typeof createViewer>>) {
+  owner ??= await createViewer('Ana');
   const windows = [0, 1, 2, 3, 4, 5, 6].map(weekday => ({ end: '12:00', start: '09:00', weekday }));
   const saved = await gql(owner, SAVE, {
     input: {
@@ -167,5 +175,62 @@ describe('Agendamento por link', () => {
       (await gql(other, `mutation ($id: ID!) { deleteBookingType(id: $id) }`, { id: type.id })).data
         .deleteBookingType
     ).toBe(false);
+  });
+
+  it('gives one hour to one guest when two book it at once through two links of the same owner', async () => {
+    const first = unique();
+    const second = unique();
+    const { owner } = await linkOf(first);
+    await linkOf(second, owner);
+    const startsAt = (await gql(null, SLOTS, { slug: first })).data.publicBookingSlots[0];
+
+    const results = await Promise.all([
+      gql(null, BOOK, { input: { email: 'bia@example.com', name: 'Bia', slug: first, startsAt } }),
+      gql(null, BOOK, {
+        input: { email: 'caio@example.com', name: 'Caio', slug: second, startsAt },
+      }),
+    ]);
+
+    expect(results.map(result => result.errors).sort()).toEqual([[], ['BAD_USER_INPUT']]);
+    expect((await gql(owner, `query { bookings { id } }`)).data.bookings).toHaveLength(1);
+  });
+
+  it('cancels once and sends one e-mail when the guest cancels twice at the same time', async () => {
+    const slug = unique();
+    await linkOf(slug);
+    const startsAt = (await gql(null, SLOTS, { slug })).data.publicBookingSlots[0];
+    const { cancelToken } = (
+      await gql(null, BOOK, { input: { email: 'bia@example.com', name: 'Bia', slug, startsAt } })
+    ).data.book;
+    process.env.RESEND_API_KEY = 're_test';
+    const resend = resendHandler();
+    mswServer.use(resend.handler);
+
+    const cancel = `mutation ($token: String!) { cancelBookingByToken(token: $token) }`;
+    const results = await Promise.all([
+      gql(null, cancel, { token: cancelToken }),
+      gql(null, cancel, { token: cancelToken }),
+    ]);
+
+    expect(results.map(result => result.data.cancelBookingByToken).sort()).toEqual([false, true]);
+    expect(resend.emails.filter(email => email.subject.startsWith('Cancelado'))).toHaveLength(1);
+  });
+
+  it('takes at most ten bookings an hour for one owner, so the form cannot send many e-mails', async () => {
+    const slug = unique();
+    await linkOf(slug);
+    const slots: string[] = (await gql(null, SLOTS, { slug })).data.publicBookingSlots;
+    const book = (index: number) =>
+      gql(null, BOOK, {
+        input: {
+          email: `guest${index}@example.com`,
+          name: 'Convidado',
+          slug,
+          startsAt: slots[index],
+        },
+      });
+
+    for (let index = 0; index < 10; index++) expect((await book(index)).errors).toEqual([]);
+    expect((await book(10)).errors).toEqual(['BAD_USER_INPUT']);
   });
 });

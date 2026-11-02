@@ -222,13 +222,21 @@ fragment StatementFields on MonthStatement {
     amountCents
   }
   expenses {
-    id
-    date
-    description
-    category
-    amountCents
-    imported
+    ...StatementExpenseFields
   }
+  transfers {
+    ...StatementExpenseFields
+  }
+}
+
+fragment StatementExpenseFields on Expense {
+  id
+  date
+  description
+  category
+  amountCents
+  imported
+  ownTransfer
 }
 
 query Month($holderId: ID!, $month: String!) {
@@ -301,6 +309,10 @@ mutation DeleteExpenseImport($id: ID!) {
 
 mutation DeleteExpense($id: ID!) {
   deleteExpense(id: $id)
+}
+
+mutation SetExpenseOwnTransfer($id: ID!, $ownTransfer: Boolean!) {
+  setExpenseOwnTransfer(id: $id, ownTransfer: $ownTransfer)
 }
 
 mutation GenerateAssessment($holderId: ID!) {

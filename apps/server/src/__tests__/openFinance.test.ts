@@ -46,6 +46,25 @@ const SYNC = /* GraphQL */ `
     }
   }
 `;
+const PERIOD = /* GraphQL */ `
+  query ($id: ID!, $from: Date!, $to: Date!) {
+    holder(id: $id) {
+      period(from: $from, to: $to) {
+        expensesCents
+        transfers {
+          id
+          description
+          ownTransfer
+        }
+      }
+    }
+  }
+`;
+const MARK = /* GraphQL */ `
+  mutation ($id: ID!, $ownTransfer: Boolean!) {
+    setExpenseOwnTransfer(id: $id, ownTransfer: $ownTransfer)
+  }
+`;
 const UNLINK = /* GraphQL */ `
   mutation ($id: ID!) {
     unlinkBank(id: $id)
@@ -409,6 +428,100 @@ describe('Open Finance through Meu Pluggy', () => {
     // An item no link has, or an event without one, reads nothing.
     expect(await handlePluggyEvent({ event: 'item/updated', itemId: 'outro' })).toBeNull();
     expect(await handlePluggyEvent({ event: 'connector/status_updated' })).toBeNull();
+  });
+
+  it('keeps a Pix to the Titular own account apart, not counted, until the User says otherwise', async () => {
+    const viewer = await createViewer('Ana Souza');
+    await allow(viewer);
+    const { item, itemId } = bank();
+    item.transactions[`${itemId}-acc`]![0]!.push({
+      amount: -500,
+      date: daysAgo(4),
+      description: 'Pix enviado Ana Maria Souza',
+      id: `${itemId}-t7`,
+      type: 'DEBIT',
+    });
+    mswServer.use(...pluggyHandlers({ [itemId]: item }).handlers);
+    expect((await gql(viewer, LINK, { itemId })).data.linkBank.added).toBe(3);
+
+    const holder = await viewerHolder(viewer);
+    const read = async () =>
+      (await gql(viewer, PERIOD, { from: addDays(today(), -30), id: holder.id, to: today() })).data
+        .holder.period;
+    let period = await read();
+    expect(period.transfers.map((row: { description: string }) => row.description)).toEqual([
+      'Pix enviado Ana Maria Souza',
+    ]);
+    // Padaria and Tarifa only.
+    expect(period.expensesCents).toBe(4600);
+
+    const pix = period.transfers[0].id;
+    expect((await gql(viewer, MARK, { id: pix, ownTransfer: false })).errors).toEqual([]);
+    period = await read();
+    expect(period.transfers).toEqual([]);
+    expect(period.expensesCents).toBe(54600);
+
+    const stranger = await createViewer();
+    expect((await gql(stranger, MARK, { id: pix, ownTransfer: true })).errors).toEqual([
+      'NOT_FOUND',
+    ]);
+  });
+
+  it('links a bank once when it is asked for twice at the same time', async () => {
+    const viewer = await createViewer();
+    await allow(viewer);
+    const { item, itemId } = bank();
+    mswServer.use(...pluggyHandlers({ [itemId]: item }).handlers);
+
+    const results = await Promise.all([
+      gql(viewer, LINK, { itemId }),
+      gql(viewer, LINK, { itemId }),
+    ]);
+
+    expect(results.map(result => result.errors)).toEqual([[], []]);
+    const links = await db
+      .select()
+      .from(schema.bankLink)
+      .where(eq(schema.bankLink.externalId, itemId));
+    expect(links).toHaveLength(1);
+    const holder = await viewerHolder(viewer);
+    const consents = await db
+      .select()
+      .from(schema.consent)
+      .where(eq(schema.consent.holderId, holder.id));
+    expect(consents).toHaveLength(1);
+    // Padaria and Tarifa, once each.
+    expect(await expensesOf(viewer)).toHaveLength(2);
+  });
+
+  it('links a bank connected in Pluggy on its own, for the one User allowed', async () => {
+    const viewer = await createViewer();
+    await allow(viewer);
+    const { item, itemId } = bank();
+    mswServer.use(...pluggyHandlers({ [itemId]: item }).handlers);
+
+    expect(await handlePluggyEvent({ event: 'item/created', itemId })).toBe(2);
+    const links = await db
+      .select()
+      .from(schema.bankLink)
+      .where(eq(schema.bankLink.externalId, itemId));
+    expect(links).toMatchObject([{ organizationId: viewer.organizationId, status: 'ACTIVE' }]);
+    expect((await expensesOf(viewer)).map(row => row.description)).toContain('Padaria');
+    // Once linked, the same event reads it again instead of linking it twice.
+    expect(await handlePluggyEvent({ event: 'item/created', itemId })).toBe(0);
+  });
+
+  it('leaves a new Pluggy item to be pasted when more than one User may link banks', async () => {
+    const viewer = await createViewer();
+    const other = await createViewer();
+    await allow(viewer);
+    process.env.OPEN_FINANCE_EMAILS = `${process.env.OPEN_FINANCE_EMAILS},${other.userId}@test.local`;
+    const { item, itemId } = bank();
+    const fake = pluggyHandlers({ [itemId]: item });
+    mswServer.use(...fake.handlers);
+
+    expect(await handlePluggyEvent({ event: 'item/created', itemId })).toBeNull();
+    expect(fake.requests).toEqual([]);
   });
 
   it('stops reading from the webhook once the User may no longer use Open Finance', async () => {
