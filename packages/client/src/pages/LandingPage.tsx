@@ -5,9 +5,11 @@ import {
   CreditCard,
   FileUp,
   LineChart,
-  MessageCircle,
+  MessageSquareText,
+  Paperclip,
+  Search,
   Repeat,
-  Send,
+  ShieldCheck,
   TrendingDown,
   X,
   type LucideIcon,
@@ -15,6 +17,7 @@ import {
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 
+import { TelegramLogo, WhatsAppLogo } from '@zapbots/ui/blocks/brand-logos';
 import { Logo } from '@zapbots/ui/blocks/logo';
 import {
   Accordion,
@@ -405,38 +408,50 @@ function Features() {
 
 // ---------------------------------------------------------------- chat
 
-const CHAT_POINTS = [
-  'Conte um gasto numa frase e ele vira lançamento depois que você confirma.',
-  'Pergunte quanto sobrou, o que vence na semana ou quanto custa quitar um empréstimo antes.',
-  'No app, mande uma foto, planilha ou PDF na conversa e o Caishen lê para você.',
-  'Nada é gravado sem o seu “Confirmar”. O Caishen nunca movimenta dinheiro.',
+const CHAT_POINTS: { icon: LucideIcon; text: string; title: string }[] = [
+  {
+    icon: MessageSquareText,
+    text: '“gastei 50 no mercado” vira um gasto.',
+    title: 'Anote numa frase',
+  },
+  {
+    icon: Search,
+    text: 'Quanto sobrou, o que vence, quanto falta.',
+    title: 'Pergunte o que quiser',
+  },
+  { icon: Paperclip, text: 'Foto, planilha ou PDF, direto no app.', title: 'Mande arquivos' },
+  { icon: ShieldCheck, text: 'Nada é salvo sem o seu sim.', title: 'Você confirma' },
 ];
 
 function Chat() {
   return (
-    <section aria-labelledby="chat-title" className="bg-(--l-dark) py-16 text-white md:py-24">
-      <Container className="grid gap-12 lg:grid-cols-2">
-        <div>
-          <div className="flex gap-2 text-white/70">
-            <MessageCircle aria-hidden className="size-6" />
-            <Send aria-hidden className="size-6" />
-          </div>
-          <h2
-            className="mt-5 font-display text-[clamp(2rem,1.4rem+2vw,3rem)] leading-[1.05] font-light tracking-[-0.02em]"
-            id="chat-title"
-          >
-            Fale com suas finanças pelo WhatsApp ou Telegram
-          </h2>
-          <p className="mt-4 max-w-[48ch] text-(length:--step-body) text-white/70">
-            O mesmo assistente do app, na conversa que você já usa todo dia. Vincule seu número em
-            um minuto, pela página de Integrações.
-          </p>
+    <section aria-labelledby="chat-title" className="bg-(--l-surface) py-16 md:py-24">
+      <Container className="text-center">
+        <div className="flex justify-center gap-3">
+          <span className="grid size-12 place-items-center rounded-full bg-[#25D366]/12">
+            <WhatsAppLogo aria-hidden className="size-6 text-[#25D366]" />
+          </span>
+          <span className="grid size-12 place-items-center rounded-full bg-[#26A5E4]/12">
+            <TelegramLogo aria-hidden className="size-6 text-[#26A5E4]" />
+          </span>
         </div>
-        <ul className="flex flex-col gap-4 self-center">
-          {CHAT_POINTS.map(point => (
-            <li className="flex gap-3 text-(length:--step-body)" key={point}>
-              <Check aria-hidden className="mt-1 size-5 shrink-0 text-(--l-seal-light)" />
-              {point}
+        <h2
+          className="mx-auto mt-6 font-display text-[clamp(2rem,1.4rem+2vw,3rem)] leading-[1.05] font-light tracking-[-0.02em]"
+          id="chat-title"
+        >
+          Suas finanças no WhatsApp
+        </h2>
+        <p className="mx-auto mt-4 text-(length:--step-body) text-(--l-muted)">
+          O mesmo Caishen do app, também no Telegram.
+        </p>
+        <ul className="mt-12 grid gap-4 text-left sm:grid-cols-2 lg:grid-cols-4">
+          {CHAT_POINTS.map(({ icon: Icon, text, title }) => (
+            <li className="rounded-[20px] bg-white p-6" key={title}>
+              <span className="grid size-10 place-items-center rounded-full bg-(--l-surface)">
+                <Icon aria-hidden className="size-5 text-(--l-seal)" />
+              </span>
+              <h3 className="mt-5 text-[17px] font-medium">{title}</h3>
+              <p className="mt-1.5 text-[15px] text-(--l-muted)">{text}</p>
             </li>
           ))}
         </ul>
