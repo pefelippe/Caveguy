@@ -9,8 +9,8 @@ import {
   CreditCard,
   FileBarChart,
   FileUp,
-  Globe,
   LayoutDashboard,
+  Landmark,
   LineChart,
   ListTodo,
   MessageSquareText,
@@ -27,8 +27,25 @@ import {
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 
-import { TelegramLogo, WhatsAppLogo } from '@zapbots/ui/blocks/brand-logos';
+import {
+  AppleLogo,
+  GoogleCalendarLogo,
+  GoogleTasksLogo,
+  ICloudLogo,
+  MakeLogo,
+  N8nLogo,
+  SamsungLogo,
+  TelegramLogo,
+  WhatsAppLogo,
+  ZapierLogo,
+} from '@zapbots/ui/blocks/brand-logos';
 import { Logo } from '@zapbots/ui/blocks/logo';
+import {
+  AnthropicLogo,
+  GeminiLogo,
+  OpenAiLogo,
+  OpenRouterLogo,
+} from '@zapbots/ui/blocks/provider-logos';
 import {
   Accordion,
   AccordionContent,
@@ -55,7 +72,7 @@ import {
 } from '@zapbots/ui/components/table';
 import { cn } from '@zapbots/ui/lib/utils';
 
-import { isLanguage, LANGUAGES, useI18n, type StringKey } from '../lib/i18n';
+import { isLanguage, LANGUAGES, useI18n, type Language, type StringKey } from '../lib/i18n';
 import { COMPANY } from '../lib/legal';
 
 /*
@@ -82,6 +99,7 @@ export function LandingPage() {
         <Hero />
         <Features />
         <Chat />
+        <Integrations />
         <Comparison />
         <Pricing />
         <Questions />
@@ -218,7 +236,10 @@ function Header() {
               className={cn('size-4 transition-transform', open && 'rotate-180')}
             />
           </Button>
-          <a className={link} href="#precos" onMouseEnter={() => setOpen(false)}>
+          <a className={link} href="#integracoes" onMouseEnter={() => setOpen(false)}>
+            {t('landing.nav.integrations')}
+          </a>
+          <a className={link} href="#precos">
             {t('landing.nav.pricing')}
           </a>
           <a className={link} href="#perguntas">
@@ -292,14 +313,33 @@ function FeaturesMenu({ onPick }: { onPick: () => void }) {
   );
 }
 
+/** Small flags drawn here: flag emojis show as letters on Windows. */
+function Flag({ language }: { language: Language }) {
+  return language === 'pt' ? (
+    <svg aria-hidden className="h-3.5 w-5 shrink-0 rounded-[2px]" viewBox="0 0 20 14">
+      <rect fill="#009C3B" height="14" width="20" />
+      <path d="M10 1.6 18.2 7 10 12.4 1.8 7z" fill="#FFDF00" />
+      <circle cx="10" cy="7" fill="#002776" r="3.1" />
+    </svg>
+  ) : (
+    <svg aria-hidden className="h-3.5 w-5 shrink-0 rounded-[2px]" viewBox="0 0 20 14">
+      <rect fill="#B22234" height="14" width="20" />
+      {[1, 3, 5, 7, 9, 11].map(row => (
+        <rect fill="#fff" height="1.08" key={row} width="20" y={row * 1.08} />
+      ))}
+      <rect fill="#3C3B6E" height="7.54" width="8.6" />
+    </svg>
+  );
+}
+
 /** Português or English, remembered by this browser until signing in. */
 function LanguageSwitch() {
   const { language, setLanguage, t } = useI18n();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button aria-label={t('landing.language')} className="gap-1.5 px-2.5" variant="ghost">
-          <Globe aria-hidden className="size-4" />
+        <Button aria-label={t('landing.language')} className="gap-2 px-2.5" variant="ghost">
+          <Flag language={language} />
           {language.toUpperCase()}
         </Button>
       </DropdownMenuTrigger>
@@ -310,7 +350,8 @@ function LanguageSwitch() {
           value={language}
         >
           {LANGUAGES.map(option => (
-            <DropdownMenuRadioItem key={option.value} value={option.value}>
+            <DropdownMenuRadioItem className="gap-2" key={option.value} value={option.value}>
+              <Flag language={option.value} />
               {option.label}
             </DropdownMenuRadioItem>
           ))}
@@ -632,6 +673,105 @@ function Chat() {
   );
 }
 
+// ---------------------------------------------------------------- integrations
+
+interface IntegrationGroup {
+  items: { icon: LucideIcon; name: StringKey | string }[];
+  title: StringKey;
+}
+
+/** What works on Integrações today, by kind; Open Finance is still coming (ADR 0020). */
+const INTEGRATIONS: IntegrationGroup[] = [
+  {
+    items: [
+      { icon: WhatsAppLogo, name: 'WhatsApp' },
+      { icon: TelegramLogo, name: 'Telegram' },
+    ],
+    title: 'landing.integrations.chat',
+  },
+  {
+    items: [
+      { icon: GoogleCalendarLogo, name: 'landing.integrations.googleCalendar' },
+      { icon: ICloudLogo, name: 'iCloud' },
+      { icon: CalendarDays, name: 'Outlook' },
+      { icon: GoogleTasksLogo, name: 'landing.integrations.googleTasks' },
+    ],
+    title: 'landing.integrations.agenda',
+  },
+  {
+    items: [
+      { icon: AppleLogo, name: 'Apple Health' },
+      { icon: SamsungLogo, name: 'Samsung Health' },
+    ],
+    title: 'landing.integrations.health',
+  },
+  {
+    items: [
+      { icon: ZapierLogo, name: 'Zapier' },
+      { icon: MakeLogo, name: 'Make' },
+      { icon: N8nLogo, name: 'n8n' },
+    ],
+    title: 'landing.integrations.automation',
+  },
+  {
+    items: [
+      { icon: OpenRouterLogo, name: 'OpenRouter' },
+      { icon: AnthropicLogo, name: 'Anthropic' },
+      { icon: GeminiLogo, name: 'Gemini' },
+      { icon: OpenAiLogo, name: 'OpenAI' },
+    ],
+    title: 'landing.integrations.ai',
+  },
+];
+
+const PILL = 'flex items-center gap-2.5 rounded-full py-2 pr-4 pl-2.5 text-[15px]';
+
+function Integrations() {
+  const { t } = useI18n();
+  return (
+    <section
+      aria-labelledby="integracoes-title"
+      className="scroll-mt-16 py-16 md:py-24"
+      id="integracoes"
+    >
+      <Container>
+        <SectionTitle id="integracoes-title" lead={t('landing.integrations.lead')}>
+          {t('landing.integrations.title')}
+        </SectionTitle>
+        <div className="mt-12 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+          {INTEGRATIONS.map(group => (
+            <div key={group.title}>
+              <p className="text-[14px] font-medium text-(--l-muted)">{t(group.title)}</p>
+              <ul className="mt-4 flex flex-wrap gap-2">
+                {group.items.map(({ icon: Icon, name }) => (
+                  <li className={cn(PILL, 'border border-(--l-sand) bg-white')} key={name}>
+                    <Icon aria-hidden className="size-5" />
+                    {isKey(name) ? t(name) : name}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+          <div>
+            <p className="flex items-center gap-2 text-[14px] font-medium text-(--l-muted)">
+              {t('landing.integrations.banks')}
+              <Badge className="px-1.5 py-0 text-[11px]" variant="secondary">
+                {t('landing.pricing.soon')}
+              </Badge>
+            </p>
+            <ul className="mt-4 flex flex-wrap gap-2 opacity-60">
+              <li className={cn(PILL, 'border border-dashed border-(--l-rule)')}>
+                <Landmark aria-hidden className="size-5" />
+                Open Finance
+              </li>
+            </ul>
+          </div>
+        </div>
+      </Container>
+    </section>
+  );
+}
+
 // ---------------------------------------------------------------- comparison
 
 type Mark = boolean | StringKey;
@@ -910,6 +1050,7 @@ const FOOTER_GROUPS: { links: { href: string; label: StringKey }[]; title: Strin
     {
       links: [
         { href: '#recursos', label: 'landing.nav.features' },
+        { href: '#integracoes', label: 'landing.nav.integrations' },
         { href: '#precos', label: 'landing.nav.pricing' },
         { href: '#perguntas', label: 'landing.nav.questions' },
       ],
