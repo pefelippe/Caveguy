@@ -56,8 +56,8 @@ _Avoid_: notificação, alerta (como termo do código em pt-BR), Insight
 **Conversa** (`Conversation`):
 Uma troca salva de Mensagens entre o Usuário e um Bot. Começa e é reaberta no
 chat: a página Chat ou o painel ao lado de qualquer tela. Cada Organização tem
-também uma Conversa "WhatsApp", que começa na primeira mensagem de um número
-ligado e aparece no Agente como as outras.
+também uma Conversa "WhatsApp" e uma "Telegram", que começam na primeira
+mensagem de um número ou conversa ligada e aparecem no Agente como as outras.
 _Avoid_: chat (é a página e o painel), thread
 
 **Mensagem** (`Message`):
@@ -81,14 +81,29 @@ _Avoid_: IA (como sinônimo de modelo), LLM
 O vínculo, autorizado pelo Usuário, com uma ferramenta de fora em que os Bots
 entram por ele. Cada Integração é de uma categoria: Provedores de IA (de onde vêm
 os Modelos, hoje o OpenRouter), Armazenamento de arquivos (Google Drive),
-Comunicação (WhatsApp), E-mail, Agenda ou Bancos. Os Bots só leem por uma
-Integração; o WhatsApp é um canal da Conversa e só responde, nunca inicia.
+Comunicação (WhatsApp, Telegram), E-mail, Agenda ou Bancos. Os Bots só leem por uma
+Integração; o WhatsApp e o Telegram são canais da Conversa e só respondem, nunca iniciam.
 _Avoid_: conexão, plugin, Fonte (essa é financeira)
 
 **Código de conexão do WhatsApp** (`whatsapp_link_code`):
 Seis letras e números, de uso único e válidos por 15 minutos, que o Usuário
 gera em Integrações e manda do celular para ligar aquele número a ele.
 _Avoid_: token, senha, PIN
+
+**Código de conexão do Telegram** (`telegram_link_code`):
+De uso único e válido por 15 minutos, vai no link `t.me` que o Usuário abre de
+Integrações; o Iniciar do Telegram o manda de volta e liga aquela conversa a ele.
+_Avoid_: token, senha, PIN
+
+**Endereço de envio** (`automation_inbox`):
+O endereço secreto, um por Usuário, para onde o Zapier, o Make, o n8n ou um
+script mandam Gastos (ADR 0033). Só recebe, nunca lê; cada Gasto entra uma vez.
+_Avoid_: webhook (na tela), API
+
+**Música** (card da Página inicial):
+O que o Usuário está ouvindo no Spotify e as últimas músicas, lido na hora e
+nunca guardado (ADR 0032). Só para quem o dono do servidor nomeia.
+_Avoid_: playlist, histórico
 
 **Vínculo bancário** (`BankLink`):
 Um banco que o Titular autorizou pelo Open Finance, lido por um provedor (hoje o
@@ -161,6 +176,20 @@ marcou. Vira um Evento na Agenda do Usuário; cancelado por qualquer lado (o
 convidado pelo link do e-mail, o Usuário na tela dos links, ou apagando o
 Evento), o Evento sai e o Agendamento fica como cancelado.
 
+**Assinatura da Agenda** (`CalendarFeed`):
+Um link secreto (`/api/calendar/<token>.ics`) com a Agenda do Usuário como
+arquivo de calendário, que o iPhone, o Google Agenda ou o Outlook leem de tempos
+em tempos: um mês para trás e um ano à frente. Lá fora só se vê; trocar o link
+desliga o antigo.
+_Avoid_: feed, sincronização (nada volta de lá)
+
+**Agenda de fora** (`ExternalCalendar`):
+Uma agenda que o Usuário mantém em outro lugar (iCloud, Google, Outlook), lida
+pelo link secreto .ics dela. Os eventos aparecem na Agenda, só para ver, e
+ocupam o horário dos Links de agendamento; nada é escrito lá. O link fica
+cifrado e não volta ao navegador.
+_Avoid_: sincronização, calendário importado (nada é copiado)
+
 **Meta** (`Goal`):
 Aonde o Usuário quer chegar: juntar um valor (MONEY, em centavos), chegar a uma
 contagem (COUNT, com unidade) ou fazer algo uma vez (CHECK). Pode agrupar
@@ -173,6 +202,24 @@ Um passo rumo a uma Meta, na unidade dela; negativo desconta.
 
 Dados de saúde, sensíveis pela LGPD: só o Usuário os vê, e saem com a conta.
 Só números inteiros: gramas, milímetros, décimos de por cento, kcal.
+
+**Google Tarefas** (`GOOGLE_TASKS`):
+As tarefas do Google do Usuário, copiadas num sentido só para as Tarefas: uma
+Lista por lista de lá. O que muda lá chega aqui; o que o Usuário faz aqui fica
+aqui. Nada é escrito no Google.
+_Avoid_: sincronização (não volta nada)
+
+**Saúde do celular** (`HealthInbox`):
+O endereço secreto (`/api/health/<token>`) para onde o celular manda os dados do
+Apple Health ou do Health Connect (Samsung Health, Garmin e outros gravam lá),
+por um app como o Health Auto Export ou o HC Webhook. Viram Passos, Medidas,
+noites de Sono e Treinos; mandar de novo o mesmo dia corrige, não duplica. Só
+recebe, nunca deixa ler.
+_Avoid_: sincronização, importação
+
+**Passos** (`ActivityDay`):
+O total de passos de um dia como o celular contou. Um por dia; um reenvio nunca
+diminui.
 
 **Ficha de treino** (`WorkoutPlan`):
 Uma lista de Exercícios (séries, repetições, carga, descanso), talvez para

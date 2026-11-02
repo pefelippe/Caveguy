@@ -14,6 +14,7 @@ const CARD_KEYS = {
   MEASURES: true,
   MARKET: true,
   MONTH: true,
+  MUSIC: true,
   OVERVIEW: true,
   TODAY: true,
 } satisfies Record<HomeCardKey, true>;

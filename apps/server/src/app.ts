@@ -20,12 +20,18 @@ import { ChatError, replyInConversation, type ChatEvent } from './services/bots/
 import { failStaleJobs } from './services/bots/jobs';
 import { runDueRoutines } from './services/bots/routines';
 import { ModelError } from './services/models';
+import { receiveAutomation } from './services/automation';
+import { receiveHealth } from './services/fitness/health';
+import { calendarFeedFile } from './services/personal/feed';
 import {
   handlePluggyEvent,
   pluggyWebhookAuthorized,
   pluggyWebhookConfigured,
   type PluggyEvent,
 } from './services/openFinance/webhook';
+import { finishSpotifyLink } from './services/spotify';
+import { telegramConfigured, verifySecret } from './services/telegram/api';
+import { handleTelegramUpdate, type TelegramUpdate } from './services/telegram/inbound';
 import { handleWebhook, type WebhookPayload } from './services/whatsapp/inbound';
 import { verifyChallenge, verifySignature, whatsappConfigured } from './services/whatsapp/meta';
 
@@ -92,6 +98,22 @@ app.post('/api/whatsapp/webhook', express.raw({ type: '*/*' }), (req, res) => {
   waitUntil(handleWebhook(payload));
 });
 
+// Telegram sends each update with the secret given to setWebhook; the answer goes out at once and
+// the update is handled after it, as Telegram waits only so long (docs/adr/0031).
+app.post('/api/telegram/webhook', express.json(), (req, res) => {
+  if (!telegramConfigured()) {
+    res.status(404).end();
+    return;
+  }
+  if (!verifySecret(req.header('x-telegram-bot-api-secret-token'))) {
+    res.status(403).json({ message: 'Não autorizado' });
+    return;
+  }
+  res.sendStatus(200);
+  const update = (req.body ?? {}) as TelegramUpdate;
+  if (typeof update.update_id === 'number') waitUntil(handleTelegramUpdate(update));
+});
+
 // Pluggy says an item changed; the answer goes out at once (it waits 5 seconds at most) and the
 // item is read after it (docs/adr/0020).
 app.post('/api/openfinance/webhook', express.json(), (req, res) => {
@@ -112,6 +134,57 @@ app.post('/api/openfinance/webhook', express.json(), (req, res) => {
       reportError(error);
     })
   );
+});
+
+// The Agenda as a calendar file, for the iPhone, Google Agenda or Outlook: the secret in the path
+// is the only key, so an unknown one reads as missing.
+app.get('/api/calendar/:file', async (req, res) => {
+  const token = /^(.+)\.ics$/.exec(req.params.file)?.[1];
+  const file = token ? await calendarFeedFile(token) : null;
+  if (!file) {
+    res.status(404).type('text/plain').send('Este link de agenda não existe mais.');
+    return;
+  }
+  res.set('Cache-Control', 'private, max-age=900').type('text/calendar; charset=utf-8').send(file);
+});
+
+// The phone's health data (Health Auto Export, HC Webhook, a Shortcut): the secret in the path is
+// the key. Bodies stay under Vercel's 4.5 MB, so the apps send a day or a week at a time.
+app.post('/api/health/:token', express.json({ limit: '4mb' }), async (req, res) => {
+  const counts = await receiveHealth(req.params.token, req.body);
+  if (!counts) {
+    res.status(404).json({ message: 'Este endereço não existe mais.' });
+    return;
+  }
+  res.json({ received: counts });
+});
+
+// Zapier, Make or n8n send Gastos to a User's secret address (docs/adr/0033).
+app.post('/api/inbox/:token', express.json({ limit: '1mb' }), async (req, res) => {
+  const result = await receiveAutomation(req.params.token, req.body);
+  if (!result) return res.status(404).json({ error: 'Endereço desconhecido.' });
+  res.status(result.added || result.repeated || !result.errors.length ? 200 : 400).json(result);
+});
+
+// Spotify sends the User back here with a code (docs/adr/0032); the session must be the one that
+// started it, so the state is checked against it. Back to Integrações, with the reason if not.
+app.get('/api/spotify/callback', async (req, res) => {
+  const back = (reason?: string) =>
+    res.redirect(`/integrations${reason ? `?spotify=${encodeURIComponent(reason)}` : ''}#spotify`);
+  const { code, error, state } = req.query;
+  if (error || typeof code !== 'string' || typeof state !== 'string') {
+    return back('Você não autorizou o Spotify.');
+  }
+  const viewer = await resolveViewer(req.headers);
+  if (!viewer) return back('Entre na sua conta e tente de novo.');
+  try {
+    await finishSpotifyLink(viewer, code, state);
+    back();
+  } catch (failure) {
+    if (failure instanceof GraphQLError) return back(failure.message);
+    reportError(failure);
+    back('O Spotify não respondeu. Tente de novo.');
+  }
 });
 
 app.get('/health', (_, res) => {

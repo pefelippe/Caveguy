@@ -94,3 +94,134 @@ mutation SetAiKey($provider: AiProvider!, $key: String!) {
 mutation RemoveAiKey($provider: AiProvider!) {
   removeAiKey(provider: $provider)
 }
+
+query CalendarFeed {
+  calendarFeed {
+    path
+    createdAt
+  }
+}
+
+mutation SetCalendarFeed($on: Boolean!) {
+  setCalendarFeed(on: $on) {
+    path
+    createdAt
+  }
+}
+
+fragment ExternalCalendarFields on ExternalCalendar {
+  id
+  name
+  source
+  host
+  lastReadAt
+  error
+}
+
+query ExternalCalendars {
+  externalCalendars {
+    ...ExternalCalendarFields
+  }
+}
+
+mutation AddExternalCalendar($name: String!, $url: String!) {
+  addExternalCalendar(name: $name, url: $url) {
+    ...ExternalCalendarFields
+  }
+}
+
+mutation RefreshExternalCalendar($id: ID!) {
+  refreshExternalCalendar(id: $id) {
+    ...ExternalCalendarFields
+  }
+}
+
+mutation RemoveExternalCalendar($id: ID!) {
+  removeExternalCalendar(id: $id)
+}
+
+fragment HealthInboxFields on HealthInbox {
+  path
+  createdAt
+  lastReceivedAt
+  lastCounts {
+    steps
+    weights
+    bodyFat
+    sleeps
+    workouts
+  }
+}
+
+query HealthInbox {
+  healthInbox {
+    ...HealthInboxFields
+  }
+}
+
+mutation SetHealthInbox($on: Boolean!) {
+  setHealthInbox(on: $on) {
+    ...HealthInboxFields
+  }
+}
+
+query GoogleTasksSync {
+  googleTasksSync {
+    lastSyncedAt
+    error
+  }
+}
+
+mutation SyncGoogleTasks {
+  syncGoogleTasks {
+    added
+    done
+    removed
+    lastSyncedAt
+  }
+}
+
+mutation StartTelegramLink {
+  startTelegramLink {
+    url
+    expiresAt
+  }
+}
+
+mutation UnlinkTelegram {
+  unlinkTelegram
+}
+
+query SpotifyLink {
+  spotifyLink {
+    name
+    error
+  }
+}
+
+mutation StartSpotifyLink {
+  startSpotifyLink
+}
+
+mutation UnlinkSpotify {
+  unlinkSpotify
+}
+
+fragment AutomationInboxFields on AutomationInbox {
+  path
+  createdAt
+  lastReceivedAt
+  lastAdded
+}
+
+query AutomationInbox {
+  automationInbox {
+    ...AutomationInboxFields
+  }
+}
+
+mutation SetAutomationInbox($on: Boolean!) {
+  setAutomationInbox(on: $on) {
+    ...AutomationInboxFields
+  }
+}

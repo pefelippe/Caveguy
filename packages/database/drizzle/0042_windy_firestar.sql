@@ -1,1 +1,0 @@
-ALTER TABLE "expense" ADD COLUMN "own_transfer" boolean DEFAULT false NOT NULL;

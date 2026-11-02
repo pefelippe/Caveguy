@@ -6,6 +6,14 @@ import { and, eq } from 'drizzle-orm';
 import { driveConnected, googleConfigured } from './drive';
 import { aiConfigured, defaultModel, listModels } from './models';
 import { bankLinks, openFinanceUnavailable } from './openFinance';
+import { healthInbox } from './fitness/health';
+import { listExternalCalendars } from './personal/calendars';
+import { googleTasksConnected, googleTasksSync } from './personal/googleTasks';
+import { automationInbox } from './automation';
+import { spotifyLinkOf, spotifyUnavailable } from './spotify';
+import { telegramConfigured } from './telegram/api';
+import { telegramLinkOf } from './telegram/link';
+import { calendarFeed as calendarFeedOf } from './personal/feed';
 import { maskPhone, whatsappLinkOf } from './whatsapp/link';
 import { whatsappConfigured } from './whatsapp/meta';
 
@@ -113,8 +121,138 @@ const openFinance: Provider = {
   },
 };
 
+const calendarFeed: Provider = {
+  category: 'CALENDAR',
+  kind: 'CALENDAR_FEED',
+  // A private .ics link, read by the User's own calendar app: nothing to set up on the server.
+  status: async viewer => {
+    const feed = await calendarFeedOf(viewer);
+    return { available: true, connected: Boolean(feed), detail: null, unavailableReason: null };
+  },
+};
+
+const externalCalendars: Provider = {
+  category: 'CALENDAR',
+  kind: 'EXTERNAL_CALENDARS',
+  // iCloud, Google or Outlook by each calendar's secret .ics address: no passwords (docs/adr/0028).
+  status: async viewer => {
+    const calendars = await listExternalCalendars(viewer);
+    return {
+      available: true,
+      connected: calendars.length > 0,
+      detail: calendars.length
+        ? `${calendars.length === 1 ? '1 agenda ligada' : `${calendars.length} agendas ligadas`}: ${calendars.map(calendar => calendar.name).join(', ')}.`
+        : null,
+      unavailableReason: null,
+    };
+  },
+};
+
+const health: Provider = {
+  category: 'HEALTH',
+  kind: 'HEALTH',
+  // Apple Health and Health Connect have no web API: the phone sends to an address (docs/adr/0029).
+  status: async viewer => {
+    const inbox = await healthInbox(viewer);
+    return {
+      available: true,
+      connected: Boolean(inbox?.lastReceivedAt),
+      detail: null,
+      unavailableReason: null,
+    };
+  },
+};
+
+const googleTasks: Provider = {
+  category: 'CALENDAR',
+  kind: 'GOOGLE_TASKS',
+  // The Google account with the tasks.readonly scope, asked for on Integrações (docs/adr/0030).
+  status: async viewer => {
+    if (!googleConfigured()) {
+      return {
+        available: false,
+        connected: false,
+        detail: null,
+        unavailableReason:
+          'O servidor está sem as credenciais do Google (GOOGLE_CLIENT_ID e GOOGLE_CLIENT_SECRET).',
+      };
+    }
+    const connected = await googleTasksConnected(viewer);
+    const sync = connected ? await googleTasksSync(viewer) : null;
+    return {
+      available: true,
+      connected,
+      detail: sync?.error ?? null,
+      unavailableReason: null,
+    };
+  },
+};
+
+const telegram: Provider = {
+  category: 'MESSAGING',
+  kind: 'TELEGRAM',
+  // The Caishen's bot answers a linked User's private chat (docs/adr/0031).
+  status: async viewer => {
+    if (!telegramConfigured()) {
+      return {
+        available: false,
+        connected: false,
+        detail: null,
+        unavailableReason: 'O Telegram ainda não está ligado neste servidor.',
+      };
+    }
+    const link = await telegramLinkOf(viewer);
+    return { available: true, connected: Boolean(link), detail: null, unavailableReason: null };
+  },
+};
+
+const spotify: Provider = {
+  category: 'MEDIA',
+  kind: 'SPOTIFY',
+  // What the User listens to, for the Música card; open only to SPOTIFY_EMAILS (docs/adr/0032).
+  status: async viewer => {
+    const reason = await spotifyUnavailable(viewer);
+    if (reason)
+      return { available: false, connected: false, detail: null, unavailableReason: reason };
+    const link = await spotifyLinkOf(viewer);
+    return {
+      available: true,
+      connected: Boolean(link),
+      detail: link?.error ?? (link?.name ? `Conta: ${link.name}.` : null),
+      unavailableReason: null,
+    };
+  },
+};
+
+const automation: Provider = {
+  category: 'AUTOMATION',
+  kind: 'AUTOMATION',
+  // Zapier, Make and n8n send Gastos to a secret address (docs/adr/0033).
+  status: async viewer => {
+    const inbox = await automationInbox(viewer);
+    return {
+      available: true,
+      connected: Boolean(inbox?.lastReceivedAt),
+      detail: null,
+      unavailableReason: null,
+    };
+  },
+};
+
 /** Every Connection zapbots knows. A new one is a new entry here and its copy on the Conexões page. */
-const PROVIDERS: Provider[] = [openRouter, googleDrive, whatsapp, openFinance];
+const PROVIDERS: Provider[] = [
+  openRouter,
+  googleDrive,
+  whatsapp,
+  openFinance,
+  calendarFeed,
+  externalCalendars,
+  health,
+  googleTasks,
+  telegram,
+  spotify,
+  automation,
+];
 
 export function connections(viewer: Viewer) {
   return Promise.all(

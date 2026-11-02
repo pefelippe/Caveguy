@@ -1,6 +1,6 @@
 {
-  "id": "d39de9e1-d722-47bb-bdbf-66a0c6047f8f",
-  "prevId": "017f130f-ddcd-4746-bcce-146c37cef39c",
+  "id": "cb47a9a4-33a1-406d-9608-89a5cc64ef65",
+  "prevId": "58d0f451-00ba-4c4f-bd95-13c38425872e",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -2596,13 +2596,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "own_transfer": {
-          "name": "own_transfer",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -3014,16 +3007,7 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "holder_organization_user_unique": {
-          "name": "holder_organization_user_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "organization_id",
-            "user_id"
-          ]
-        }
-      },
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -5565,6 +5549,86 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.calendar_feed": {
+      "name": "calendar_feed",
+      "schema": "",
+      "columns": {
+        "organization_id": {
+          "name": "organization_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "token": {
+          "name": "token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "calendar_feed_organization_id_organization_id_fk": {
+          "name": "calendar_feed_organization_id_organization_id_fk",
+          "tableFrom": "calendar_feed",
+          "tableTo": "organization",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "calendar_feed_user_id_user_id_fk": {
+          "name": "calendar_feed_user_id_user_id_fk",
+          "tableFrom": "calendar_feed",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "calendar_feed_token_unique": {
+          "name": "calendar_feed_token_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "token"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.event": {
       "name": "event",
       "schema": "",
@@ -5693,6 +5757,109 @@
         "event_organization_id_organization_id_fk": {
           "name": "event_organization_id_organization_id_fk",
           "tableFrom": "event",
+          "tableTo": "organization",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.external_calendar": {
+      "name": "external_calendar",
+      "schema": "",
+      "columns": {
+        "created_by_id": {
+          "name": "created_by_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "error": {
+          "name": "error",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "host": {
+          "name": "host",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "last_read_at": {
+          "name": "last_read_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sealed_url": {
+          "name": "sealed_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "external_calendar_created_by_id_user_id_fk": {
+          "name": "external_calendar_created_by_id_user_id_fk",
+          "tableFrom": "external_calendar",
+          "tableTo": "user",
+          "columnsFrom": [
+            "created_by_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "external_calendar_organization_id_organization_id_fk": {
+          "name": "external_calendar_organization_id_organization_id_fk",
+          "tableFrom": "external_calendar",
           "tableTo": "organization",
           "columnsFrom": [
             "organization_id"

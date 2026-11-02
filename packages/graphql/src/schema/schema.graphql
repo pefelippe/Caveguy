@@ -100,6 +100,13 @@ enum ConnectionKind {
   GOOGLE_DRIVE
   WHATSAPP
   OPEN_FINANCE
+  CALENDAR_FEED
+  EXTERNAL_CALENDARS
+  HEALTH
+  GOOGLE_TASKS
+  TELEGRAM
+  SPOTIFY
+  AUTOMATION
 }
 
 "What a Connection is for; the Conexões page has one section per category."
@@ -108,6 +115,10 @@ enum ConnectionCategory {
   FILE_STORAGE
   MESSAGING
   FINANCE
+  CALENDAR
+  HEALTH
+  MEDIA
+  AUTOMATION
 }
 
 enum BankLinkStatus {
@@ -184,6 +195,7 @@ type BankSync {
 enum ConversationChannel {
   APP
   WHATSAPP
+  TELEGRAM
 }
 
 "The number the Viewer talks to the Caishen from on WhatsApp."
@@ -367,6 +379,7 @@ enum HomeCardKey {
   GOALS
   FITNESS
   MEASURES
+  MUSIC
 }
 
 type HomeCardSetting {
@@ -1440,6 +1453,8 @@ enum AgendaKind {
   TASK
   "A bill from Finanças: Parcela, Fatura or Gasto recorrente."
   DUE
+  "An event from a calendar kept elsewhere (iCloud, Google, Outlook); read only."
+  EXTERNAL
 }
 
 "One line of the Agenda on one day."
@@ -1456,6 +1471,8 @@ type AgendaItem {
   done: Boolean
   "The path it opens."
   link: String!
+  "For an EXTERNAL event, the name of its calendar."
+  source: String
 }
 
 enum GoalArea {
@@ -1843,6 +1860,8 @@ type FitnessToday {
   "The Fichas set for today's weekday."
   plans: [WorkoutPlan!]!
   done: [WorkoutSession!]!
+  "Today's steps as the phone counted them; null when it sent none."
+  steps: Int
 }
 
 enum WorkoutGoal {
@@ -1945,4 +1964,178 @@ extend type Mutation {
   deleteSleepLog(id: ID!): Boolean!
   addMeasurement(input: MeasurementInput!): Measurement!
   deleteMeasurement(id: ID!): Boolean!
+}
+
+# Integrações with the Agenda: a private link to it as a calendar file (.ics) the iPhone, Google
+# Agenda or Outlook subscribe to.
+
+"The Viewer's private calendar link: anyone with it reads their Agenda, so it can be replaced."
+type CalendarFeed {
+  "The path of the .ics file under the app's own address: /api/calendar/<secret>.ics."
+  path: String!
+  createdAt: DateTime!
+}
+
+extend type Query {
+  calendarFeed: CalendarFeed
+}
+
+extend type Mutation {
+  "On makes a new link (the old one stops working); off removes it."
+  setCalendarFeed(on: Boolean!): CalendarFeed
+}
+
+"Where an outside calendar comes from, read by its host."
+enum CalendarSource {
+  ICLOUD
+  GOOGLE
+  OUTLOOK
+  OTHER
+}
+
+"A calendar the Viewer keeps elsewhere, read by its secret .ics address; the address never leaves the server."
+type ExternalCalendar {
+  id: ID!
+  name: String!
+  source: CalendarSource!
+  host: String!
+  lastReadAt: DateTime
+  "Why the last read failed, in pt-BR."
+  error: String
+}
+
+extend type Query {
+  externalCalendars: [ExternalCalendar!]!
+}
+
+extend type Mutation {
+  "Reads the link first: one that is not a calendar is refused. webcal:// is read as https://."
+  addExternalCalendar(name: String!, url: String!): ExternalCalendar!
+  refreshExternalCalendar(id: ID!): ExternalCalendar!
+  removeExternalCalendar(id: ID!): Boolean!
+}
+
+# Saúde do celular: an address the phone sends Apple Health or Health Connect data to
+# (docs/adr/0029). What comes becomes Medidas, Sono, Treinos and the day's steps.
+
+"How many readings of each kind came in a send."
+type HealthCounts {
+  steps: Int!
+  weights: Int!
+  bodyFat: Int!
+  sleeps: Int!
+  workouts: Int!
+}
+
+"The Viewer's private address for their phone's health data."
+type HealthInbox {
+  "Under the app's own address: /api/health/<secret>."
+  path: String!
+  createdAt: DateTime!
+  lastReceivedAt: DateTime
+  lastCounts: HealthCounts
+}
+
+extend type Query {
+  healthInbox: HealthInbox
+}
+
+extend type Mutation {
+  "On makes a new address (the old one stops working); off removes it, keeping what came."
+  setHealthInbox(on: Boolean!): HealthInbox
+}
+
+# Google Tarefas, copied one way into Tarefas (docs/adr/0030).
+
+"When a Connection that copies from elsewhere last read it."
+type IntegrationSync {
+  lastSyncedAt: DateTime
+  "Why the last read failed, in pt-BR."
+  error: String
+}
+
+"What a read of Google Tarefas changed here."
+type GoogleTasksResult {
+  added: Int!
+  done: Int!
+  removed: Int!
+  lastSyncedAt: DateTime!
+}
+
+extend type Query {
+  googleTasksSync: IntegrationSync
+}
+
+extend type Mutation {
+  "Reads Google Tarefas into Tarefas now; needs the tasks.readonly scope on the Google account."
+  syncGoogleTasks: GoogleTasksResult!
+}
+
+# Telegram: the Caishen's bot answers a linked User's private chat (docs/adr/0031).
+
+"A link the Viewer opens in Telegram to connect it: `t.me/<bot>?start=<code>`, valid 15 minutes."
+type TelegramLinkCode {
+  url: String!
+  expiresAt: DateTime!
+}
+
+extend type Mutation {
+  startTelegramLink: TelegramLinkCode!
+  unlinkTelegram: Boolean!
+}
+
+# Automação: Zapier, Make or n8n send Gastos to a secret address (docs/adr/0033).
+
+type AutomationInbox {
+  "Under the app's own address: /api/inbox/<secret>."
+  path: String!
+  createdAt: DateTime!
+  lastReceivedAt: DateTime
+  "How many new Gastos the last send added."
+  lastAdded: Int
+}
+
+extend type Query {
+  automationInbox: AutomationInbox
+}
+
+extend type Mutation {
+  "On makes a new address (the old one stops working); off removes it, keeping what came."
+  setAutomationInbox(on: Boolean!): AutomationInbox
+}
+
+# Spotify: what the Viewer listens to, for the Música card (docs/adr/0032).
+
+type SpotifyLink {
+  "The name Spotify shows for the account."
+  name: String
+  "Why the last read failed, in pt-BR; null when it worked."
+  error: String
+}
+
+type MusicTrack {
+  title: String!
+  "The artists, or the podcast's name for an episode."
+  artists: String!
+  url: String
+  imageUrl: String
+  "When it was heard; null for what is playing now."
+  playedAt: DateTime
+}
+
+type Music {
+  playing: MusicTrack
+  recent: [MusicTrack!]!
+}
+
+extend type Query {
+  spotifyLink: SpotifyLink
+  "Null when the Viewer has not linked Spotify."
+  music: Music
+}
+
+extend type Mutation {
+  "The address of Spotify's consent screen; it comes back to /api/spotify/callback."
+  startSpotifyLink: String!
+  unlinkSpotify: Boolean!
 }

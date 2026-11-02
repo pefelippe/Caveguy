@@ -4,6 +4,19 @@ import type { Resolvers } from '@zapbots/graphql/server';
 import { AiKeyError, aiKeys, removeAiKey, saveAiKey } from '../services/aiKeys';
 import { connections } from '../services/connections';
 import {
+  addExternalCalendar,
+  listExternalCalendars,
+  refreshExternalCalendar,
+  removeExternalCalendar,
+} from '../services/personal/calendars';
+import { healthInbox, setHealthInbox } from '../services/fitness/health';
+import { googleTasksSync, syncGoogleTasks } from '../services/personal/googleTasks';
+import { automationInbox, setAutomationInbox } from '../services/automation';
+import { music, spotifyLinkOf, startSpotifyLink, unlinkSpotify } from '../services/spotify';
+import { telegramConfigured } from '../services/telegram/api';
+import { startTelegramLink, unlinkTelegram } from '../services/telegram/link';
+import { calendarFeed, setCalendarFeed } from '../services/personal/feed';
+import {
   bankAccounts,
   bankLinks,
   linkBank,
@@ -30,6 +43,30 @@ export const connectionResolvers: Resolvers = {
     linkBank: (_, { itemId }, context) => linkBank(requireViewer(context), itemId),
     syncBankLink: (_, { id }, context) => syncBankLink(requireViewer(context), id),
     unlinkBank: (_, { id }, context) => unlinkBank(requireViewer(context), id),
+    setCalendarFeed: (_, { on }, context) => setCalendarFeed(requireViewer(context), on),
+    setHealthInbox: (_, { on }, context) => setHealthInbox(requireViewer(context), on),
+    setAutomationInbox: (_, { on }, context) => setAutomationInbox(requireViewer(context), on),
+    syncGoogleTasks: (_, __, context) => syncGoogleTasks(requireViewer(context)),
+    startTelegramLink: (_, __, context) => {
+      const viewer = requireViewer(context);
+      if (!telegramConfigured()) badInput('O Telegram ainda não está ligado neste servidor');
+      return startTelegramLink(viewer);
+    },
+    unlinkTelegram: async (_, __, context) => {
+      await unlinkTelegram(requireViewer(context));
+      return true;
+    },
+    startSpotifyLink: (_, __, context) => startSpotifyLink(requireViewer(context)),
+    unlinkSpotify: async (_, __, context) => {
+      await unlinkSpotify(requireViewer(context));
+      return true;
+    },
+    addExternalCalendar: (_, { name, url }, context) =>
+      addExternalCalendar(requireViewer(context), name, url),
+    refreshExternalCalendar: (_, { id }, context) =>
+      refreshExternalCalendar(requireViewer(context), id),
+    removeExternalCalendar: (_, { id }, context) =>
+      removeExternalCalendar(requireViewer(context), id),
     startWhatsappLink: (_, __, context) => {
       const viewer = requireViewer(context);
       if (!whatsappConfigured()) badInput('O WhatsApp ainda não está ligado neste servidor');
@@ -59,6 +96,13 @@ export const connectionResolvers: Resolvers = {
   Query: {
     aiKeys: (_, __, context) => aiKeys(requireViewer(context)),
     bankLinks: (_, __, context) => bankLinks(requireViewer(context)),
+    calendarFeed: (_, __, context) => calendarFeed(requireViewer(context)),
+    healthInbox: (_, __, context) => healthInbox(requireViewer(context)),
+    automationInbox: (_, __, context) => automationInbox(requireViewer(context)),
+    music: (_, __, context) => music(requireViewer(context)),
+    spotifyLink: (_, __, context) => spotifyLinkOf(requireViewer(context)),
+    googleTasksSync: (_, __, context) => googleTasksSync(requireViewer(context)),
+    externalCalendars: (_, __, context) => listExternalCalendars(requireViewer(context)),
     connections: (_, __, context) => connections(requireViewer(context)),
     whatsappLink: async (_, __, context) => {
       const link = await whatsappLinkOf(requireViewer(context));

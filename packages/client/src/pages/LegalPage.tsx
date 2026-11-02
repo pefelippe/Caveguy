@@ -348,14 +348,45 @@ const PRIVACY: Clause[] = [
           o link vê seu nome e seus horários livres, nunca o que está na sua agenda.
         </li>
         <li>
+          <strong>Agenda no celular:</strong> se você criar o link da sua agenda, quem o tiver lê os
+          seus eventos, as tarefas com prazo e os vencimentos das contas (com o valor), de um mês
+          atrás a um ano à frente, como faz o calendário em que você o colou. Trocar o link desliga
+          o antigo na hora; desligar apaga o link.
+        </li>
+        <li>
+          <strong>Agendas de fora:</strong> se você ligar uma agenda do iCloud, do Google ou do
+          Outlook pelo link dela, guardamos o link cifrado e lemos dele os seus compromissos para
+          mostrar na sua Agenda e ocupar os horários dos seus links de agendamento. Os compromissos
+          ficam só na memória do servidor por alguns minutos e nada é escrito na agenda de lá.
+          Remover a agenda apaga o link.
+        </li>
+        <li>
+          <strong>Saúde do celular:</strong> se você criar o endereço de envio e colá-lo num app do
+          celular (Health Auto Export no iPhone, HC Webhook no Android), recebemos dele passos,
+          peso, gordura corporal, sono e treinos do Apple Health ou do Health Connect, e guardamos
+          como os dados de Fitness acima, com o mesmo cuidado de dado sensível. O endereço só
+          recebe; trocar ou desligar o endereço não apaga o que já chegou, e você apaga cada
+          registro quando quiser.
+        </li>
+        <li>
+          <strong>Google Tarefas:</strong> se você conectar, o Google nos deixa só ler as suas
+          tarefas. Copiamos as abertas para as suas Tarefas (título, notas e data) e lemos de novo
+          quando você abre as Tarefas. Nada é escrito no Google; você retira o acesso na sua conta
+          Google quando quiser.
+        </li>
+        <li>
           <strong>Conversas com o agente:</strong> as mensagens e respostas. Anexos (imagens, PDFs,
           planilhas) são enviados ao modelo de IA para aquela resposta e não ficam guardados;
           guardamos só os nomes.
         </li>
         <li>
           <strong>Integrações que você ligar:</strong> o número de WhatsApp vinculado e as mensagens
-          trocadas por ele; contas e transações do Open Finance (Pluggy), quando disponível; chaves
-          de provedores de IA que você colar (guardadas cifradas).
+          trocadas por ele; a conversa do Telegram vinculada (só o número interno dela) e as
+          mensagens trocadas por ela; contas e transações do Open Finance (Pluggy), quando
+          disponível; chaves de provedores de IA que você colar (guardadas cifradas); o acesso ao
+          Spotify, se você conectar (guardado cifrado, com o nome da conta; o que você ouve não é
+          guardado); os gastos que suas automações (Zapier, Make, n8n ou outra) mandarem para o seu
+          endereço de envio, que entram como os de uma planilha.
         </li>
         <li>
           <strong>Pagamento:</strong> o identificador de cliente e de assinatura no Stripe e o
@@ -430,9 +461,18 @@ const PRIVACY: Clause[] = [
             Resend: envio de e-mails, como o link para trocar a senha e as confirmações de
             agendamento.
           </li>
-          <li>Google: login com o Google e, se você ligar, o Google Drive.</li>
+          <li>Google: login com o Google e, se você ligar, o Google Drive e o Google Tarefas.</li>
           <li>Meta (WhatsApp Cloud API): mensagens, se você vincular um número.</li>
+          <li>Telegram: mensagens, se você vincular uma conversa.</li>
+          <li>
+            Spotify: o que você está ouvindo e ouviu há pouco, lido na hora e não guardado, se você
+            conectar a sua conta.
+          </li>
           <li>Pluggy: Open Finance, se você vincular um banco.</li>
+          <li>
+            Apple (iCloud), Google ou Microsoft (Outlook): só lemos o link da agenda que você ligar;
+            nada seu é enviado a eles.
+          </li>
           <li>
             Sentry: registro de erros técnicos, configurado para não receber cookies, mensagens,
             valores nem dados da sua conta.

@@ -9,8 +9,10 @@ import {
   jsonb,
   pgEnum,
   pgTable,
+  primaryKey,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
 
@@ -45,15 +47,21 @@ export const homeLayout = pgTable('home_layout', {
 });
 
 /** Lista: a named group of Tarefas (Casa, Trabalho, Mercado…). */
-export const taskList = pgTable('task_list', {
-  color: text('color'),
-  createdById: createdById(),
-  id: uuid('id').primaryKey().defaultRandom(),
-  name: text('name').notNull(),
-  organizationId: organizationId(),
-  position: integer('position').notNull().default(0),
-  ...timestamps,
-});
+export const taskList = pgTable(
+  'task_list',
+  {
+    color: text('color'),
+    createdById: createdById(),
+    /** For a Lista copied from elsewhere, its id there: `google:<id>`. */
+    externalId: text('external_id'),
+    id: uuid('id').primaryKey().defaultRandom(),
+    name: text('name').notNull(),
+    organizationId: organizationId(),
+    position: integer('position').notNull().default(0),
+    ...timestamps,
+  },
+  table => [uniqueIndex('task_list_external_idx').on(table.organizationId, table.externalId)]
+);
 
 export const taskPriority = pgEnum('task_priority', ['LOW', 'NORMAL', 'HIGH']);
 
@@ -69,6 +77,8 @@ export const task = pgTable(
     dueOn: date('due_on'),
     /** "HH:MM", only with `dueOn`. */
     dueTime: text('due_time'),
+    /** For a Tarefa copied from elsewhere, its id there: `google:<id>`. */
+    externalId: text('external_id'),
     goalId: uuid('goal_id').references((): AnyPgColumn => goal.id, { onDelete: 'set null' }),
     id: uuid('id').primaryKey().defaultRandom(),
     listId: uuid('list_id').references(() => taskList.id, { onDelete: 'set null' }),
@@ -79,7 +89,10 @@ export const task = pgTable(
     title: text('title').notNull(),
     ...timestamps,
   },
-  table => [index('task_open_idx').on(table.organizationId, table.doneAt, table.dueOn)]
+  table => [
+    index('task_open_idx').on(table.organizationId, table.doneAt, table.dueOn),
+    uniqueIndex('task_external_idx').on(table.organizationId, table.externalId),
+  ]
 );
 
 /** Nota: free text in Markdown, pinned ones first. */
@@ -211,4 +224,55 @@ export const booking = pgTable(
     startsAt: timestamp('starts_at', { withTimezone: true }).notNull(),
   },
   table => [index('booking_type_starts_idx').on(table.bookingTypeId, table.startsAt)]
+);
+
+/**
+ * Assinatura da Agenda: the secret of a User's private calendar link, `/api/calendar/<token>.ics`,
+ * that the iPhone, Google Agenda or Outlook read now and then. One per User; a new one replaces it.
+ */
+export const calendarFeed = pgTable('calendar_feed', {
+  organizationId: organizationId(),
+  token: text('token').notNull().unique(),
+  userId: text('user_id')
+    .primaryKey()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  ...timestamps,
+});
+
+/**
+ * Agenda de fora: a calendar the User keeps elsewhere (iCloud, Google, Outlook), read by its
+ * secret .ics address. Its events show in the Agenda and take time from the Links de agendamento;
+ * nothing is written back.
+ */
+export const externalCalendar = pgTable('external_calendar', {
+  createdById: createdById(),
+  /** Why the last read failed, in pt-BR; null when it worked. */
+  error: text('error'),
+  /** Where it comes from, shown beside its name: p52-caldav.icloud.com, calendar.google.com… */
+  host: text('host').notNull(),
+  id: uuid('id').primaryKey().defaultRandom(),
+  lastReadAt: timestamp('last_read_at', { withTimezone: true }),
+  name: text('name').notNull(),
+  organizationId: organizationId(),
+  /** Its address, sealed (`services/sealed.ts`, `calendar-url`): whoever has it reads the calendar. */
+  sealedUrl: text('sealed_url').notNull(),
+  ...timestamps,
+});
+
+/**
+ * When a User's Connection that copies from elsewhere (Google Tarefas…) last read it, and why it
+ * failed if it did. One row per User and kind.
+ */
+export const integrationSync = pgTable(
+  'integration_sync',
+  {
+    error: text('error'),
+    kind: text('kind').notNull(),
+    lastSyncedAt: timestamp('last_synced_at', { withTimezone: true }),
+    organizationId: organizationId(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+  },
+  table => [primaryKey({ columns: [table.userId, table.kind] })]
 );

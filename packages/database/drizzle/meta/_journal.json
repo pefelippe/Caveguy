@@ -299,15 +299,57 @@
     {
       "idx": 42,
       "version": "7",
-      "when": 1793207620190,
-      "tag": "0042_windy_firestar",
+      "when": 1793208210211,
+      "tag": "0042_lethal_punisher",
       "breakpoints": true
     },
     {
       "idx": 43,
       "version": "7",
-      "when": 1793212910536,
-      "tag": "0043_regular_quicksilver",
+      "when": 1793208768166,
+      "tag": "0043_dizzy_venom",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1793209193915,
+      "tag": "0044_magenta_blue_shield",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1793209634452,
+      "tag": "0045_bizarre_enchantress",
+      "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1793210088421,
+      "tag": "0046_bored_selene",
+      "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1793211080331,
+      "tag": "0047_bright_lady_deathstrike",
+      "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1793211565170,
+      "tag": "0048_broken_eternals",
+      "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1793635188040,
+      "tag": "0049_daily_major_mapleleaf",
       "breakpoints": true
     }
   ]
