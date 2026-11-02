@@ -786,45 +786,47 @@ function FooterLink({ href, label }: { href: string; label: string }) {
 function Footer() {
   return (
     <footer className="px-5 pt-16 pb-10 md:px-8">
-      <div className="flex flex-col gap-12 md:flex-row md:justify-between">
-        <div className="max-w-[380px]">
-          <Link className="flex items-center gap-2 text-[20px] font-medium" to="/landing">
-            <Logo size={28} />
-            Caishen
-          </Link>
-          <p className="mt-4 text-[15px] leading-relaxed text-(--l-muted)">
-            Finanças organizadas para quem não quer viver de planilha.
+      <Container className="px-0 md:px-0">
+        <div className="flex flex-col gap-12 md:flex-row md:justify-between">
+          <div className="max-w-[380px]">
+            <Link className="flex items-center gap-2 text-[20px] font-medium" to="/landing">
+              <Logo size={28} />
+              Caishen
+            </Link>
+            <p className="mt-4 text-[15px] leading-relaxed text-(--l-muted)">
+              Finanças organizadas para quem não quer viver de planilha.
+            </p>
+          </div>
+          <nav aria-label="Rodapé" className="grid grid-cols-2 gap-10 sm:grid-cols-3 md:gap-16">
+            {FOOTER_GROUPS.map(group => (
+              <div key={group.title}>
+                <p className="text-[15px] font-medium">{group.title}</p>
+                <ul className="mt-4 flex flex-col gap-3 text-[15px]">
+                  {group.links.map(link => (
+                    <li key={link.href}>
+                      <FooterLink {...link} />
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </nav>
+        </div>
+        <div className="mt-14 flex flex-col gap-4 border-t border-(--l-sand) pt-6 text-(length:--step-small) text-(--l-muted) md:flex-row md:items-end md:justify-between">
+          <div className="flex flex-col gap-1">
+            <p>
+              {COMPANY.name} · CNPJ {COMPANY.cnpj} · {COMPANY.city}
+            </p>
+            <p>
+              O Caishen não é uma instituição financeira, não oferece crédito nem recomenda
+              investimentos, e nunca movimenta dinheiro.
+            </p>
+          </div>
+          <p className="shrink-0">
+            © {new Date().getFullYear()} Caishen. Todos os direitos reservados.
           </p>
         </div>
-        <nav aria-label="Rodapé" className="grid grid-cols-2 gap-10 sm:grid-cols-3 md:gap-16">
-          {FOOTER_GROUPS.map(group => (
-            <div key={group.title}>
-              <p className="text-[15px] font-medium">{group.title}</p>
-              <ul className="mt-4 flex flex-col gap-3 text-[15px]">
-                {group.links.map(link => (
-                  <li key={link.href}>
-                    <FooterLink {...link} />
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </nav>
-      </div>
-      <div className="mt-14 flex flex-col gap-4 border-t border-(--l-sand) pt-6 text-(length:--step-small) text-(--l-muted) md:flex-row md:items-end md:justify-between">
-        <div className="flex flex-col gap-1">
-          <p>
-            {COMPANY.name} · CNPJ {COMPANY.cnpj} · {COMPANY.city}
-          </p>
-          <p>
-            O Caishen não é uma instituição financeira, não oferece crédito nem recomenda
-            investimentos, e nunca movimenta dinheiro.
-          </p>
-        </div>
-        <p className="shrink-0">
-          © {new Date().getFullYear()} Caishen. Todos os direitos reservados.
-        </p>
-      </div>
+      </Container>
     </footer>
   );
 }
