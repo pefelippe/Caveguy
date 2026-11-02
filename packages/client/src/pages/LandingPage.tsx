@@ -1,23 +1,32 @@
 import {
   ArrowRight,
+  Bot,
+  Building2,
   Calculator,
+  CalendarDays,
   Check,
   CreditCard,
+  FileBarChart,
   FileUp,
+  Globe,
+  LayoutDashboard,
   LineChart,
+  ListTodo,
   MessageSquareText,
+  NotebookPen,
   Paperclip,
-  Search,
   Repeat,
+  Search,
   ShieldCheck,
   TrendingDown,
+  Workflow,
   X,
   type LucideIcon,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 
-import { WhatsAppLogo } from '@zapbots/ui/blocks/brand-logos';
+import { TelegramLogo, WhatsAppLogo } from '@zapbots/ui/blocks/brand-logos';
 import { Logo } from '@zapbots/ui/blocks/logo';
 import {
   Accordion,
@@ -28,6 +37,22 @@ import {
 import { Badge } from '@zapbots/ui/components/badge';
 import { Button } from '@zapbots/ui/components/button';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from '@zapbots/ui/components/dropdown-menu';
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+} from '@zapbots/ui/components/navigation-menu';
+import {
   Table,
   TableBody,
   TableCell,
@@ -37,24 +62,27 @@ import {
 } from '@zapbots/ui/components/table';
 import { cn } from '@zapbots/ui/lib/utils';
 
+import { isLanguage, LANGUAGES, useI18n, type StringKey } from '../lib/i18n';
 import { COMPANY } from '../lib/legal';
 
 /*
- * Simple and functional: what the Caishen does, what it costs and how to start. Only what exists
- * today; what is coming (Open Finance, the plan for companies) says "Em breve".
+ * Simple and functional: what the Caishen does, what it costs and how to start, in Portuguese or
+ * English (the switch in the header). Only what exists today; what is coming (Open Finance, the
+ * plan for companies) says "Em breve".
  */
 
 const SIGN_UP = '/sign-in?step=sign-up';
 
 /** The page for visitors who are not signed in. "Entrar" leads to /sign-in. */
 export function LandingPage() {
+  const { t } = useI18n();
   return (
     <div className="landing min-h-svh overflow-x-clip bg-(--l-bg) text-(--l-ink)">
       <a
         className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded-md focus:bg-(--l-ink) focus:px-4 focus:py-2 focus:text-white"
         href="#conteudo"
       >
-        Pular para o conteúdo
+        {t('landing.skip')}
       </a>
       <Header />
       <main id="conteudo">
@@ -93,43 +121,195 @@ function SectionTitle({ children, id, lead }: { children: ReactNode; id: string;
   );
 }
 
-const NAV = [
-  { href: '#recursos', label: 'Recursos' },
-  { href: '#precos', label: 'Preços' },
-  { href: '#perguntas', label: 'Perguntas' },
+// ---------------------------------------------------------------- header
+
+interface MenuEntry {
+  icon: LucideIcon;
+  text: StringKey;
+  title: StringKey | string;
+}
+
+/** The Funcionalidades menu, by area; every entry leads to Recursos. Empresas is still coming. */
+const MENU: { entries: MenuEntry[]; soon?: boolean; title: StringKey }[] = [
+  {
+    entries: [
+      { icon: LayoutDashboard, text: 'landing.menu.home.text', title: 'landing.menu.home' },
+      { icon: Bot, text: 'landing.menu.agent.text', title: 'landing.menu.agent' },
+    ],
+    title: 'landing.menu.overview',
+  },
+  {
+    entries: [
+      { icon: LineChart, text: 'landing.menu.flow.text', title: 'landing.menu.flow' },
+      { icon: FileUp, text: 'landing.menu.statements.text', title: 'landing.menu.statements' },
+      { icon: Repeat, text: 'landing.menu.recurring.text', title: 'landing.menu.recurring' },
+      { icon: CreditCard, text: 'landing.menu.cards.text', title: 'landing.menu.cards' },
+      { icon: TrendingDown, text: 'landing.menu.debts.text', title: 'landing.menu.debts' },
+      {
+        icon: Calculator,
+        text: 'landing.menu.calculators.text',
+        title: 'landing.menu.calculators',
+      },
+    ],
+    title: 'landing.menu.finance',
+  },
+  {
+    entries: [
+      { icon: CalendarDays, text: 'landing.menu.calendar.text', title: 'landing.menu.calendar' },
+      { icon: ListTodo, text: 'landing.menu.tasks.text', title: 'landing.menu.tasks' },
+      { icon: NotebookPen, text: 'landing.menu.notes.text', title: 'landing.menu.notes' },
+    ],
+    title: 'landing.menu.organize',
+  },
+  {
+    entries: [
+      { icon: WhatsAppLogo, text: 'landing.menu.whatsapp.text', title: 'WhatsApp' },
+      { icon: TelegramLogo, text: 'landing.menu.telegram.text', title: 'Telegram' },
+      { icon: Workflow, text: 'landing.menu.automation.text', title: 'landing.menu.automation' },
+    ],
+    title: 'landing.menu.channels',
+  },
+  {
+    entries: [
+      { icon: Building2, text: 'landing.menu.contracts.text', title: 'landing.menu.contracts' },
+      { icon: FileBarChart, text: 'landing.menu.reports.text', title: 'landing.menu.reports' },
+    ],
+    soon: true,
+    title: 'landing.menu.business',
+  },
 ];
 
+const isKey = (value: string): value is StringKey => value.includes('.');
+
 function Header() {
+  const { t } = useI18n();
+  const link = 'rounded-md px-3 py-2 text-[15px] hover:bg-(--l-surface)';
   return (
-    <header className="sticky top-0 z-40 border-b border-(--l-sand) bg-(--l-bg)/90 backdrop-blur">
-      <Container className="flex h-16 items-center gap-6">
-        <Link aria-label="Caishen" className="flex items-center gap-2 font-medium" to="/landing">
+    <header className="sticky top-0 z-40 border-b border-(--l-sand) bg-(--l-bg)/95 backdrop-blur">
+      <Container className="flex h-16 items-center gap-2">
+        <Link
+          aria-label="Caishen"
+          className="mr-auto flex items-center gap-2 text-[18px] font-medium"
+          to="/landing"
+        >
           <Logo size={26} />
           Caishen
         </Link>
-        <nav aria-label="Seções" className="hidden flex-1 gap-6 text-[15px] md:flex">
-          {NAV.map(item => (
-            <a className="text-(--l-muted) hover:text-(--l-ink)" href={item.href} key={item.href}>
-              {item.label}
-            </a>
-          ))}
+        <NavigationMenu
+          aria-label={t('landing.nav.sections')}
+          className="static hidden flex-none lg:flex"
+          viewport={false}
+        >
+          <NavigationMenuList>
+            <NavigationMenuItem className="static">
+              <NavigationMenuTrigger className="bg-transparent text-[15px] font-normal hover:bg-(--l-surface) data-[state=open]:bg-(--l-surface)">
+                {t('landing.nav.features')}
+              </NavigationMenuTrigger>
+              <NavigationMenuContent className="top-full! left-0! mt-0! w-full rounded-none! border-x-0! border-t-0! bg-(--l-bg)! shadow-[0_24px_40px_-24px_rgb(0_0_0/0.25)]!">
+                <FeaturesMenu />
+              </NavigationMenuContent>
+            </NavigationMenuItem>
+          </NavigationMenuList>
+        </NavigationMenu>
+        <nav className="hidden items-center lg:flex">
+          <a className={link} href="#precos">
+            {t('landing.nav.pricing')}
+          </a>
+          <a className={link} href="#perguntas">
+            {t('landing.nav.questions')}
+          </a>
+          <Link className={link} to="/sign-in">
+            {t('landing.nav.signIn')}
+          </Link>
         </nav>
-        <div className="ml-auto flex items-center gap-2">
-          <Button asChild className="hidden sm:inline-flex" variant="ghost">
-            <Link to="/sign-in">Entrar</Link>
-          </Button>
-          <Button asChild>
-            <Link to={SIGN_UP}>Criar conta grátis</Link>
-          </Button>
-        </div>
+        <LanguageSwitch />
+        <Button asChild className="ml-1 h-10 px-5">
+          <Link to={SIGN_UP}>{t('landing.nav.signUp')}</Link>
+        </Button>
       </Container>
     </header>
   );
 }
 
+/** The open Funcionalidades menu: one column per area, each entry an icon, a name and a line. */
+function FeaturesMenu() {
+  const { t } = useI18n();
+  return (
+    <div className="mx-auto grid max-w-[1120px] grid-cols-5 gap-8 px-8 py-8">
+      {MENU.map(group => (
+        <div key={group.title}>
+          <p className="flex items-center gap-2 text-[13px] font-medium text-(--l-muted)">
+            {t(group.title)}
+            {group.soon && (
+              <Badge className="px-1.5 py-0 text-[11px]" variant="secondary">
+                {t('landing.pricing.soon')}
+              </Badge>
+            )}
+          </p>
+          <ul className="mt-4 flex flex-col gap-1">
+            {group.entries.map(({ icon: Icon, text, title }) => (
+              <li key={title}>
+                <NavigationMenuLink asChild>
+                  <a
+                    className={cn(
+                      'flex flex-row items-start gap-3 rounded-lg p-2',
+                      group.soon && 'opacity-60'
+                    )}
+                    href="#recursos"
+                  >
+                    <span className="grid size-9 shrink-0 place-items-center rounded-lg border border-(--l-sand) bg-white">
+                      <Icon aria-hidden className="size-4 text-(--l-ink)" />
+                    </span>
+                    <span>
+                      <span className="block text-[14px] font-medium text-(--l-ink)">
+                        {isKey(title) ? t(title) : title}
+                      </span>
+                      <span className="block text-[13px] leading-snug text-(--l-muted)">
+                        {t(text)}
+                      </span>
+                    </span>
+                  </a>
+                </NavigationMenuLink>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Português or English, remembered by this browser until signing in. */
+function LanguageSwitch() {
+  const { language, setLanguage, t } = useI18n();
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button aria-label={t('landing.language')} className="gap-1.5 px-2.5" variant="ghost">
+          <Globe aria-hidden className="size-4" />
+          {language.toUpperCase()}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuLabel>{t('landing.language')}</DropdownMenuLabel>
+        <DropdownMenuRadioGroup
+          onValueChange={value => isLanguage(value) && setLanguage(value)}
+          value={language}
+        >
+          {LANGUAGES.map(option => (
+            <DropdownMenuRadioItem key={option.value} value={option.value}>
+              {option.label}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 // ---------------------------------------------------------------- hero
 
-/** Words in the seal's light red, underlined by a stroke drawn by hand. */
+/** Words in the seal's red, underlined by a stroke drawn by hand. */
 function Highlight({ children, dark }: { children: ReactNode; dark?: boolean }) {
   return (
     <span
@@ -175,7 +355,8 @@ function DarkSection({
   );
 }
 
-function Checks({ dark, items }: { dark?: boolean; items: string[] }) {
+function Checks({ dark, items }: { dark?: boolean; items: StringKey[] }) {
+  const { t } = useI18n();
   return (
     <ul
       className={cn(
@@ -189,7 +370,7 @@ function Checks({ dark, items }: { dark?: boolean; items: string[] }) {
             aria-hidden
             className={cn('size-4', dark ? 'text-(--l-seal-light)' : 'text-(--l-seal)')}
           />
-          {item}
+          {t(item)}
         </li>
       ))}
     </ul>
@@ -197,71 +378,75 @@ function Checks({ dark, items }: { dark?: boolean; items: string[] }) {
 }
 
 function Hero() {
+  const { t } = useI18n();
   return (
     <section
       aria-labelledby="hero-title"
       className="px-5 pt-20 pb-20 text-center md:pt-28 md:pb-28"
       style={LIGHT_GRID}
     >
-      <p className="text-[15px] font-medium text-(--l-seal)">Finanças pessoais com IA</p>
+      <p className="text-[15px] font-medium text-(--l-seal)">{t('landing.hero.kicker')}</p>
       <h1
         className="mx-auto mt-6 font-display text-(length:--step-head) leading-[1.02] font-light tracking-[-0.025em]"
         id="hero-title"
       >
-        Suas finanças organizadas.
+        {t('landing.hero.title')}
         <br />
-        <Highlight>Sem planilha</Highlight>.
+        <Highlight>{t('landing.hero.highlight')}</Highlight>.
       </h1>
       <p className="mx-auto mt-8 text-(length:--step-lead) text-(--l-muted)">
-        Mande o extrato e veja seu mês inteiro. Tire dúvidas pelo WhatsApp.
+        {t('landing.hero.lead')}
       </p>
       <div className="mt-10 flex flex-wrap justify-center gap-3">
         <Button asChild className="h-14 px-8 text-[16px]">
           <Link to={SIGN_UP}>
-            Começar grátis <ArrowRight />
+            {t('landing.hero.start')} <ArrowRight />
           </Link>
         </Button>
         <Button asChild className="h-14 bg-white px-8 text-[16px]" variant="outline">
-          <a href="#precos">Ver preços</a>
+          <a href="#precos">{t('landing.hero.pricing')}</a>
         </Button>
       </div>
-      <Checks items={['Pro por R$ 19 por mês', 'Sem cartão de crédito', 'Sem senha de banco']} />
+      <Checks
+        items={['landing.hero.check.pro', 'landing.check.noCard', 'landing.hero.check.noPassword']}
+      />
       <Preview />
     </section>
   );
 }
 
-const SAMPLE_DUES = [
-  { amount: 'R$ 1.850,00', day: '05/03', label: 'Aluguel' },
-  { amount: 'R$ 2.140,00', day: '10/03', label: 'Fatura do cartão' },
-  { amount: 'R$ 39,90', day: '12/03', label: 'Internet' },
+const SAMPLE_DUES: { amount: string; day: string; label: StringKey }[] = [
+  { amount: 'R$ 1.850,00', day: '05/03', label: 'landing.preview.rent' },
+  { amount: 'R$ 2.140,00', day: '10/03', label: 'landing.preview.card' },
+  { amount: 'R$ 39,90', day: '12/03', label: 'landing.preview.internet' },
 ];
 
-const SAMPLE_CATEGORIES = [
-  { label: 'Moradia', share: 0.82 },
-  { label: 'Mercado', share: 0.46 },
-  { label: 'Transporte', share: 0.28 },
-  { label: 'Lazer', share: 0.17 },
+const SAMPLE_CATEGORIES: { label: StringKey; share: number }[] = [
+  { label: 'landing.preview.housing', share: 0.82 },
+  { label: 'landing.preview.groceries', share: 0.46 },
+  { label: 'landing.preview.transport', share: 0.28 },
+  { label: 'landing.preview.leisure', share: 0.17 },
 ];
 
 /** The product at a glance: a sample month beside a sample conversation. */
 function Preview() {
+  const { t } = useI18n();
   return (
     <div className="mx-auto mt-16 grid max-w-[1040px] gap-4 rounded-[32px] border border-(--l-sand) bg-(--l-surface) p-3 text-left shadow-[0_40px_80px_-40px_rgb(0_0_0/0.35)] md:mt-20 md:p-4 lg:grid-cols-[1.25fr_1fr]">
       <div
-        aria-label="Exemplo do resumo do mês"
+        aria-label={t('landing.preview.label')}
         className="flex flex-col gap-6 rounded-[24px] bg-white p-6 md:p-8"
         role="img"
       >
         <div className="flex items-baseline justify-between">
-          <p className="text-[15px] text-(--l-muted)">Sobra em março</p>
-          <p className="text-[13px] text-(--l-muted)">exemplo</p>
+          <p className="text-[15px] text-(--l-muted)">{t('landing.preview.month')}</p>
+          <p className="text-[13px] text-(--l-muted)">{t('landing.preview.sample')}</p>
         </div>
         <p className="-mt-4 font-display text-[3.25rem] leading-none font-light tracking-[-0.02em] tabular-nums">
           R$ 1.330,00
         </p>
         <p className="-mt-3 text-[15px] text-(--l-muted) tabular-nums">
-          Entrou R$ 6.200,00 · Saiu R$ 4.870,00
+          {t('landing.preview.inOut')}
         </p>
         <ul className="flex flex-col gap-3 border-t border-(--l-sand) pt-5">
           {SAMPLE_CATEGORIES.map(category => (
@@ -269,7 +454,7 @@ function Preview() {
               className="grid grid-cols-[96px_1fr] items-center gap-3 text-[14px]"
               key={category.label}
             >
-              <span className="text-(--l-muted)">{category.label}</span>
+              <span className="text-(--l-muted)">{t(category.label)}</span>
               <span className="h-2 rounded-full bg-(--l-surface)">
                 <span
                   className="block h-full rounded-full bg-(--l-seal)"
@@ -283,7 +468,7 @@ function Preview() {
           {SAMPLE_DUES.map(due => (
             <li className="flex items-center gap-3" key={due.label}>
               <span className="w-11 text-(--l-muted) tabular-nums">{due.day}</span>
-              <span className="flex-1">{due.label}</span>
+              <span className="flex-1">{t(due.label)}</span>
               <span className="tabular-nums">{due.amount}</span>
             </li>
           ))}
@@ -296,9 +481,10 @@ function Preview() {
 
 /** A sample conversation: a Gasto told in a message, proposed back and saved on confirmation. */
 function ChatMock() {
+  const { t } = useI18n();
   return (
     <div
-      aria-label="Exemplo de conversa com o Caishen"
+      aria-label={t('landing.chatMock.label')}
       className="w-full rounded-[24px] bg-(--l-sand)/40 p-4"
       role="img"
     >
@@ -306,27 +492,28 @@ function ChatMock() {
         <Logo size={32} />
         <div>
           <p className="text-[15px] font-medium">Caishen</p>
-          <p className="text-[13px] text-(--l-muted)">exemplo de conversa</p>
+          <p className="text-[13px] text-(--l-muted)">{t('landing.chatMock.sample')}</p>
         </div>
       </div>
       <div className="flex flex-col gap-3 px-1 pt-4 text-[15px]">
-        <Bubble mine>gastei 87,50 no mercado hoje</Bubble>
+        <Bubble mine>{t('landing.chatMock.spent')}</Bubble>
         <Bubble>
-          <p>Anotei assim, confere?</p>
+          <p>{t('landing.chatMock.check')}</p>
           <div className="mt-2 rounded-xl bg-(--l-surface) p-3 text-[14px]">
-            <p className="font-medium">Gasto · R$ 87,50</p>
-            <p className="text-(--l-muted)">Mercado · hoje</p>
+            <p className="font-medium">{t('landing.chatMock.expense')}</p>
+            <p className="text-(--l-muted)">{t('landing.chatMock.where')}</p>
           </div>
           <div className="mt-2 grid grid-cols-2 gap-2 text-center text-[14px] font-medium">
-            <span className="rounded-lg bg-(--l-ink) py-1.5 text-white">Confirmar</span>
-            <span className="rounded-lg border border-(--l-sand) py-1.5">Cancelar</span>
+            <span className="rounded-lg bg-(--l-ink) py-1.5 text-white">
+              {t('landing.chatMock.confirm')}
+            </span>
+            <span className="rounded-lg border border-(--l-sand) py-1.5">
+              {t('landing.chatMock.cancel')}
+            </span>
           </div>
         </Bubble>
-        <Bubble mine>quanto sobrou esse mês?</Bubble>
-        <Bubble>
-          Até agora entraram R$ 6.200,00 e saíram R$ 4.870,00. Sobram R$ 1.330,00, e a fatura do
-          cartão vence dia 10.
-        </Bubble>
+        <Bubble mine>{t('landing.chatMock.ask')}</Bubble>
+        <Bubble>{t('landing.chatMock.answer')}</Bubble>
       </div>
     </div>
   );
@@ -349,55 +536,37 @@ function Bubble({ children, mine }: { children: ReactNode; mine?: boolean }) {
 
 // ---------------------------------------------------------------- features
 
-const FEATURES: { icon: LucideIcon; text: string; title: string }[] = [
+const FEATURES: { icon: LucideIcon; text: StringKey; title: StringKey }[] = [
   {
     icon: FileUp,
-    text: 'Importe o extrato em OFX, CSV, Excel ou PDF. Cada linha entra uma vez só, mesmo que você mande o arquivo de novo.',
-    title: 'Extrato em segundos',
+    text: 'landing.features.statements.text',
+    title: 'landing.features.statements',
   },
-  {
-    icon: LineChart,
-    text: 'O fluxo de caixa do mês ou de qualquer período: entradas, saídas, gastos por categoria e o que ainda vai vencer.',
-    title: 'Fluxo de caixa',
-  },
-  {
-    icon: Repeat,
-    text: 'Aluguel, assinaturas, impostos e contas fixas, com o vencimento de cada uma no lugar certo do mês.',
-    title: 'Gastos recorrentes',
-  },
-  {
-    icon: CreditCard,
-    text: 'Cada cartão com suas faturas e o que é cobrado nele, sem contar o mesmo gasto duas vezes.',
-    title: 'Cartões e faturas',
-  },
-  {
-    icon: TrendingDown,
-    text: 'Empréstimos e financiamentos com juros, saldo e um plano para quitar tudo, mostrando o mês da última parcela.',
-    title: 'Sair das dívidas',
-  },
+  { icon: LineChart, text: 'landing.features.flow.text', title: 'landing.menu.flow' },
+  { icon: Repeat, text: 'landing.features.recurring.text', title: 'landing.menu.recurring' },
+  { icon: CreditCard, text: 'landing.features.cards.text', title: 'landing.menu.cards' },
+  { icon: TrendingDown, text: 'landing.features.debts.text', title: 'landing.menu.debts' },
   {
     icon: Calculator,
-    text: 'Price ou SAC, e alugar ou financiar, com os números lado a lado antes de assinar qualquer contrato.',
-    title: 'Calculadoras',
+    text: 'landing.features.calculators.text',
+    title: 'landing.menu.calculators',
   },
 ];
 
 function Features() {
+  const { t } = useI18n();
   return (
     <section aria-labelledby="recursos-title" className="scroll-mt-16 py-16 md:py-24" id="recursos">
       <Container>
-        <SectionTitle
-          id="recursos-title"
-          lead="Tudo o que você precisa para saber para onde vai o seu dinheiro, num lugar só."
-        >
-          O que o Caishen faz
+        <SectionTitle id="recursos-title" lead={t('landing.features.lead')}>
+          {t('landing.features.title')}
         </SectionTitle>
         <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map(({ icon: Icon, text, title }) => (
             <li className="rounded-[20px] bg-(--l-surface) p-6" key={title}>
               <Icon aria-hidden className="size-6 text-(--l-seal)" />
-              <h3 className="mt-4 text-[18px] font-medium">{title}</h3>
-              <p className="mt-2 text-[15px] leading-relaxed text-(--l-muted)">{text}</p>
+              <h3 className="mt-4 text-[18px] font-medium">{t(title)}</h3>
+              <p className="mt-2 text-[15px] leading-relaxed text-(--l-muted)">{t(text)}</p>
             </li>
           ))}
         </ul>
@@ -408,22 +577,15 @@ function Features() {
 
 // ---------------------------------------------------------------- chat
 
-const CHAT_POINTS: { icon: LucideIcon; text: string; title: string }[] = [
-  {
-    icon: MessageSquareText,
-    text: '“gastei 50 no mercado” vira um gasto.',
-    title: 'Anote numa frase',
-  },
-  {
-    icon: Search,
-    text: 'Quanto sobrou, o que vence, quanto falta.',
-    title: 'Pergunte o que quiser',
-  },
-  { icon: Paperclip, text: 'Foto, planilha ou PDF, direto no app.', title: 'Mande arquivos' },
-  { icon: ShieldCheck, text: 'Nada é salvo sem o seu sim.', title: 'Você confirma' },
+const CHAT_POINTS: { icon: LucideIcon; text: StringKey; title: StringKey }[] = [
+  { icon: MessageSquareText, text: 'landing.chat.note.text', title: 'landing.chat.note' },
+  { icon: Search, text: 'landing.chat.ask.text', title: 'landing.chat.ask' },
+  { icon: Paperclip, text: 'landing.chat.files.text', title: 'landing.chat.files' },
+  { icon: ShieldCheck, text: 'landing.chat.confirm.text', title: 'landing.chat.confirm' },
 ];
 
 function Chat() {
+  const { t } = useI18n();
   return (
     <section aria-labelledby="chat-title" className="bg-(--l-surface) py-16 md:py-24">
       <Container className="text-center">
@@ -436,10 +598,10 @@ function Chat() {
           className="mx-auto mt-6 font-display text-[clamp(2rem,1.4rem+2vw,3rem)] leading-[1.05] font-light tracking-[-0.02em]"
           id="chat-title"
         >
-          Suas finanças no WhatsApp
+          {t('landing.chat.title')}
         </h2>
         <p className="mx-auto mt-4 text-(length:--step-body) text-(--l-muted)">
-          O mesmo Caishen do app, também no Telegram.
+          {t('landing.chat.lead')}
         </p>
         <ul className="mt-12 grid gap-4 text-left sm:grid-cols-2 lg:grid-cols-4">
           {CHAT_POINTS.map(({ icon: Icon, text, title }) => (
@@ -447,8 +609,8 @@ function Chat() {
               <span className="grid size-10 place-items-center rounded-full bg-(--l-surface)">
                 <Icon aria-hidden className="size-5 text-(--l-seal)" />
               </span>
-              <h3 className="mt-5 text-[17px] font-medium">{title}</h3>
-              <p className="mt-1.5 text-[15px] text-(--l-muted)">{text}</p>
+              <h3 className="mt-5 text-[17px] font-medium">{t(title)}</h3>
+              <p className="mt-1.5 text-[15px] text-(--l-muted)">{t(text)}</p>
             </li>
           ))}
         </ul>
@@ -459,42 +621,52 @@ function Chat() {
 
 // ---------------------------------------------------------------- comparison
 
-const ROWS: { caishen: boolean | string; label: string; sheet: boolean | string }[] = [
-  { caishen: 'Minutos', label: 'Tempo para começar', sheet: 'Horas montando' },
-  { caishen: true, label: 'Importa o extrato do banco', sheet: 'Copiar e colar' },
-  { caishen: true, label: 'Separa o que vence em cada mês', sheet: false },
-  { caishen: true, label: 'Plano para quitar as dívidas', sheet: false },
-  { caishen: true, label: 'Responde no WhatsApp e no Telegram', sheet: false },
-  { caishen: true, label: 'Funciona no celular', sheet: 'Mais ou menos' },
+type Mark = boolean | StringKey;
+
+const ROWS: { caishen: Mark; label: StringKey; sheet: Mark }[] = [
+  {
+    caishen: 'landing.compare.start.caishen',
+    label: 'landing.compare.start',
+    sheet: 'landing.compare.start.sheet',
+  },
+  { caishen: true, label: 'landing.compare.import', sheet: 'landing.compare.import.sheet' },
+  { caishen: true, label: 'landing.compare.due', sheet: false },
+  { caishen: true, label: 'landing.compare.debts', sheet: false },
+  { caishen: true, label: 'landing.compare.chat', sheet: false },
+  { caishen: true, label: 'landing.compare.phone', sheet: 'landing.compare.phone.sheet' },
 ];
 
-function Cell({ value }: { value: boolean | string }) {
-  if (typeof value === 'string') return <>{value}</>;
+function Cell({ value }: { value: Mark }) {
+  const { t } = useI18n();
+  if (typeof value === 'string') return <>{t(value)}</>;
   return value ? (
-    <Check aria-label="Sim" className="size-5 text-(--l-seal)" />
+    <Check aria-label={t('landing.compare.yes')} className="size-5 text-(--l-seal)" />
   ) : (
-    <X aria-label="Não" className="size-5 text-(--l-rule)" />
+    <X aria-label={t('landing.compare.no')} className="size-5 text-(--l-rule)" />
   );
 }
 
 function Comparison() {
+  const { t } = useI18n();
   return (
     <section aria-labelledby="comparacao-title" className="py-16 md:py-24">
       <Container>
-        <SectionTitle id="comparacao-title">Melhor que a planilha</SectionTitle>
+        <SectionTitle id="comparacao-title">{t('landing.compare.title')}</SectionTitle>
         <div className="mt-10 overflow-hidden rounded-[20px] border border-(--l-sand)">
           <Table className="text-[15px]">
             <TableHeader>
               <TableRow className="bg-(--l-surface) hover:bg-(--l-surface)">
                 <TableHead className="h-12 px-5" />
                 <TableHead className="h-12 px-5 font-medium text-(--l-ink)">Caishen</TableHead>
-                <TableHead className="h-12 px-5 font-medium text-(--l-muted)">Planilha</TableHead>
+                <TableHead className="h-12 px-5 font-medium text-(--l-muted)">
+                  {t('landing.compare.sheet')}
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {ROWS.map(row => (
                 <TableRow key={row.label}>
-                  <TableCell className="px-5 py-4 whitespace-normal">{row.label}</TableCell>
+                  <TableCell className="px-5 py-4 whitespace-normal">{t(row.label)}</TableCell>
                   <TableCell className="px-5 py-4">
                     <Cell value={row.caishen} />
                   </TableCell>
@@ -514,11 +686,11 @@ function Comparison() {
 // ---------------------------------------------------------------- pricing
 
 interface PlanCard {
-  cta?: string;
-  features: string[];
+  cta?: StringKey;
+  features: StringKey[];
   highlight?: boolean;
-  name: string;
-  note: string;
+  name: StringKey | string;
+  note: StringKey;
   price: string;
   soon?: boolean;
 }
@@ -526,46 +698,47 @@ interface PlanCard {
 /** The Limits are those of `PLANS` in `services/billing/plans.ts`. */
 const PLANS: PlanCard[] = [
   {
-    cta: 'Começar grátis',
+    cta: 'landing.hero.start',
     features: [
-      '300 mensagens ao Caishen por mês',
-      '30 Workflows por mês',
-      'Importação de extratos',
-      'Fluxo de caixa, gastos e cartões',
-      'WhatsApp e Telegram',
+      'landing.pricing.free.messages',
+      'landing.pricing.free.jobs',
+      'landing.pricing.free.import',
+      'landing.pricing.free.flow',
+      'landing.pricing.free.chat',
     ],
-    name: 'Gratuito',
-    note: 'para sempre',
+    name: 'landing.pricing.free',
+    note: 'landing.pricing.forever',
     price: 'R$ 0',
   },
   {
-    cta: 'Assinar o Pro',
+    cta: 'landing.pricing.subscribe',
     features: [
-      '5.000 mensagens ao Caishen por mês',
-      '500 Workflows por mês',
-      'Tudo do Gratuito',
-      'Cancele quando quiser',
+      'landing.pricing.pro.messages',
+      'landing.pricing.pro.jobs',
+      'landing.pricing.pro.all',
+      'landing.check.cancel',
     ],
     highlight: true,
     name: 'Pro',
-    note: 'por mês',
+    note: 'landing.pricing.month',
     price: 'R$ 19',
   },
   {
     features: [
-      'Contratos e receita recorrente',
-      'MRR, churn e margem por cliente',
-      'DRE e fluxo de caixa da empresa',
-      'Mais de um CNPJ e de um usuário',
+      'landing.pricing.business.contracts',
+      'landing.pricing.business.metrics',
+      'landing.pricing.business.reports',
+      'landing.pricing.business.team',
     ],
-    name: 'Empresas',
-    note: 'por mês',
+    name: 'landing.pricing.business',
+    note: 'landing.pricing.month',
     price: 'R$ 49',
     soon: true,
   },
 ];
 
 function Pricing() {
+  const { t } = useI18n();
   return (
     <section
       aria-labelledby="precos-title"
@@ -573,8 +746,8 @@ function Pricing() {
       id="precos"
     >
       <Container>
-        <SectionTitle id="precos-title" lead="Comece grátis. Pague só se quiser mais.">
-          Preços simples
+        <SectionTitle id="precos-title" lead={t('landing.pricing.lead')}>
+          {t('landing.pricing.title')}
         </SectionTitle>
         <div className="mt-12 grid gap-4 lg:grid-cols-3">
           {PLANS.map(plan => (
@@ -587,23 +760,25 @@ function Pricing() {
               key={plan.name}
             >
               <div className="flex items-center gap-2">
-                <h3 className="text-[18px] font-medium">{plan.name}</h3>
+                <h3 className="text-[18px] font-medium">
+                  {isKey(plan.name) ? t(plan.name) : plan.name}
+                </h3>
                 {plan.highlight && (
-                  <Badge className="bg-(--l-seal) text-white">Mais escolhido</Badge>
+                  <Badge className="bg-(--l-seal) text-white">{t('landing.pricing.popular')}</Badge>
                 )}
-                {plan.soon && <Badge variant="secondary">Em breve</Badge>}
+                {plan.soon && <Badge variant="secondary">{t('landing.pricing.soon')}</Badge>}
               </div>
               <p className="mt-4 flex items-baseline gap-2">
                 <span className="font-display text-[3rem] leading-none font-light tabular-nums">
                   {plan.price}
                 </span>
-                <span className="text-(--l-muted)">{plan.note}</span>
+                <span className="text-(--l-muted)">{t(plan.note)}</span>
               </p>
               <ul className="mt-6 flex flex-1 flex-col gap-3 text-[15px]">
                 {plan.features.map(feature => (
                   <li className="flex gap-2.5" key={feature}>
                     <Check aria-hidden className="mt-0.5 size-4 shrink-0 text-(--l-seal)" />
-                    {feature}
+                    {t(feature)}
                   </li>
                 ))}
               </ul>
@@ -613,11 +788,11 @@ function Pricing() {
                   className="mt-8 h-11"
                   variant={plan.highlight ? 'default' : 'outline'}
                 >
-                  <Link to={SIGN_UP}>{plan.cta}</Link>
+                  <Link to={SIGN_UP}>{t(plan.cta)}</Link>
                 </Button>
               ) : (
                 <Button className="mt-8 h-11" disabled variant="outline">
-                  Em breve
+                  {t('landing.pricing.soon')}
                 </Button>
               )}
             </div>
@@ -630,45 +805,18 @@ function Pricing() {
 
 // ---------------------------------------------------------------- questions
 
-const QUESTIONS: { answer: string; question: string }[] = [
-  {
-    answer:
-      'Não. Você importa o extrato que baixa do próprio banco. O Caishen só lê o arquivo, nunca pede senha de banco e nunca movimenta dinheiro.',
-    question: 'Preciso dar a senha do meu banco?',
-  },
-  {
-    answer:
-      'OFX, CSV, Excel (.xlsx) e PDF com texto. A maioria dos bancos oferece pelo menos um deles. Linhas repetidas são ignoradas, então pode mandar o mesmo arquivo de novo sem medo.',
-    question: 'Quais arquivos posso importar?',
-  },
-  {
-    answer:
-      'Na página de Integrações, gere um código e mande para o número do Caishen (ou abra o link do Telegram). A partir daí é só conversar. Qualquer lançamento proposto só é salvo quando você toca em Confirmar.',
-    question: 'Como funciona o WhatsApp e o Telegram?',
-  },
-  {
-    answer:
-      'Sim. O plano Pro é mensal, sem fidelidade. Você cancela pela página Plano e continua no Gratuito, com seus dados.',
-    question: 'Posso cancelar quando quiser?',
-  },
-  {
-    answer:
-      'Ainda não. A conexão automática com os bancos está em testes e chega em breve. Por enquanto, a importação de extratos faz o mesmo papel.',
-    question: 'Tem Open Finance?',
-  },
-  {
-    answer:
-      'Ainda não. O plano Empresas, com contratos, receita recorrente e DRE, está sendo construído. Crie sua conta grátis e avisamos quando abrir.',
-    question: 'Serve para minha empresa?',
-  },
-  {
-    answer:
-      'Os dados são seus. Você pode excluir a conta e tudo o que está nela a qualquer momento, pela página Perfil. Os detalhes estão na Política de Privacidade.',
-    question: 'Meus dados estão seguros?',
-  },
+const QUESTIONS: { answer: StringKey; question: StringKey }[] = [
+  { answer: 'landing.q.password.a', question: 'landing.q.password' },
+  { answer: 'landing.q.files.a', question: 'landing.q.files' },
+  { answer: 'landing.q.chat.a', question: 'landing.q.chat' },
+  { answer: 'landing.q.cancel.a', question: 'landing.q.cancel' },
+  { answer: 'landing.q.openFinance.a', question: 'landing.q.openFinance' },
+  { answer: 'landing.q.business.a', question: 'landing.q.business' },
+  { answer: 'landing.q.data.a', question: 'landing.q.data' },
 ];
 
 function Questions() {
+  const { t } = useI18n();
   return (
     <section
       aria-labelledby="perguntas-title"
@@ -676,15 +824,15 @@ function Questions() {
       id="perguntas"
     >
       <Container className="grid gap-10 lg:grid-cols-[1fr_1.4fr]">
-        <SectionTitle id="perguntas-title">Perguntas frequentes</SectionTitle>
+        <SectionTitle id="perguntas-title">{t('landing.questions.title')}</SectionTitle>
         <Accordion collapsible type="single">
           {QUESTIONS.map(item => (
             <AccordionItem key={item.question} value={item.question}>
               <AccordionTrigger className="py-5 text-[17px] font-medium hover:no-underline">
-                {item.question}
+                {t(item.question)}
               </AccordionTrigger>
               <AccordionContent className="text-[15px] leading-relaxed text-(--l-muted)">
-                {item.answer}
+                {t(item.answer)}
               </AccordionContent>
             </AccordionItem>
           ))}
@@ -695,8 +843,6 @@ function Questions() {
 }
 
 // ---------------------------------------------------------------- close
-
-const PROMISES = ['Plano gratuito para sempre', 'Sem cartão de crédito', 'Cancele quando quiser'];
 
 /** The fine grid behind the close, drawn in the paper's tone over the ink. */
 const GRID = {
@@ -714,73 +860,80 @@ const LIGHT_GRID = {
 
 /** The close: like the hero, the promise underlined in the seal's red. */
 function Close() {
+  const { t } = useI18n();
   return (
     <DarkSection className="py-24 md:py-36" title="comece-title">
-      <p className="text-[15px] font-medium text-(--l-seal-light)">Comece hoje</p>
+      <p className="text-[15px] font-medium text-(--l-seal-light)">{t('landing.close.kicker')}</p>
       <h2
         className="mx-auto mt-6 font-display text-(length:--step-head) leading-[1.02] font-light tracking-[-0.025em]"
         id="comece-title"
       >
-        Seu dinheiro merece mais
+        {t('landing.close.title')}
         <br />
-        que uma <Highlight dark>planilha esquecida</Highlight>.
+        {t('landing.close.than')} <Highlight dark>{t('landing.close.highlight')}</Highlight>.
       </h2>
       <p className="mx-auto mt-8 text-(length:--step-lead) text-white/75">
-        Mande o extrato e veja seu mês inteiro. Você só decide.
+        {t('landing.close.lead')}
       </p>
       <div className="mt-10 flex flex-wrap justify-center gap-3">
         <Button asChild className="h-14 bg-white px-8 text-[16px] text-(--l-ink) hover:bg-white/90">
           <Link to={SIGN_UP}>
-            Criar conta grátis <ArrowRight />
+            {t('landing.nav.signUp')} <ArrowRight />
           </Link>
         </Button>
       </div>
-      <Checks dark items={PROMISES} />
+      <Checks
+        dark
+        items={['landing.close.check.free', 'landing.check.noCard', 'landing.check.cancel']}
+      />
     </DarkSection>
   );
 }
 
 // ---------------------------------------------------------------- footer
 
-const FOOTER_GROUPS: { links: { href: string; label: string }[]; title: string }[] = [
-  {
-    links: [
-      { href: '#recursos', label: 'Recursos' },
-      { href: '#precos', label: 'Preços' },
-      { href: '#perguntas', label: 'Perguntas' },
-    ],
-    title: 'Produto',
-  },
-  {
-    links: [
-      { href: '/sign-in', label: 'Entrar' },
-      { href: SIGN_UP, label: 'Criar conta' },
-    ],
-    title: 'Caishen',
-  },
-  {
-    links: [
-      { href: '/terms', label: 'Termos de Uso' },
-      { href: '/privacy', label: 'Privacidade' },
-    ],
-    title: 'Legal',
-  },
-];
+const FOOTER_GROUPS: { links: { href: string; label: StringKey }[]; title: StringKey | string }[] =
+  [
+    {
+      links: [
+        { href: '#recursos', label: 'landing.nav.features' },
+        { href: '#precos', label: 'landing.nav.pricing' },
+        { href: '#perguntas', label: 'landing.nav.questions' },
+      ],
+      title: 'landing.footer.product',
+    },
+    {
+      links: [
+        { href: '/sign-in', label: 'landing.nav.signIn' },
+        { href: SIGN_UP, label: 'landing.footer.signUp' },
+      ],
+      title: 'Caishen',
+    },
+    {
+      links: [
+        { href: '/terms', label: 'landing.footer.terms' },
+        { href: '/privacy', label: 'landing.footer.privacy' },
+      ],
+      title: 'landing.footer.legal',
+    },
+  ];
 
-function FooterLink({ href, label }: { href: string; label: string }) {
+function FooterLink({ href, label }: { href: string; label: StringKey }) {
+  const { t } = useI18n();
   const className = 'text-(--l-muted) hover:text-(--l-ink)';
   return href.startsWith('#') ? (
     <a className={className} href={href}>
-      {label}
+      {t(label)}
     </a>
   ) : (
     <Link className={className} to={href}>
-      {label}
+      {t(label)}
     </Link>
   );
 }
 
 function Footer() {
+  const { t } = useI18n();
   return (
     <footer className="px-5 pt-16 pb-10 md:px-8">
       <Container className="px-0 md:px-0">
@@ -791,13 +944,18 @@ function Footer() {
               Caishen
             </Link>
             <p className="mt-4 text-[15px] leading-relaxed text-(--l-muted)">
-              Finanças organizadas para quem não quer viver de planilha.
+              {t('landing.footer.tagline')}
             </p>
           </div>
-          <nav aria-label="Rodapé" className="grid grid-cols-2 gap-10 sm:grid-cols-3 md:gap-16">
+          <nav
+            aria-label={t('landing.footer.label')}
+            className="grid grid-cols-2 gap-10 sm:grid-cols-3 md:gap-16"
+          >
             {FOOTER_GROUPS.map(group => (
               <div key={group.title}>
-                <p className="text-[15px] font-medium">{group.title}</p>
+                <p className="text-[15px] font-medium">
+                  {isKey(group.title) ? t(group.title) : group.title}
+                </p>
                 <ul className="mt-4 flex flex-col gap-3 text-[15px]">
                   {group.links.map(link => (
                     <li key={link.href}>
@@ -809,19 +967,11 @@ function Footer() {
             ))}
           </nav>
         </div>
-        <div className="mt-14 flex flex-col gap-4 border-t border-(--l-sand) pt-6 text-(length:--step-small) text-(--l-muted) md:flex-row md:items-end md:justify-between">
-          <div className="flex flex-col gap-1">
-            <p>
-              {COMPANY.name} · CNPJ {COMPANY.cnpj} · {COMPANY.city}
-            </p>
-            <p>
-              O Caishen não é uma instituição financeira, não oferece crédito nem recomenda
-              investimentos, e nunca movimenta dinheiro.
-            </p>
-          </div>
-          <p className="shrink-0">
-            © {new Date().getFullYear()} Caishen. Todos os direitos reservados.
+        <div className="mt-14 flex flex-col gap-2 border-t border-(--l-sand) pt-6 text-[12px] text-(--l-muted) md:flex-row md:items-center md:justify-between">
+          <p>
+            CNPJ {COMPANY.cnpj} · {t('landing.footer.notice')}
           </p>
+          <p className="shrink-0">© {new Date().getFullYear()} Caishen</p>
         </div>
       </Container>
     </footer>
