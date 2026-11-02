@@ -722,13 +722,6 @@ function Close() {
             Criar conta grátis <ArrowRight />
           </Link>
         </Button>
-        <Button
-          asChild
-          className="h-14 border-white/25 bg-transparent px-8 text-[16px] text-white hover:bg-white/10 hover:text-white"
-          variant="outline"
-        >
-          <a href="#precos">Ver planos</a>
-        </Button>
       </div>
       <Checks dark items={PROMISES} />
     </DarkSection>
