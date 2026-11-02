@@ -10,7 +10,6 @@ import {
   FileBarChart,
   FileUp,
   LayoutDashboard,
-  Landmark,
   LineChart,
   ListTodo,
   MessageSquareText,
@@ -27,25 +26,8 @@ import {
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 
-import {
-  AppleLogo,
-  GoogleCalendarLogo,
-  GoogleTasksLogo,
-  ICloudLogo,
-  MakeLogo,
-  N8nLogo,
-  SamsungLogo,
-  TelegramLogo,
-  WhatsAppLogo,
-  ZapierLogo,
-} from '@zapbots/ui/blocks/brand-logos';
+import { TelegramLogo, WhatsAppLogo } from '@zapbots/ui/blocks/brand-logos';
 import { Logo } from '@zapbots/ui/blocks/logo';
-import {
-  AnthropicLogo,
-  GeminiLogo,
-  OpenAiLogo,
-  OpenRouterLogo,
-} from '@zapbots/ui/blocks/provider-logos';
 import {
   Accordion,
   AccordionContent,
@@ -91,7 +73,6 @@ export function LandingPage() {
         <Hero />
         <Features />
         <Chat />
-        <Integrations />
         <Comparison />
         <Pricing />
         <Questions />
@@ -199,19 +180,19 @@ const MENU: { entries: MenuEntry[]; soon?: boolean; title: StringKey }[] = [
   {
     entries: [
       {
-        href: '#integrations',
+        href: '#features',
         icon: CalendarDays,
         text: 'landing.menu.calendar.text',
         title: 'landing.menu.calendar',
       },
       {
-        href: '#integrations',
+        href: '#features',
         icon: ListTodo,
         text: 'landing.menu.tasks.text',
         title: 'landing.menu.tasks',
       },
       {
-        href: '#integrations',
+        href: '#features',
         icon: NotebookPen,
         text: 'landing.menu.notes.text',
         title: 'landing.menu.notes',
@@ -234,7 +215,7 @@ const MENU: { entries: MenuEntry[]; soon?: boolean; title: StringKey }[] = [
         title: 'Telegram',
       },
       {
-        href: '#integrations',
+        href: '#features',
         icon: Workflow,
         text: 'landing.menu.automation.text',
         title: 'landing.menu.automation',
@@ -308,10 +289,7 @@ function Header() {
               className={cn('size-4 transition-transform', open && 'rotate-180')}
             />
           </Button>
-          <a className={link} href="#integrations" onMouseEnter={() => setOpen(false)}>
-            {t('landing.nav.integrations')}
-          </a>
-          <a className={link} href="#pricing">
+          <a className={link} href="#pricing" onMouseEnter={() => setOpen(false)}>
             {t('landing.nav.pricing')}
           </a>
           <a className={link} href="#faq">
@@ -784,105 +762,6 @@ function Chat() {
   );
 }
 
-// ---------------------------------------------------------------- integrations
-
-interface IntegrationGroup {
-  items: { icon: LucideIcon; name: StringKey | string }[];
-  title: StringKey;
-}
-
-/** What works on Integrações today, by kind; Open Finance is still coming (ADR 0020). */
-const INTEGRATIONS: IntegrationGroup[] = [
-  {
-    items: [
-      { icon: WhatsAppLogo, name: 'WhatsApp' },
-      { icon: TelegramLogo, name: 'Telegram' },
-    ],
-    title: 'landing.integrations.chat',
-  },
-  {
-    items: [
-      { icon: GoogleCalendarLogo, name: 'landing.integrations.googleCalendar' },
-      { icon: ICloudLogo, name: 'iCloud' },
-      { icon: CalendarDays, name: 'Outlook' },
-      { icon: GoogleTasksLogo, name: 'landing.integrations.googleTasks' },
-    ],
-    title: 'landing.integrations.agenda',
-  },
-  {
-    items: [
-      { icon: AppleLogo, name: 'Apple Health' },
-      { icon: SamsungLogo, name: 'Samsung Health' },
-    ],
-    title: 'landing.integrations.health',
-  },
-  {
-    items: [
-      { icon: ZapierLogo, name: 'Zapier' },
-      { icon: MakeLogo, name: 'Make' },
-      { icon: N8nLogo, name: 'n8n' },
-    ],
-    title: 'landing.integrations.automation',
-  },
-  {
-    items: [
-      { icon: OpenRouterLogo, name: 'OpenRouter' },
-      { icon: AnthropicLogo, name: 'Anthropic' },
-      { icon: GeminiLogo, name: 'Gemini' },
-      { icon: OpenAiLogo, name: 'OpenAI' },
-    ],
-    title: 'landing.integrations.ai',
-  },
-];
-
-const PILL = 'flex items-center gap-2.5 rounded-full py-2 pr-4 pl-2.5 text-[15px]';
-
-function Integrations() {
-  const { t } = useI18n();
-  return (
-    <section
-      aria-labelledby="integrations-title"
-      className="scroll-mt-16 py-16 md:py-24"
-      id="integrations"
-    >
-      <Container>
-        <SectionTitle id="integrations-title" lead={t('landing.integrations.lead')}>
-          {t('landing.integrations.title')}
-        </SectionTitle>
-        <div className="mt-12 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
-          {INTEGRATIONS.map(group => (
-            <div key={group.title}>
-              <p className="text-[14px] font-medium text-(--l-muted)">{t(group.title)}</p>
-              <ul className="mt-4 flex flex-wrap gap-2">
-                {group.items.map(({ icon: Icon, name }) => (
-                  <li className={cn(PILL, 'border border-(--l-sand) bg-white')} key={name}>
-                    <Icon aria-hidden className="size-5" />
-                    {isKey(name) ? t(name) : name}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-          <div>
-            <p className="flex items-center gap-2 text-[14px] font-medium text-(--l-muted)">
-              {t('landing.integrations.banks')}
-              <Badge className="px-1.5 py-0 text-[11px]" variant="secondary">
-                {t('landing.pricing.soon')}
-              </Badge>
-            </p>
-            <ul className="mt-4 flex flex-wrap gap-2 opacity-60">
-              <li className={cn(PILL, 'border border-dashed border-(--l-rule)')}>
-                <Landmark aria-hidden className="size-5" />
-                Open Finance
-              </li>
-            </ul>
-          </div>
-        </div>
-      </Container>
-    </section>
-  );
-}
-
 // ---------------------------------------------------------------- comparison
 
 const POINTS = ['start', 'import', 'due', 'debts', 'phone'] as const;
@@ -1144,7 +1023,6 @@ const FOOTER_GROUPS: {
   {
     links: [
       { href: '#features', label: 'landing.nav.features' },
-      { href: '#integrations', label: 'landing.nav.integrations' },
       { href: '#pricing', label: 'landing.nav.pricing' },
       { href: '#faq', label: 'landing.nav.questions' },
     ],
