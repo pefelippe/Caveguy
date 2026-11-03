@@ -13,54 +13,60 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * After the name: Caishen (財神) is the god of wealth, so the app is paper and ink with the red of a
- * seal (朱, cinnabar) as its mark. Surfaces part by tone, not by shadow: the screen and the menu on a
- * paper grey, cards white on it, nested panels one step down. Ink is what acts (buttons); the
- * seal marks the brand, the open menu entry and focus. The areas take the old pigments: cinnabar for
- * Finanças, ink blue for Pessoal, jade for Fitness, the gold of the ingot for the rest.
+ * Two quiet colours and one loud. Quiet: Cloudy White (#FDFDFE) for the screen, the menu and
+ * the cards (set apart by a border), and Sky Blue (#0099FF) for the open menu entry, links, focus
+ * and a faint tint on nested panels (a deeper sky,
+ * #0077CC, where it is text: #0099FF on white is only 3:1). Loud: Amber Red, the seal, used
+ * sparingly: the brand, the Caishen's ink, Finanças and the landing page's calls to act. Text and
+ * ordinary buttons are a navy ink, so the red stays rare. No shadow at rest.
+ * Pessoal takes the sky; Fitness and the rest keep jade and gold.
  */
 :root {
   --radius: 0.5rem;
-  --ink-black: #141413;
-  --ink-soft: #2a2a27;
-  --seal: #c0262d;
+  --ink-black: #0f1b2a;
+  --ink-soft: #24344a;
+  --sky: #0099ff;
+  --sky-ink: #0077cc;
+  --cloud: #fdfdfe;
+  /* Amber Red, darkened a touch so white text on it reaches 4.5:1. */
+  --seal: #dc3312;
 
-  --background: #f2f2f0;
+  --background: var(--cloud);
   --foreground: var(--ink-black);
-  --card: #ffffff;
+  --card: var(--cloud);
   --card-foreground: var(--ink-black);
-  --popover: #ffffff;
+  --popover: var(--cloud);
   --popover-foreground: var(--ink-black);
   --primary: var(--ink-black);
-  --primary-foreground: #fafaf8;
-  --secondary: #e8e8e4;
+  --primary-foreground: var(--cloud);
+  --secondary: #e3ecf5;
   --secondary-foreground: var(--ink-black);
-  --muted: #f4f4f2;
-  --muted-foreground: #64645d;
-  --accent: #ebebe7;
+  --muted: #f3f7fb;
+  --muted-foreground: #556273;
+  --accent: #e5eef7;
   --accent-foreground: var(--ink-black);
-  --destructive: oklch(0.52 0.19 25);
+  --destructive: oklch(0.5 0.19 22);
   --success: oklch(0.5 0.11 155);
   --warning: oklch(0.6 0.13 70);
-  --border: #e2e2dd;
+  --border: #dde6ef;
   /* Nothing at rest casts a shadow; only what opens over the page (menus, dialogs) does. */
   --card-shadow: none;
-  --input: #d3d3cd;
-  --ring: var(--seal);
+  --input: #c9d6e3;
+  --ring: var(--sky);
 
-  /* The menu on the left sits on the same paper as the screen; the open entry takes the seal. */
+  /* The menu on the left sits on the same paper as the screen; the open entry takes the sky. */
   --sidebar: var(--background);
   --sidebar-foreground: var(--ink-soft);
-  --sidebar-primary: var(--seal);
+  --sidebar-primary: var(--sky-ink);
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #e6e6e1;
+  --sidebar-accent: #e1ebf5;
   --sidebar-accent-foreground: var(--ink-black);
   --sidebar-border: transparent;
-  --sidebar-ring: var(--seal);
+  --sidebar-ring: var(--sky);
 
   /* The dark bar of the sign-in and the send buttons: plain ink. */
   --header: var(--ink-black);
-  --header-foreground: #f3f3f0;
+  --header-foreground: #f2f6fb;
   --header-muted: var(--ink-soft);
   /* The highlight on ink: the gold of the ingot. */
   --gold: #d9a63e;
@@ -69,10 +75,10 @@
   --navy: var(--ink-black);
   --navy-soft: var(--ink-soft);
   --blue: var(--seal);
-  --paper: #fafaf8;
+  --paper: var(--cloud);
   --rail: var(--ink-black);
-  --frame: #e2e2dd;
-  --rail-foreground: #d3d3cd;
+  --frame: #dde6ef;
+  --rail-foreground: #c9d6e3;
 
   /* One ink per Bot, and a neutral one outside them. */
   --ink-neutral: var(--ink-black);
@@ -80,46 +86,48 @@
 
   /* One colour per area of the app, for its icons, dots and bars. */
   --area-finance: var(--seal);
-  --area-personal: #2e5b84;
+  --area-personal: var(--sky-ink);
   --area-fitness: #3d7a50;
   --area-general: #9a7419;
 }
 
 .dark {
-  --seal: #ef5a5e;
-  --background: #0c0c0b;
-  --foreground: #f3f3f0;
-  --card: #161615;
-  --card-foreground: #f3f3f0;
-  --popover: #1c1c1a;
-  --popover-foreground: #f3f3f0;
-  --primary: #f3f3f0;
-  --primary-foreground: #141413;
-  --secondary: #222220;
-  --secondary-foreground: #f3f3f0;
-  --muted: #20201e;
-  --muted-foreground: #a3a39b;
-  --accent: #292927;
-  --accent-foreground: #f3f3f0;
-  --destructive: oklch(0.65 0.19 25);
+  --sky: #33adff;
+  --sky-ink: #5cbcff;
+  --seal: #ff5a3a;
+  --background: #0a121d;
+  --foreground: #f2f6fb;
+  --card: #111b28;
+  --card-foreground: #f2f6fb;
+  --popover: #162231;
+  --popover-foreground: #f2f6fb;
+  --primary: #f2f6fb;
+  --primary-foreground: #0f1b2a;
+  --secondary: #1a2634;
+  --secondary-foreground: #f2f6fb;
+  --muted: #172230;
+  --muted-foreground: #9aa8b8;
+  --accent: #1f2c3c;
+  --accent-foreground: #f2f6fb;
+  --destructive: oklch(0.65 0.19 22);
   --success: oklch(0.7 0.12 155);
   --warning: oklch(0.76 0.13 75);
-  --border: #2c2c29;
-  --input: #3a3a36;
-  --ring: var(--seal);
+  --border: #223041;
+  --input: #2e3d4f;
+  --ring: var(--sky);
 
   --sidebar: var(--background);
-  --sidebar-foreground: #e4e4df;
-  --sidebar-primary: var(--seal);
-  --sidebar-accent: #21211f;
-  --sidebar-accent-foreground: #f3f3f0;
+  --sidebar-foreground: #dfe6ee;
+  --sidebar-primary: var(--sky-ink);
+  --sidebar-accent: #162331;
+  --sidebar-accent-foreground: #f2f6fb;
   --sidebar-border: transparent;
-  --sidebar-ring: var(--seal);
+  --sidebar-ring: var(--sky);
 
-  --ink-neutral: #f3f3f0;
+  --ink-neutral: #f2f6fb;
   --bot-finance: var(--seal);
   --area-finance: var(--seal);
-  --area-personal: #82a8cf;
+  --area-personal: var(--sky-ink);
   --area-fitness: #78b98c;
   --area-general: #d9ad52;
   color-scheme: dark;
@@ -178,6 +186,8 @@
   --color-navy: var(--navy);
   --color-navy-soft: var(--navy-soft);
   --color-seal: var(--seal);
+  --color-sky: var(--sky);
+  --color-sky-ink: var(--sky-ink);
   /* The ink of the Bot on screen; set by `data-bot` on a wrapper. */
   --color-ink: var(--ink, var(--ink-neutral));
 }
