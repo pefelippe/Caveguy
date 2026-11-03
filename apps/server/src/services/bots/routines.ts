@@ -1,6 +1,7 @@
 import { db, schema, type RoutineRow } from '@zapbots/database';
 import { and, eq, isNull, lte } from 'drizzle-orm';
 
+import { reportError } from '../../sentry';
 import { PlanLimitError, requireWithinLimit } from '../billing/billing';
 import { aiConfigured } from '../models';
 import { handOverJob } from './jobs';
@@ -35,57 +36,63 @@ export async function runDueRoutines(now = new Date()): Promise<number> {
     .where(and(lte(schema.routine.nextRunAt, now), isNull(schema.routine.pausedAt)));
   let handed = 0;
   for (const routine of due) {
-    // Without a key to a Model provider the Job would only fail; the Routine waits for one.
-    if (!(await aiConfigured(routine.organizationId))) continue;
-    // Claiming by the old `nextRunAt` keeps two ticks from handing the same run over twice.
-    const [claimed] = await db
-      .update(schema.routine)
-      .set({ nextRunAt: nextRunAfter(routine.cadence, now) })
-      .where(
-        and(eq(schema.routine.id, routine.id), eq(schema.routine.nextRunAt, routine.nextRunAt))
-      )
-      .returning({ id: schema.routine.id });
-    if (!claimed || !routine.createdById) continue;
-    const [member] = await db
-      .select({ role: schema.member.role })
-      .from(schema.member)
-      .where(
-        and(
-          eq(schema.member.userId, routine.createdById),
-          eq(schema.member.organizationId, routine.organizationId)
-        )
-      );
-    if (!member) continue;
-    const viewer = {
-      organizationId: routine.organizationId,
-      role: member.role,
-      userId: routine.createdById,
-    };
-    const job = {
-      botId: routine.botId,
-      files: [],
-      instructions: routine.instructions,
-      routineId: routine.id,
-    };
+    // One Routine that fails must not hold back the others.
     try {
-      await requireWithinLimit(viewer, 'jobs');
+      // Without a key to a Model provider the Job would only fail; the Routine waits for one.
+      if (!(await aiConfigured(routine.organizationId))) continue;
+      // Claiming by the old `nextRunAt` keeps two ticks from handing the same run over twice.
+      const [claimed] = await db
+        .update(schema.routine)
+        .set({ nextRunAt: nextRunAfter(routine.cadence, now) })
+        .where(
+          and(eq(schema.routine.id, routine.id), eq(schema.routine.nextRunAt, routine.nextRunAt))
+        )
+        .returning({ id: schema.routine.id });
+      if (!claimed || !routine.createdById) continue;
+      const [member] = await db
+        .select({ role: schema.member.role })
+        .from(schema.member)
+        .where(
+          and(
+            eq(schema.member.userId, routine.createdById),
+            eq(schema.member.organizationId, routine.organizationId)
+          )
+        );
+      if (!member) continue;
+      const viewer = {
+        organizationId: routine.organizationId,
+        role: member.role,
+        userId: routine.createdById,
+      };
+      const job = {
+        botId: routine.botId,
+        files: [],
+        instructions: routine.instructions,
+        routineId: routine.id,
+      };
+      try {
+        await requireWithinLimit(viewer, 'jobs');
+      } catch (error) {
+        if (!(error instanceof PlanLimitError)) throw error;
+        // Past the Limit the run still shows up, as a failed Job, so the Routine raises an Alert.
+        await db.insert(schema.job).values({
+          botId: job.botId,
+          createdById: viewer.userId,
+          error: error.message,
+          finishedAt: now,
+          instructions: job.instructions,
+          organizationId: viewer.organizationId,
+          routineId: job.routineId,
+          status: 'FAILED',
+        });
+        continue;
+      }
+      await handOverJob(viewer, job);
+      handed += 1;
     } catch (error) {
-      if (!(error instanceof PlanLimitError)) throw error;
-      // Past the Limit the run still shows up, as a failed Job, so the Routine raises an Alert.
-      await db.insert(schema.job).values({
-        botId: job.botId,
-        createdById: viewer.userId,
-        error: error.message,
-        finishedAt: now,
-        instructions: job.instructions,
-        organizationId: viewer.organizationId,
-        routineId: job.routineId,
-        status: 'FAILED',
-      });
-      continue;
+      console.error('routine failed:', routine.id, error);
+      reportError(error);
     }
-    await handOverJob(viewer, job);
-    handed += 1;
   }
   return handed;
 }
