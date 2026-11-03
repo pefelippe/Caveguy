@@ -120,6 +120,8 @@ export const auth = betterAuth({
     // The app's language, kept with the User so it follows them to any browser.
     additionalFields: {
       language: { defaultValue: 'pt', required: false, type: 'string' },
+      // Set only through `finishOnboarding`.
+      onboardedAt: { input: false, required: false, type: 'date' },
       // Set only through `setTimeZone`, which checks it: a zone Intl does not know breaks the Agenda.
       timezone: {
         defaultValue: 'America/Sao_Paulo',

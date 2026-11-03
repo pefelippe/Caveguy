@@ -626,7 +626,7 @@ const plain = (text: string) =>
  * A .csv, .xlsx, .ofx or .pdf of Gastos picked, read and handed to the dialog: a sheet (or a PDF
  * statement, read into one) to map its columns, an OFX straight to what comes in. A Cartão's OFX is its Fatura, imported in Cartões.
  */
-function ImportButton({
+export function ImportButton({
   holderId,
   onError,
   owner,

@@ -31,10 +31,11 @@ const finance = <Name extends string>(name: Name) =>
   page(() => import('./pages/FinancePage') as Promise<Record<Name, ComponentType>>, name);
 const IncomePage = finance('IncomePage');
 const FixedPage = finance('FixedPage');
-const EntriesPage = page(() => import('./pages/EntriesPage'), 'EntriesPage');
+const EntriesPage = page<'EntriesPage', object>(() => import('./pages/EntriesPage'), 'EntriesPage');
 const PayoffPage = page(() => import('./pages/PayoffPage'), 'PayoffPage');
 const CalculatorsPage = page(() => import('./pages/CalculatorsPage'), 'CalculatorsPage');
 const DashboardPage = page(() => import('./pages/DashboardPage'), 'DashboardPage');
+const WelcomePage = page(() => import('./pages/WelcomePage'), 'WelcomePage');
 const ChatPage = page(() => import('./pages/ChatPage'), 'ChatPage');
 const JobsPage = page(() => import('./pages/JobsPage'), 'JobsPage');
 const JobPage = page(() => import('./pages/JobPage'), 'JobPage');
@@ -143,9 +144,25 @@ export function App() {
     );
   }
 
+  // A new User goes through the welcome wizard first; public and legal pages stay reachable.
+  if (
+    !session.user.onboardedAt &&
+    !/^\/(welcome|landing|reset-password|terms|privacy|book|w)(\/|$)/.test(pathname)
+  ) {
+    return <Navigate replace to="/welcome" />;
+  }
+
   // Every path is in English; the app speaks Portuguese and, later, English too.
   return (
     <Routes>
+      <Route
+        element={
+          <Suspense fallback={<Splash />}>
+            <WelcomePage user={session.user} />
+          </Suspense>
+        }
+        path="welcome"
+      />
       {/* Signed in, the landing page is still there to look at, outside the app's frame. */}
       <Route
         element={

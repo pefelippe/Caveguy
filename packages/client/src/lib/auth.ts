@@ -15,6 +15,7 @@ export const authClient = createAuthClient({
     inferAdditionalFields({
       user: {
         language: { required: false, type: 'string' },
+        onboardedAt: { input: false, required: false, type: 'date' },
         timezone: { input: false, required: false, type: 'string' },
       },
     }),

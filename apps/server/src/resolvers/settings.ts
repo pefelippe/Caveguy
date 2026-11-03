@@ -61,6 +61,14 @@ export const settingsResolvers: Resolvers = {
       }
       return true;
     },
+    finishOnboarding: async (_, __, context) => {
+      const viewer = requireViewer(context);
+      await db
+        .update(schema.user)
+        .set({ onboardedAt: new Date() })
+        .where(eq(schema.user.id, viewer.userId));
+      return true;
+    },
     renameOrganization: async (_, { name }, context) => {
       const viewer = requireViewer(context);
       const trimmed = name.trim();

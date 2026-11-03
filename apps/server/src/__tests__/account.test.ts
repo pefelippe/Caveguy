@@ -109,3 +109,18 @@ describe('deleteAccount', () => {
     ).toEqual([]);
   });
 });
+
+describe('finishOnboarding', () => {
+  it('marks only the signed-in User as through the welcome wizard', async () => {
+    const viewer = await createViewer();
+    const other = await createViewer();
+    const onboardedAt = async (id: string) =>
+      (await db.select().from(schema.user).where(eq(schema.user.id, id)))[0]?.onboardedAt;
+
+    const result = await gql(viewer, 'mutation { finishOnboarding }');
+
+    expect(result.data).toEqual({ finishOnboarding: true });
+    expect(await onboardedAt(viewer.userId)).toBeInstanceOf(Date);
+    expect(await onboardedAt(other.userId)).toBeNull();
+  });
+});

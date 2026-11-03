@@ -308,6 +308,36 @@ const STRINGS = {
   'home.month.open': { en: 'See entries', pt: 'Ver lançamentos' },
   'home.more': { en: 'and {count} more', pt: 'e mais {count}' },
   'welcome.send': { en: 'Send', pt: 'Enviar' },
+  'onboarding.back': { en: 'Back', pt: 'Voltar' },
+  'onboarding.debts': { en: 'Debts and cards', pt: 'Dívidas e cartões' },
+  'onboarding.debtsHint': {
+    en: 'Loans, financing and credit cards: what you owe and when it is due.',
+    pt: 'Empréstimos, financiamentos e cartões: o que você deve e quando vence.',
+  },
+  'onboarding.done': { en: 'Finish', pt: 'Concluir' },
+  'onboarding.expenses': { en: 'Expenses', pt: 'Gastos' },
+  'onboarding.expensesHint': {
+    en: 'Add an expense or a monthly bill, or import a bank statement (.ofx, .csv, .xlsx or PDF).',
+    pt: 'Adicione um gasto ou uma conta do mês, ou importe um extrato (.ofx, .csv, .xlsx ou PDF).',
+  },
+  'onboarding.income': { en: 'Income', pt: 'Renda' },
+  'onboarding.incomeHint': {
+    en: 'What comes in every month: salary, a business draw, rent you receive.',
+    pt: 'O que entra todo mês: salário, pró-labore, um aluguel que você recebe.',
+  },
+  'onboarding.next': { en: 'Continue', pt: 'Continuar' },
+  'onboarding.saved': {
+    en: 'Saved. Add another or continue.',
+    pt: 'Salvo. Adicione outro ou continue.',
+  },
+  'onboarding.setup': { en: 'Time zone and language', pt: 'Fuso e idioma' },
+  'onboarding.setupHint': {
+    en: 'Where "today" is for you, and the language of the app.',
+    pt: 'Onde é "hoje" para você e em que língua o app fala.',
+  },
+  'onboarding.skip': { en: 'Skip setup', pt: 'Pular configuração' },
+  'onboarding.step': { en: 'Step {n} of {total}', pt: 'Passo {n} de {total}' },
+  'onboarding.title': { en: 'Welcome, {name}', pt: 'Boas-vindas, {name}' },
   'account.emailHint': {
     en: 'It comes from Google and cannot be changed here.',
     pt: 'Vem do Google e não muda por aqui.',

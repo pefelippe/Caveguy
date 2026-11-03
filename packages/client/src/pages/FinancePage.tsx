@@ -1187,7 +1187,7 @@ function RecurringSection({
   );
 }
 
-type EntryKind =
+export type EntryKind =
   | 'CARD'
   | 'EXPENSE'
   | 'FINANCING'
@@ -1338,9 +1338,6 @@ export function AddEntryDialog({
   month?: string;
   onClose: () => void;
 }) {
-  const holder = useHolder();
-  const [kind, setKind] = useState<EntryKind>(ENTRY_KINDS[direction][0]!.value);
-
   return (
     <Dialog onOpenChange={open => !open && onClose()} open>
       <DialogContent
@@ -1355,8 +1352,38 @@ export function AddEntryDialog({
               : 'O que sai: uma vez, todo mês, um empréstimo, um cartão.'}
           </DialogDescription>
         </DialogHeader>
+        <EntryForms
+          kinds={ENTRY_KINDS[direction].map(option => option.value)}
+          month={month}
+          onDone={onClose}
+        />
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/** The kinds to pick from, then the picked one's form: the Add dialog and the welcome wizard. */
+export function EntryForms({
+  kinds,
+  month,
+  onDone,
+}: {
+  kinds: EntryKind[];
+  month?: string;
+  onDone: () => void;
+}) {
+  const holder = useHolder();
+  const options = [...ENTRY_KINDS.IN, ...ENTRY_KINDS.OUT].filter(option =>
+    kinds.includes(option.value)
+  );
+  const [kind, setKind] = useState<EntryKind>(options[0]!.value);
+  const direction = ENTRY_KINDS.IN.some(option => option.value === kind) ? 'IN' : 'OUT';
+
+  return (
+    <>
+      {options.length > 1 && (
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {ENTRY_KINDS[direction].map(option => (
+          {options.map(option => (
             <Button
               className={cn(
                 'h-auto flex-col items-start gap-0.5 rounded-xl px-4 py-3 text-left whitespace-normal',
@@ -1371,29 +1398,29 @@ export function AddEntryDialog({
             </Button>
           ))}
         </div>
-        {!holder ? (
-          <PageSkeleton />
-        ) : kind === 'EXPENSE' || kind === 'ONE_OFF_INCOME' ? (
-          <OneOffForm
-            direction={direction}
-            holder={holder}
-            key={kind}
-            month={month}
-            onDone={onClose}
-          />
-        ) : kind === 'INCOME' ? (
-          <IncomeForm holder={holder} onDone={onClose} />
-        ) : kind === 'RECURRING' ? (
-          <RecurringForm holder={holder} onDone={onClose} />
-        ) : kind === 'TAX' ? (
-          <TaxForm holder={holder} onDone={onClose} />
-        ) : kind === 'CARD' ? (
-          <CardForm holder={holder} onDone={onClose} />
-        ) : (
-          <OperationForm holder={holder} key={kind} onDone={onClose} type={kind} />
-        )}
-      </DialogContent>
-    </Dialog>
+      )}
+      {!holder ? (
+        <PageSkeleton />
+      ) : kind === 'EXPENSE' || kind === 'ONE_OFF_INCOME' ? (
+        <OneOffForm
+          direction={direction}
+          holder={holder}
+          key={kind}
+          month={month}
+          onDone={onDone}
+        />
+      ) : kind === 'INCOME' ? (
+        <IncomeForm holder={holder} onDone={onDone} />
+      ) : kind === 'RECURRING' ? (
+        <RecurringForm holder={holder} onDone={onDone} />
+      ) : kind === 'TAX' ? (
+        <TaxForm holder={holder} onDone={onDone} />
+      ) : kind === 'CARD' ? (
+        <CardForm holder={holder} onDone={onDone} />
+      ) : (
+        <OperationForm holder={holder} key={kind} onDone={onDone} type={kind} />
+      )}
+    </>
   );
 }
 

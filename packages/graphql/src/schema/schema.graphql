@@ -287,6 +287,8 @@ type Mutation {
   (docs/adr/0027). `confirm` is the account's e-mail, typed by the User.
   """
   deleteAccount(confirm: String!): Boolean!
+  "Marks the first-run wizard (/welcome) as done or skipped, so it does not open again."
+  finishOnboarding: Boolean!
   "Picks the Model a Bot uses; null goes back to the server default."
   setBotModel(id: ID!, model: String): Bot!
   startConversation(botId: ID!): Conversation!
