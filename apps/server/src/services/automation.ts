@@ -4,12 +4,13 @@ import type { Viewer } from '@zapbots/auth';
 import { db, schema } from '@zapbots/database';
 import { lineFingerprint, parseMoney } from '@zapbots/finance';
 import { wallClock } from '@zapbots/personal';
-import { and, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { GraphQLError } from 'graphql';
 
 import { viewerTimeZone } from './personal/clock';
 import { expenseValues, importExpenses, type ImportedExpense } from './records';
 import { viewerHolder } from './viewerHolder';
+import { viewerOfToken } from './secretLink';
 
 /**
  * Automação (docs/adr/0033): a secret address Zapier, Make, n8n or any script sends Gastos to,
@@ -54,27 +55,6 @@ export async function setAutomationInbox(viewer: Viewer, on: boolean) {
   return shown(row!);
 }
 
-/** Who an address belongs to, while they are still in its Organization. */
-async function inboxViewer(token: string): Promise<null | Viewer> {
-  if (!/^[\w-]{16,64}$/.test(token)) return null;
-  const [row] = await db
-    .select({
-      organizationId: schema.automationInbox.organizationId,
-      role: schema.member.role,
-      userId: schema.automationInbox.userId,
-    })
-    .from(schema.automationInbox)
-    .innerJoin(
-      schema.member,
-      and(
-        eq(schema.member.userId, schema.automationInbox.userId),
-        eq(schema.member.organizationId, schema.automationInbox.organizationId)
-      )
-    )
-    .where(eq(schema.automationInbox.token, token));
-  return row ?? null;
-}
-
 /** The first of these fields that is there, so senders may write in Portuguese or English. */
 function field(line: Record<string, unknown>, ...names: string[]): unknown {
   for (const name of names) if (line[name] !== undefined && line[name] !== null) return line[name];
@@ -106,7 +86,7 @@ export async function receiveAutomation(
   token: string,
   body: unknown
 ): Promise<AutomationResult | null> {
-  const viewer = await inboxViewer(token);
+  const viewer = await viewerOfToken(schema.automationInbox, token);
   if (!viewer) return null;
   const wrapped = body as { expenses?: unknown; gastos?: unknown } | null;
   const lines = Array.isArray(body)

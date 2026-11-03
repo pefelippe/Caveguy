@@ -4,10 +4,11 @@ import type { Viewer } from '@zapbots/auth';
 import { db, schema } from '@zapbots/database';
 import { addDays } from '@zapbots/finance';
 import { icsCalendar, type IcsEntry } from '@zapbots/personal';
-import { and, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 import { agenda, MAX_AGENDA_DAYS } from './agenda';
 import { viewerTimeZone, viewerToday } from './clock';
+import { viewerOfToken } from '../secretLink';
 
 /** How far the calendar link reaches: a month back and a year ahead. */
 const DAYS_BACK = 31;
@@ -47,32 +48,15 @@ export async function setCalendarFeed(viewer: Viewer, on: boolean) {
     .insert(schema.calendarFeed)
     .values(values)
     .onConflictDoUpdate({
-      set: { createdAt: values.createdAt, token: values.token },
+      set: {
+        createdAt: values.createdAt,
+        organizationId: values.organizationId,
+        token: values.token,
+      },
       target: schema.calendarFeed.userId,
     })
     .returning();
   return shown(row!);
-}
-
-/** Who a calendar link belongs to, as a Viewer of their Organization; null for an unknown one. */
-async function feedViewer(token: string): Promise<null | Viewer> {
-  if (!/^[\w-]{16,64}$/.test(token)) return null;
-  const [row] = await db
-    .select({
-      organizationId: schema.calendarFeed.organizationId,
-      role: schema.member.role,
-      userId: schema.calendarFeed.userId,
-    })
-    .from(schema.calendarFeed)
-    .innerJoin(
-      schema.member,
-      and(
-        eq(schema.member.userId, schema.calendarFeed.userId),
-        eq(schema.member.organizationId, schema.calendarFeed.organizationId)
-      )
-    )
-    .where(eq(schema.calendarFeed.token, token));
-  return row ?? null;
 }
 
 /**
@@ -80,7 +64,7 @@ async function feedViewer(token: string): Promise<null | Viewer> {
  * due in Finanças, a month back and a year ahead. Null for a link that does not exist (any more).
  */
 export async function calendarFeedFile(token: string): Promise<null | string> {
-  const viewer = await feedViewer(token);
+  const viewer = await viewerOfToken(schema.calendarFeed, token);
   if (!viewer) return null;
   const [timeZone, today] = await Promise.all([viewerTimeZone(viewer), viewerToday(viewer)]);
   const origin = process.env.CLIENT_ORIGIN ?? 'http://localhost:5173';

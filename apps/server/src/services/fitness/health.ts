@@ -7,6 +7,7 @@ import { wallClock } from '@zapbots/personal';
 import { and, eq, sql } from 'drizzle-orm';
 
 import { viewerTimeZone } from '../personal/clock';
+import { viewerOfToken } from '../secretLink';
 
 const pathOf = (token: string) => `/api/health/${token}`;
 
@@ -39,32 +40,11 @@ export async function setHealthInbox(viewer: Viewer, on: boolean) {
     .insert(schema.healthInbox)
     .values({ organizationId: viewer.organizationId, token, userId: viewer.userId })
     .onConflictDoUpdate({
-      set: { lastCounts: null, lastReceivedAt: null, token },
+      set: { lastCounts: null, lastReceivedAt: null, organizationId: viewer.organizationId, token },
       target: schema.healthInbox.userId,
     })
     .returning();
   return shown(row!);
-}
-
-/** Who an address belongs to; null for one that does not exist (any more). */
-async function inboxViewer(token: string): Promise<null | Viewer> {
-  if (!/^[\w-]{16,64}$/.test(token)) return null;
-  const [row] = await db
-    .select({
-      organizationId: schema.healthInbox.organizationId,
-      role: schema.member.role,
-      userId: schema.healthInbox.userId,
-    })
-    .from(schema.healthInbox)
-    .innerJoin(
-      schema.member,
-      and(
-        eq(schema.member.userId, schema.healthInbox.userId),
-        eq(schema.member.organizationId, schema.healthInbox.organizationId)
-      )
-    )
-    .where(eq(schema.healthInbox.token, token));
-  return row ?? null;
 }
 
 export interface HealthCounts {
@@ -81,7 +61,7 @@ export interface HealthCounts {
  * one body fat a day, one night a morning, each workout once. Null for an unknown address.
  */
 export async function receiveHealth(token: string, body: unknown): Promise<HealthCounts | null> {
-  const viewer = await inboxViewer(token);
+  const viewer = await viewerOfToken(schema.healthInbox, token);
   if (!viewer) return null;
   const zone = await viewerTimeZone(viewer);
   const batch = readHealthPayload(body, instant => wallClock(instant, zone));
