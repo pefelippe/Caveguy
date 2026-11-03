@@ -89,6 +89,9 @@ export const auth = betterAuth({
     // (docs/adr/0026). Google sign-in is left to Google's own verification.
     twoFactor({ issuer: 'Caishen' }),
   ],
+  // Counted in the database, so every server copy (each Vercel instance) sees the same tries at
+  // passwords and two-step codes; in memory each would count alone.
+  rateLimit: { storage: 'database' },
   secret: process.env.BETTER_AUTH_SECRET,
   socialProviders: googleEnabled
     ? {
@@ -117,7 +120,13 @@ export const auth = betterAuth({
     // The app's language, kept with the User so it follows them to any browser.
     additionalFields: {
       language: { defaultValue: 'pt', required: false, type: 'string' },
-      timezone: { defaultValue: 'America/Sao_Paulo', required: false, type: 'string' },
+      // Set only through `setTimeZone`, which checks it: a zone Intl does not know breaks the Agenda.
+      timezone: {
+        defaultValue: 'America/Sao_Paulo',
+        input: false,
+        required: false,
+        type: 'string',
+      },
     },
   },
 });

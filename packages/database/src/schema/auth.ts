@@ -2,7 +2,7 @@
  * Tables owned by Better Auth (core + organization plugin). Field names must match what Better
  * Auth expects; regenerate from `getAuthTables` in `better-auth/db` when upgrading it.
  */
-import { boolean, index, integer, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
+import { bigint, boolean, index, integer, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
 
 const createdAt = () => timestamp('created_at', { withTimezone: true }).notNull().defaultNow();
 const updatedAt = () =>
@@ -135,4 +135,15 @@ export const invitation = pgTable('invitation', {
     .references(() => organization.id, { onDelete: 'cascade' }),
   role: text('role'),
   status: text('status').notNull().default('pending'),
+});
+
+/**
+ * Better Auth's rate limits, kept in the database so every server copy counts the same tries
+ * (`rateLimit.storage: 'database'`); in memory each Vercel instance would count on its own.
+ */
+export const rateLimit = pgTable('rate_limit', {
+  count: integer('count').notNull(),
+  id: text('id').primaryKey(),
+  key: text('key').notNull().unique(),
+  lastRequest: bigint('last_request', { mode: 'number' }).notNull(),
 });
