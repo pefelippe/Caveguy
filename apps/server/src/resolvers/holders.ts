@@ -19,6 +19,7 @@ import {
   addIncomeSource,
   addOneOffIncome,
   addRecurringExpense,
+  deleteExpense,
   deleteExpenseImport,
   importExpenses,
   updateExpenseImport,
@@ -266,13 +267,7 @@ export const holderResolvers: Resolvers = {
         .returning({ id: schema.oneOffIncome.id });
       return deleted.length > 0;
     },
-    deleteExpense: async (_, { id }, context) => {
-      const deleted = await db
-        .delete(schema.expense)
-        .where(owned(schema.expense, requireViewer(context), id))
-        .returning({ id: schema.expense.id });
-      return deleted.length > 0;
-    },
+    deleteExpense: (_, { id }, context) => deleteExpense(requireViewer(context), id),
     setExpenseOwnTransfer: (_, { id, ownTransfer }, context) =>
       setExpenseOwnTransfer(requireViewer(context), id, ownTransfer),
     deleteTax: async (_, { id }, context) => {

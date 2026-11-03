@@ -1,6 +1,6 @@
 import type { Viewer } from '@zapbots/auth';
 import { db, schema } from '@zapbots/database';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import {
   Decimal,
   ImpliedRateError,
@@ -292,6 +292,26 @@ export async function importExpenses(
     return { ...values, externalId, ownTransfer: row.ownTransfer ?? false };
   });
 
+  // Lines the User deleted stay deleted.
+  const keys = checked.flatMap(row => (row.externalId ? [row.externalId] : []));
+  const gone = keys.length
+    ? new Set(
+        (
+          await db
+            .select({ externalId: schema.deletedExpense.externalId })
+            .from(schema.deletedExpense)
+            .where(
+              and(
+                eq(schema.deletedExpense.holderId, holderId),
+                inArray(schema.deletedExpense.externalId, keys)
+              )
+            )
+        ).map(row => row.externalId)
+      )
+    : new Set<string>();
+  const kept = checked.filter(row => !row.externalId || !gone.has(row.externalId));
+  if (!kept.length) return 0;
+
   return db.transaction(async tx => {
     const [batch] = from.file
       ? await tx
@@ -309,7 +329,7 @@ export async function importExpenses(
     const added = await tx
       .insert(schema.expense)
       .values(
-        checked.map(row => ({
+        kept.map(row => ({
           ...row,
           bankLinkId: from.bankLinkId ?? null,
           holderId,
@@ -644,11 +664,38 @@ export async function updateRecord(
  * Deletes a saved record of the Viewer's Organization; a Bot gets here only through a DELETE
  * Proposal the User confirmed. An Operation takes its Extra Amortizations and late payments along.
  */
+/**
+ * Deletes a Gasto. One that came from a bank, a file or an automation leaves its key behind, so the
+ * next read of the same source (which overlaps the last) does not bring it back.
+ */
+export async function deleteExpense(
+  viewer: Viewer,
+  id: string,
+  executor: Pick<typeof db, 'delete' | 'insert'> = db
+): Promise<boolean> {
+  const [deleted] = await executor
+    .delete(schema.expense)
+    .where(owned(schema.expense, viewer, id))
+    .returning({ externalId: schema.expense.externalId, holderId: schema.expense.holderId });
+  if (!deleted) return false;
+  if (deleted.externalId) {
+    await executor
+      .insert(schema.deletedExpense)
+      .values({
+        externalId: deleted.externalId,
+        holderId: deleted.holderId,
+        organizationId: viewer.organizationId,
+      })
+      .onConflictDoNothing();
+  }
+  return true;
+}
+
 export async function deleteRecord(
   viewer: Viewer,
   kind: RecordKind,
   id: string,
-  executor: Pick<typeof db, 'delete'> = db
+  executor: Pick<typeof db, 'delete' | 'insert'> = db
 ): Promise<{ id: string }> {
   // Not found unless it belongs to the Viewer (an Income Source through its Holder).
   await readRecord(viewer, kind, id);
@@ -662,7 +709,7 @@ export async function deleteRecord(
       await executor.delete(schema.incomeSource).where(eq(schema.incomeSource.id, id));
       break;
     case 'EXPENSE':
-      await executor.delete(schema.expense).where(owned(schema.expense, viewer, id));
+      await deleteExpense(viewer, id, executor);
       break;
     case 'ONE_OFF_INCOME':
       await executor.delete(schema.oneOffIncome).where(owned(schema.oneOffIncome, viewer, id));

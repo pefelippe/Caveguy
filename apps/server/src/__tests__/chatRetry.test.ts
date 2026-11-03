@@ -13,6 +13,7 @@ import {
 } from '../../test/msw/openrouter';
 import { ensureBots } from '../services/bots/catalog';
 import { replyInConversation } from '../services/bots/chat';
+import { monthUsage } from '../services/usage';
 
 beforeAll(() => mswServer.listen());
 afterEach(() => mswServer.resetHandlers());
@@ -108,6 +109,8 @@ describe('Tentar de novo e editar no chat', () => {
     const sent = log[0]!.messages.map(textOf);
     expect(sent.filter(text => text === 'Quanto gastei?')).toHaveLength(1);
     expect(sent.some(text => text.includes('Resposta ruim.'))).toBe(false);
+    // Asking again costs the Model a reply, so it counts as a Message.
+    expect((await monthUsage(viewer)).messages).toBe(3);
   });
 
   it('answers the edited Message in place of the old one', async () => {

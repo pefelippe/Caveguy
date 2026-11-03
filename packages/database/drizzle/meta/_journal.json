@@ -351,6 +351,13 @@
       "when": 1793635188040,
       "tag": "0049_daily_major_mapleleaf",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1793703081503,
+      "tag": "0050_complete_patch",
+      "breakpoints": true
     }
   ]
 }

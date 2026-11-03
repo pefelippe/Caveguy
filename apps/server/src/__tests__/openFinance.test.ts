@@ -275,6 +275,17 @@ describe('Open Finance through Meu Pluggy', () => {
     expect((await gql(viewer, SYNC, { id: link })).data.syncBankLink.added).toBe(1);
     // Pasting the same item again reads it, without a second link.
     expect((await gql(viewer, LINK, { itemId })).data.linkBank.link.id).toBe(link);
+
+    // A line the User deleted stays deleted, though the next read covers its day again.
+    const padaria = (await expensesOf(viewer)).find(row => row.description === 'Padaria')!;
+    expect(
+      (await gql(viewer, `mutation ($id: ID!) { deleteExpense(id: $id) }`, { id: padaria.id })).data
+    ).toEqual({ deleteExpense: true });
+    expect((await gql(viewer, SYNC, { id: link })).data.syncBankLink.added).toBe(0);
+    expect((await expensesOf(viewer)).map(row => row.description).sort()).toEqual([
+      'Café',
+      'Tarifa',
+    ]);
   });
 
   it('reads a card as a Cartão, its limit and Faturas following the bank', async () => {

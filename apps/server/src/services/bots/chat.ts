@@ -1,6 +1,6 @@
 import type { Viewer } from '@zapbots/auth';
 import { db, schema, type MessageRow } from '@zapbots/database';
-import { and, asc, eq, gt, inArray, isNull, lt, ne, or } from 'drizzle-orm';
+import { and, asc, eq, gt, inArray, isNull, lt, ne, or, sql } from 'drizzle-orm';
 
 import { owned } from '../../resolvers/guards';
 import { PlanLimitError, requireWithinLimit } from '../billing/billing';
@@ -186,7 +186,11 @@ export async function replyInConversation(options: {
     let again: MessageRow | undefined;
     if (redo) {
       again = await takeBackReply(saved, redo === 'edit' ? content : undefined);
-      saved = saved.slice(0, saved.indexOf(again));
+      const answered = again.id;
+      saved = saved.slice(
+        0,
+        saved.findIndex(message => message.id === answered)
+      );
     }
     const history = saved.slice(-HISTORY);
     // What became of each Proposal, so the Model does not offer a confirmed one again.
@@ -252,10 +256,13 @@ async function takeBackReply(messages: MessageRow[], edited?: string): Promise<M
     await db.delete(schema.message).where(inArray(schema.message.id, after));
   }
   const message = messages[last]!;
-  if (edited === undefined) return message;
+  // Each answer asked again costs the Model as much as a new Message, so it counts as one.
   const [updated] = await db
     .update(schema.message)
-    .set({ content: edited })
+    .set({
+      retries: sql`${schema.message.retries} + 1`,
+      ...(edited === undefined ? {} : { content: edited }),
+    })
     .where(eq(schema.message.id, message.id))
     .returning();
   return updated!;

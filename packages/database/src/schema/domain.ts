@@ -285,6 +285,24 @@ export const expense = pgTable(
   ]
 );
 
+/**
+ * The key of an imported Gasto the User deleted, so a later read of the same bank, file or
+ * automation (which overlap what came before) does not bring it back.
+ */
+export const deletedExpense = pgTable(
+  'deleted_expense',
+  {
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    externalId: text('external_id').notNull(),
+    holderId: uuid('holder_id')
+      .notNull()
+      .references(() => holder.id, { onDelete: 'cascade' }),
+    id: uuid('id').primaryKey().defaultRandom(),
+    organizationId: organizationId(),
+  },
+  table => [unique('deleted_expense_holder_external_unique').on(table.holderId, table.externalId)]
+);
+
 /** A Receita avulsa: money that came in once, on `date`, outside the Fontes de Renda. */
 export const oneOffIncome = pgTable(
   'one_off_income',
@@ -477,6 +495,8 @@ export const message = pgTable(
       .references(() => conversation.id, { onDelete: 'cascade' }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     id: uuid('id').primaryKey().defaultRandom(),
+    /** How many times the reply to this User Message was asked again (retry or edit): each counts as a Message. */
+    retries: integer('retries').notNull().default(0),
     role: messageRole('role').notNull(),
   },
   table => [index('message_conversation_idx').on(table.conversationId, table.createdAt)]
