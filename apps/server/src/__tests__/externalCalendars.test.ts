@@ -152,6 +152,24 @@ describe('Agendas de fora', () => {
     expect(await refused('https://127.0.0.1/calendar.ics')).toEqual(['BAD_USER_INPUT']);
     expect(await refused('https://169.254.169.254/latest/meta-data')).toEqual(['BAD_USER_INPUT']);
     expect(await refused('https://localhost/calendar.ics')).toEqual(['BAD_USER_INPUT']);
+    // Nor by way of a redirect: each hop is checked again.
+    const HOPS = 'https://hops.example.com';
+    mswServer.use(
+      http.get(`${HOPS}/to-metadata`, () =>
+        HttpResponse.redirect('http://169.254.169.254/latest/meta-data', 302)
+      ),
+      http.get(`${HOPS}/to-local`, () => HttpResponse.redirect('https://127.0.0.1/a.ics', 302)),
+      http.get(`${HOPS}/loop`, () => HttpResponse.redirect(`${HOPS}/loop`, 302)),
+      http.get(`${HOPS}/to-icloud`, () => HttpResponse.redirect(ICLOUD_URL, 301))
+    );
+    expect(await refused(`${HOPS}/to-metadata`)).toEqual(['BAD_USER_INPUT']);
+    expect(await refused(`${HOPS}/to-local`)).toEqual(['BAD_USER_INPUT']);
+    expect(await refused(`${HOPS}/loop`)).toEqual(['BAD_USER_INPUT']);
+    const moved = await gql(viewer, ADD, { name: 'Movida', url: `${HOPS}/to-icloud` });
+    expect(moved.errors).toEqual([]);
+    await gql(viewer, `mutation ($id: ID!) { removeExternalCalendar(id: $id) }`, {
+      id: moved.data.addExternalCalendar.id,
+    });
     expect((await gql(viewer, `{ externalCalendars { id } }`)).data.externalCalendars).toEqual([]);
 
     const { id } = (await gql(viewer, ADD, { name: 'Casa', url: ICLOUD_URL })).data

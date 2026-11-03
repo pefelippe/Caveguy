@@ -67,28 +67,70 @@ const outside = new Agent({
 
 export class FetchRefused extends Error {}
 
+/** Hops a link may redirect through (iCloud moves between its own servers). */
+const MAX_REDIRECTS = 3;
+
+/** Refuses what no link may reach: not https, or an address written out that is not public. */
+function checkTarget(url: URL) {
+  if (url.protocol !== 'https:') throw new FetchRefused('O link precisa começar com https://.');
+  // Node does not look an address up when it is written out, so the agent above never sees it.
+  const host = url.hostname.replace(/^\[|\]$/g, '');
+  if (isIP(host) && !isPublicAddress(host)) {
+    throw new FetchRefused('Esse endereço não é público.');
+  }
+}
+
+/** The body as text, refused once it passes `maxBytes`, without holding more than that. */
+async function readCapped(response: Response, maxBytes: number): Promise<string> {
+  if (Number(response.headers.get('content-length') ?? 0) > maxBytes) {
+    throw new FetchRefused('O arquivo do link é grande demais.');
+  }
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  for await (const chunk of response.body ?? []) {
+    size += chunk.byteLength;
+    if (size > maxBytes) {
+      await response.body?.cancel().catch(() => {});
+      throw new FetchRefused('O arquivo do link é grande demais.');
+    }
+    chunks.push(chunk);
+  }
+  return Buffer.concat(chunks).toString('utf8');
+}
+
 /**
- * GETs a link a User gave: https only, public addresses only, at most `maxBytes`, 15 seconds.
- * Throws `FetchRefused` with a message for people.
+ * GETs a link a User gave: https only, public addresses only (each redirect checked again), at
+ * most `maxBytes`, 15 seconds. Throws `FetchRefused` with a message for people.
  */
 export async function fetchOutside(
   url: URL,
   { accept, maxBytes }: { accept: string; maxBytes: number }
 ): Promise<string> {
-  if (url.protocol !== 'https:') throw new FetchRefused('O link precisa começar com https://.');
-  if (isIP(url.hostname.replace(/^\[|\]$/g, '')) && !isPublicAddress(url.hostname)) {
-    throw new FetchRefused('Esse endereço não é público.');
-  }
+  const signal = AbortSignal.timeout(15_000);
+  let target = url;
   let response: Response;
-  try {
-    response = await fetch(url, {
-      // @ts-expect-error: Node's fetch takes undici's dispatcher, which the DOM types do not know.
-      dispatcher: outside,
-      headers: { Accept: accept, 'User-Agent': 'Caishen/1.0 (+https://caishen.app)' },
-      signal: AbortSignal.timeout(15_000),
-    });
-  } catch {
-    throw new FetchRefused('Não consegui abrir o link. Confira se ele está certo e é público.');
+  for (let hop = 0; ; hop += 1) {
+    checkTarget(target);
+    try {
+      response = await fetch(target, {
+        // @ts-expect-error: Node's fetch takes undici's dispatcher, which the DOM types do not know.
+        dispatcher: outside,
+        headers: { Accept: accept, 'User-Agent': 'Caishen/1.0 (+https://caishen.app)' },
+        redirect: 'manual',
+        signal,
+      });
+    } catch {
+      throw new FetchRefused('Não consegui abrir o link. Confira se ele está certo e é público.');
+    }
+    const location = response.headers.get('location');
+    if (response.status < 300 || response.status >= 400 || !location) break;
+    await response.body?.cancel().catch(() => {});
+    if (hop >= MAX_REDIRECTS) throw new FetchRefused('O link redireciona demais.');
+    try {
+      target = new URL(location, target);
+    } catch {
+      throw new FetchRefused('O link redireciona para um endereço inválido.');
+    }
   }
   if (response.status === 404 || response.status === 410) {
     throw new FetchRefused('O link não existe mais.');
@@ -98,10 +140,10 @@ export async function fetchOutside(
   }
   if (!response.ok)
     throw new FetchRefused(`O servidor do link respondeu com erro (${response.status}).`);
-  if (Number(response.headers.get('content-length') ?? 0) > maxBytes) {
-    throw new FetchRefused('O arquivo do link é grande demais.');
+  try {
+    return await readCapped(response, maxBytes);
+  } catch (error) {
+    if (error instanceof FetchRefused) throw error;
+    throw new FetchRefused('Não consegui abrir o link. Confira se ele está certo e é público.');
   }
-  const text = await response.text();
-  if (text.length > maxBytes) throw new FetchRefused('O arquivo do link é grande demais.');
-  return text;
 }
