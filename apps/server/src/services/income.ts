@@ -1,6 +1,6 @@
 import { db, schema, type IncomeSourceRow } from '@zapbots/database';
 import { dateInMonth, Decimal, foreignToBrlCents, INCOMING_IOF } from '@zapbots/finance';
-import { and, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 import { dollarRate } from './exchange';
 
@@ -51,13 +51,13 @@ export async function incomePayments(
 
   if (source.currency === 'BRL') {
     const date = dateInMonth(yearMonth, days[0]!);
-    return [{ amountCents: source.monthlyNetCents, date, foreign: null }];
+    return running(date) ? [{ amountCents: source.monthlyNetCents, date, foreign: null }] : [];
   }
 
   const overrides = await db
     .select()
     .from(schema.incomeRateOverride)
-    .where(and(eq(schema.incomeRateOverride.incomeSourceId, source.id)));
+    .where(eq(schema.incomeRateOverride.incomeSourceId, source.id));
   const parts = split(source.monthlyNetCents, days.length);
   const payments: IncomePayment[] = [];
   for (const [index, day] of days.entries()) {

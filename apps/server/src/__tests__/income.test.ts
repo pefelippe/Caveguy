@@ -131,3 +131,31 @@ describe('a salary paid in dollars', () => {
     ).toEqual(['NOT_FOUND']);
   });
 });
+
+describe('a salary paid in reais', () => {
+  it('pays nothing on a payday before it starts or after it ends', async () => {
+    const viewer = await createViewer();
+    const holder = await viewerHolder(viewer);
+    const salary = (startsOn: string, endsOn: null | string) => ({
+      currency: 'BRL' as const,
+      description: `Salário ${startsOn}`,
+      endsOn,
+      holderId: holder.id,
+      monthlyNetCents: 300_000,
+      paydays: [5],
+      startsOn,
+    });
+    await db
+      .insert(schema.incomeSource)
+      .values([salary('2025-11-20', null), salary('2025-01-01', '2025-11-03')]);
+
+    const november = (await gql(viewer, MONTH, { id: holder.id, month: '2025-11' })).data.holder
+      .month;
+    expect(november).toMatchObject({ incomeCents: 0, incomes: [] });
+    const december = (await gql(viewer, MONTH, { id: holder.id, month: '2025-12' })).data.holder
+      .month;
+    expect(december.incomes).toEqual([
+      expect.objectContaining({ amountCents: 300_000, date: '2025-12-05' }),
+    ]);
+  });
+});
