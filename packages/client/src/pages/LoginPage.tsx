@@ -1,7 +1,7 @@
 import { LoaderCircle, MailCheck } from 'lucide-react';
 import { AnimatePresence, MotionConfig, motion, type Variants } from 'motion/react';
 import { type FormEvent, type ReactNode, useEffect, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { Logo } from '@zapbots/ui/blocks/logo';
 import { Button } from '@zapbots/ui/components/button';
@@ -11,6 +11,7 @@ import { Label } from '@zapbots/ui/components/label';
 import { Separator } from '@zapbots/ui/components/separator';
 
 import { FormError } from '../components/FormError';
+import { APP_BASE } from '../lib/area';
 import { authClient } from '../lib/auth';
 
 /** How a password reset link reaches the User: by email, back to this page (local server, no
@@ -125,9 +126,13 @@ export function LoginPage() {
     google: false,
     link: 'email',
   });
-  // In development the address comes filled in (`VITE_DEV_SIGN_IN_EMAIL`).
+  const { state } = useLocation();
+  // The landing page's close hands its e-mail over in the router's state, never in the URL; in
+  // development the address otherwise comes filled in (`VITE_DEV_SIGN_IN_EMAIL`).
   const [email, setEmail] = useState(
-    import.meta.env.DEV ? (import.meta.env.VITE_DEV_SIGN_IN_EMAIL ?? '') : ''
+    () =>
+      (state as { email?: string } | null)?.email ||
+      (import.meta.env.DEV ? (import.meta.env.VITE_DEV_SIGN_IN_EMAIL ?? '') : '')
   );
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
@@ -216,7 +221,7 @@ export function LoginPage() {
     setError(null);
     setPending(true);
     const result = await authClient.signIn.social({
-      callbackURL: window.location.origin,
+      callbackURL: `${window.location.origin}${APP_BASE}`,
       provider: 'google',
     });
     // On success the browser is already redirecting to Google.

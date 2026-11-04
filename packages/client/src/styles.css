@@ -80,26 +80,46 @@
   @apply rounded bg-muted px-1 text-[13px];
 }
 
-/* The landing page: always light, paper and ink with the seal's red as its one accent, Stack Sans
-   in five sizes. `--l-*` are its own roles, apart from the app's theme. */
+/* The landing page's anchors glide to their section; only there, and not with reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  html:has(.landing) {
+    scroll-behavior: smooth;
+  }
+}
+
+/* The landing page: always light, in the brand's two quiet colours and one loud. Cloud is the
+   ground, a faint Sky the fields and the links, Amber Red only for the Caishen's answer and the
+   close. Written as hex, not the theme's variables, so the dark theme never reaches it. */
 .landing {
-  --l-bg: #ffffff;
-  --l-surface: #f2f2f0;
-  --l-sand: #e3e3de;
-  --l-rule: #c9c9c2;
-  --l-ink: #141413;
-  --l-muted: #5f5f58;
-  --l-dark: #141413;
-  --l-dark-step: #262624;
-  --l-paper: #f5f5f3;
-  --l-paper-soft: #c8c8c1;
-  --l-seal: #c0262d;
-  --l-seal-dark: #a11f25;
-  --l-seal-light: #ef5a5e;
-  --l-marker: #f1dc9a;
-  --step-small: clamp(0.8125rem, 0.79rem + 0.1vw, 0.875rem);
+  --l-bg: #fdfdfe;
+  --l-surface: #f3f7fb;
+  --l-step: #e4edf6;
+  --l-ink: #0f1b2a;
+  --l-muted: #556273;
+  --l-sky: #0099ff;
+  --l-sky-ink: #0068b3;
+  --l-seal: #e8112d;
   --step-body: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
   --step-lead: clamp(1.25rem, 1.1rem + 0.7vw, 1.625rem);
-  --step-head: clamp(2.5rem, 1.3rem + 4vw, 5rem);
   color-scheme: light;
+}
+
+/* The one motif: the slanted corner of the mark's blocks (7.07 across for 3.7 down, so 1.91 to 1),
+   on the buttons and the photo's frame. `--cut` is how far down it goes. */
+.landing .cut {
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--cut, 10px) * 1.91) 0,
+    100% var(--cut, 10px),
+    100% 100%,
+    0 100%
+  );
+}
+@keyframes l-caret {
+  50% {
+    opacity: 0;
+  }
+}
+.landing .caret {
+  animation: l-caret 1s steps(1) infinite;
 }
