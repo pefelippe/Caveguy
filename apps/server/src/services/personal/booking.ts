@@ -353,7 +353,7 @@ export async function book(input: BookInput, now = new Date()) {
   const cancelUrl = `${clientOrigin()}/book/cancel/${booked.cancelToken}`;
   await Promise.all([
     sendEmail({
-      link: { label: 'Ver na Agenda', url: `${clientOrigin()}/personal/calendar` },
+      link: { label: 'Ver na Agenda', url: `${clientOrigin()}/app/personal/calendar` },
       paragraphs: [
         `${name} (${email}) marcou “${type.title}” com você para ${when(startsAt, owner.timezone)}.`,
         ...(note ? [`Mensagem: ${note}`] : []),

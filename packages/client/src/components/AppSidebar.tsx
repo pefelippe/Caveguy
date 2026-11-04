@@ -128,7 +128,7 @@ export function AppSidebar() {
   const active = activeItem(items, pathname);
 
   return (
-    <Sidebar className="overflow-hidden" collapsible="icon">
+    <Sidebar className="overflow-hidden md:border-r" collapsible="icon">
       <MenuTop />
       <SidebarContent className="gap-1 px-6 pt-6 pb-6 [scrollbar-width:none] group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:px-2">
         <SidebarGroup className="p-0">

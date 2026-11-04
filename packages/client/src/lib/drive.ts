@@ -1,3 +1,4 @@
+import { APP_BASE } from './area';
 import { authClient } from './auth';
 
 /** Only files the User picks become visible to zapbots (non-sensitive scope). */
@@ -20,7 +21,7 @@ export const pickerConfigured = () => Boolean(API_KEY && APP_ID);
 /** Sends the User to Google to grant the Drive scope, then back to the Connections page. */
 export async function connectDrive(): Promise<string | null> {
   const result = await authClient.linkSocial({
-    callbackURL: `${window.location.origin}/integrations/files`,
+    callbackURL: `${window.location.origin}${APP_BASE}/integrations/files`,
     provider: 'google',
     scopes: [DRIVE_SCOPE],
   });

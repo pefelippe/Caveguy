@@ -4,6 +4,7 @@ import { Navigate, Route, Routes, useLocation, useParams } from 'react-router-do
 import { Splash } from '@zapbots/ui/blocks/logo';
 
 import { Layout, Scrolling } from './components/Layout';
+import { APP_BASE, IN_APP } from './lib/area';
 import { authClient } from './lib/auth';
 import { isLanguage, useI18n } from './lib/i18n';
 import { DOCUMENTS_ENABLED } from './lib/nav';
@@ -108,13 +109,26 @@ function LegacyIntegration() {
   return <Navigate replace to={group === 'models' ? '/integrations#ai' : '/integrations'} />;
 }
 
+/** Crosses between the site and the app, which are two routers: a full page load. */
+function Leave({ to }: { to: string }) {
+  useEffect(() => window.location.replace(to), [to]);
+  return <Splash />;
+}
+
+/** An app screen opened at its old root address, e.g. `/caishen/entries` or Stripe's `/plan?checkout=`. */
+function LegacyAppPath() {
+  const { hash, pathname, search } = useLocation();
+  return <Leave to={`${APP_BASE}${pathname}${search}${hash}`} />;
+}
+
 export function App() {
   const { data: session, isPending } = authClient.useSession();
   const { setLanguage } = useI18n();
   const { pathname } = useLocation();
   const language = session?.user.language;
-  useDocumentTitle(Boolean(session));
-  useAppliedTheme(Boolean(session) && pathname !== '/landing');
+  useDocumentTitle(IN_APP);
+  // The site stays light; the User's theme is the app's.
+  useAppliedTheme(Boolean(session) && IN_APP);
 
   // Signed in, the User's own language wins over the one this browser remembered.
   useEffect(() => {
@@ -124,31 +138,37 @@ export function App() {
   if (isPending) {
     return <Splash />;
   }
-  // Every User has a personal Organization from their first session on (docs/adr/0007).
-  if (!session) {
+
+  // The site at the root reads the same signed in or out: the landing page, the Termos and the
+  // Política (docs/adr/0027), booking and shared Fichas. Signed in, Entrar opens the app.
+  if (!IN_APP) {
     return (
       <Suspense fallback={null}>
         <Routes>
           <Route element={<LandingPage />} index />
-          <Route element={<LandingPage />} path="landing" />
-          <Route element={<LoginPage />} path="sign-in" />
+          <Route element={<Navigate replace to="/" />} path="landing" />
+          <Route element={session ? <Leave to={APP_BASE} /> : <LoginPage />} path="sign-in" />
+          {/* A reset link opened while signed in still works; choosing the password signs out. */}
           <Route element={<ResetPasswordPage />} path="reset-password" />
           <Route element={<TermsPage />} path="terms" />
           <Route element={<PrivacyPage />} path="privacy" />
           <Route element={<BookingPage />} path="book/:slug" />
           <Route element={<WorkoutSharePage />} path="w/:token" />
           <Route element={<CancelBookingPage />} path="book/cancel/:token" />
-          <Route element={<Navigate replace to="/sign-in" />} path="*" />
+          {/* Old addresses of the app's screens (e-mails, bookmarks) open them under /app. */}
+          <Route element={<LegacyAppPath />} path="*" />
         </Routes>
       </Suspense>
     );
   }
 
-  // A new User goes through the welcome wizard first; public and legal pages stay reachable.
-  if (
-    !session.user.onboardedAt &&
-    !/^\/(welcome|landing|reset-password|terms|privacy|book|w)(\/|$)/.test(pathname)
-  ) {
+  // Every User has a personal Organization from their first session on (docs/adr/0007).
+  if (!session) {
+    return <Leave to="/sign-in" />;
+  }
+
+  // A new User goes through the welcome wizard first.
+  if (!session.user.onboardedAt && pathname !== '/welcome') {
     return <Navigate replace to="/welcome" />;
   }
 
@@ -162,59 +182,6 @@ export function App() {
           </Suspense>
         }
         path="welcome"
-      />
-      {/* Signed in, the landing page is still there to look at, outside the app's frame. */}
-      <Route
-        element={
-          <Suspense fallback={null}>
-            <LandingPage />
-          </Suspense>
-        }
-        path="landing"
-      />
-      {/* A reset link opened while signed in still works; choosing the password signs out. */}
-      <Route element={<ResetPasswordPage />} path="reset-password" />
-      {/* The Termos and the Política read the same signed in or out (docs/adr/0027). */}
-      <Route
-        element={
-          <Suspense fallback={null}>
-            <TermsPage />
-          </Suspense>
-        }
-        path="terms"
-      />
-      <Route
-        element={
-          <Suspense fallback={null}>
-            <PrivacyPage />
-          </Suspense>
-        }
-        path="privacy"
-      />
-      {/* A booking link reads the same for its owner, outside the app's frame. */}
-      <Route
-        element={
-          <Suspense fallback={null}>
-            <BookingPage />
-          </Suspense>
-        }
-        path="book/:slug"
-      />
-      <Route
-        element={
-          <Suspense fallback={null}>
-            <CancelBookingPage />
-          </Suspense>
-        }
-        path="book/cancel/:token"
-      />
-      <Route
-        element={
-          <Suspense fallback={null}>
-            <WorkoutSharePage />
-          </Suspense>
-        }
-        path="w/:token"
       />
       <Route element={<Layout user={session.user} />}>
         <Route

@@ -7,6 +7,7 @@ import { cn } from '@zapbots/ui/lib/utils';
 
 import { HEADER_ICON } from '../lib/header';
 import { useI18n } from '../lib/i18n';
+import { pageTitle } from '../lib/title';
 import { useChatPanel } from './ChatPanel';
 import { NotificationsMenu } from './NotificationsMenu';
 import { ProfileMenu, type ProfileUser } from './ProfileMenu';
@@ -41,15 +42,19 @@ function AgentButton() {
  */
 export function AppHeader({ user }: { user: ProfileUser }) {
   const { t } = useI18n();
+  const { pathname } = useLocation();
 
   return (
-    <header className="z-20 flex h-(--header-height) shrink-0 items-center gap-2 bg-background pt-[env(safe-area-inset-top)] pr-3 pl-4 text-foreground md:pr-6 print:hidden">
+    <header className="z-20 flex h-(--header-height) shrink-0 items-center gap-2 border-b bg-background pt-[env(safe-area-inset-top)] pr-3 pl-4 text-foreground md:pr-6 print:hidden">
       <Link aria-label={t('rail.caishen')} className="flex items-center gap-2.5 md:hidden" to="/">
         <Logo size={24} />
         <span className="text-base font-semibold tracking-tight">Caishen</span>
       </Link>
 
-      <div className="flex-1" />
+      <p className="hidden flex-1 truncate text-base font-semibold tracking-tight md:block">
+        {pageTitle(pathname)}
+      </p>
+      <div className="flex-1 md:hidden" />
 
       <div className="flex shrink-0 items-center gap-2">
         <NotificationsMenu />

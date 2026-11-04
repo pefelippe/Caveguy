@@ -9,6 +9,7 @@ import { BrowserRouter } from 'react-router-dom';
 
 import { App } from './App';
 import { apolloClient } from './lib/apollo';
+import { APP_BASE, IN_APP } from './lib/area';
 import { I18nProvider } from './lib/i18n';
 import './styles.css';
 
@@ -16,7 +17,7 @@ createRoot(document.getElementById('root')!, rootErrorOptions).render(
   <StrictMode>
     <ApolloProvider client={apolloClient}>
       <I18nProvider>
-        <BrowserRouter>
+        <BrowserRouter basename={IN_APP ? APP_BASE : undefined}>
           {/* With reduced motion, `motion` drops what moves and keeps fades, everywhere. */}
           <MotionConfig reducedMotion="user">
             <App />

@@ -17,7 +17,7 @@ const cap = () => Number(process.env.WHATSAPP_MONTHLY_CAP) || DEFAULT_CAP;
 /** The last message of the month, once the cap is reached. */
 export const capReached = () =>
   `Chegamos ao limite de mensagens do WhatsApp deste mês. Continue pelo app${
-    process.env.CLIENT_ORIGIN ? `: ${process.env.CLIENT_ORIGIN}/chat` : '.'
+    process.env.CLIENT_ORIGIN ? `: ${process.env.CLIENT_ORIGIN}/app/chat` : '.'
   }`;
 
 export class MetaError extends Error {}

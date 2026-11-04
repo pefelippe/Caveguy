@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import { Button } from '@zapbots/ui/components/button';
 
+import { APP_BASE } from '../lib/area';
 import { authClient } from '../lib/auth';
 import { FormError } from './FormError';
 
@@ -18,7 +19,7 @@ export const TASKS_SCOPE = 'https://www.googleapis.com/auth/tasks.readonly';
 /** Sends the User to Google to grant the Tarefas scope, then back to this card. */
 async function connectGoogleTasks(): Promise<null | string> {
   const result = await authClient.linkSocial({
-    callbackURL: `${window.location.origin}/integrations#google-tasks`,
+    callbackURL: `${window.location.origin}${APP_BASE}/integrations#google-tasks`,
     provider: 'google',
     scopes: [TASKS_SCOPE],
   });

@@ -9,7 +9,7 @@ import {
 } from '@zapbots/graphql/client';
 import { CheckIcon, CreditCardIcon, ExternalLinkIcon } from 'lucide-react';
 import { useRef, type ReactNode } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 
 import { PageHeading } from '@zapbots/ui/blocks/field';
 import { PageSkeleton } from '@zapbots/ui/blocks/page-skeleton';
@@ -217,10 +217,10 @@ export function PlanSettings() {
         ))}
       </section>
       <p className="max-w-prose text-sm text-muted-foreground">
-        {t('billing.terms')}{' '}
-        <Link className="text-primary underline-offset-4 hover:underline" to="/terms">
+        {t('billing.terms')} {/* The Termos are the site's, outside the app's router. */}
+        <a className="text-primary underline-offset-4 hover:underline" href="/terms">
           {t('legal.terms')}
-        </Link>
+        </a>
       </p>
     </div>
   );

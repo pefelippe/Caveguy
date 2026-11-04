@@ -20,7 +20,7 @@ import { badInput, requireViewer } from './guards';
 import { requireAdmin } from './settings';
 
 const clientOrigin = () => process.env.CLIENT_ORIGIN ?? 'http://localhost:5173';
-const returnUrl = () => `${clientOrigin()}/plan`;
+const returnUrl = () => `${clientOrigin()}/app/plan`;
 
 async function state(viewer: Parameters<typeof billingState>[0]) {
   return { ...(await billingState(viewer)), configured: stripeConfigured() };

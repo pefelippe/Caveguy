@@ -170,7 +170,9 @@ app.post('/api/inbox/:token', express.json({ limit: '1mb' }), async (req, res) =
 // started it, so the state is checked against it. Back to Integrações, with the reason if not.
 app.get('/api/spotify/callback', async (req, res) => {
   const back = (reason?: string) =>
-    res.redirect(`/integrations${reason ? `?spotify=${encodeURIComponent(reason)}` : ''}#spotify`);
+    res.redirect(
+      `/app/integrations${reason ? `?spotify=${encodeURIComponent(reason)}` : ''}#spotify`
+    );
   const { code, error, state } = req.query;
   if (error || typeof code !== 'string' || typeof state !== 'string') {
     return back('Você não autorizou o Spotify.');
