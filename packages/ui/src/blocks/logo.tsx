@@ -45,12 +45,24 @@ export function Logo({ className, size = 28 }: { className?: string; size?: numb
   );
 }
 
-/** While the app loads: the mark with a bar running under it. Same look as `index.html`. */
+/** The mark in white on a red circle (the seal): the app's sign, in the menu, on sign-in and while it loads. */
+export function LogoBadge({ className, size = 32 }: { className?: string; size?: number }) {
+  return (
+    <span
+      className={cn('grid shrink-0 place-items-center rounded-full bg-seal text-white', className)}
+      style={{ height: size, width: size }}
+    >
+      <Logo size={Math.round(size * 0.55)} />
+    </span>
+  );
+}
+
+/** While the app loads: the badge with a bar running under it. Same look as `index.html`. */
 export function Splash() {
   return (
     <div className="grid min-h-svh place-items-center bg-background" role="status">
       <div className="flex flex-col items-center gap-5 text-header dark:text-foreground">
-        <Logo size={56} />
+        <LogoBadge size={64} />
         <span className="splash-track">
           <span className="splash-bar" />
         </span>

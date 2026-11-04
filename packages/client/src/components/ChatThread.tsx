@@ -5,6 +5,7 @@ import {
   type MessageFieldsFragment,
 } from '@zapbots/graphql/client';
 import {
+  ArrowRightIcon,
   ArrowUpIcon,
   CheckIcon,
   CopyIcon,
@@ -31,7 +32,7 @@ import {
 } from 'react';
 import { useLocation } from 'react-router-dom';
 
-import { Logo } from '@zapbots/ui/blocks/logo';
+import { LogoBadge } from '@zapbots/ui/blocks/logo';
 import { Button } from '@zapbots/ui/components/button';
 import {
   DropdownMenu,
@@ -293,26 +294,28 @@ export function ChatThread({
       >
         {empty &&
           !page && (
-            // After Mercado Pago's: the greeting large on top, the suggestions at the foot as one list.
-            <div className="flex flex-1 flex-col justify-between gap-8 pt-4">
-              <p className="text-2xl leading-tight font-semibold tracking-tight text-balance">
-                {greeting ? `Olá, ${greeting}!` : 'Olá!'}
-                <br />
-                Como posso te ajudar?
-              </p>
+            // The mark, the greeting and the suggestions as one block in the middle of the panel.
+            <div className="flex flex-1 flex-col justify-center gap-6 py-6">
+              <div className="flex flex-col items-center gap-3 text-center">
+                <BotGlyph bot={bot.key} size={44} />
+                <p className="text-2xl leading-tight font-semibold tracking-tight text-balance">
+                  {greeting ? `Olá, ${greeting}!` : 'Olá!'}
+                  <br />
+                  Como posso te ajudar?
+                </p>
+              </div>
               {suggestions.length > 0 && (
-                <ul className="flex flex-col gap-0.5 overflow-hidden rounded-2xl">
+                <ul className="flex flex-col gap-1">
                   {suggestions.map(suggestion => (
                     <li key={suggestion.text}>
                       <Button
-                        className="h-auto w-full justify-start gap-3 rounded-none bg-muted px-3 py-3 text-left text-sm font-normal whitespace-normal text-foreground hover:bg-accent active:scale-[0.99]"
+                        className="group/suggestion h-auto w-full justify-start gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-normal whitespace-normal text-foreground hover:bg-foreground/5 active:scale-[0.99]"
                         onClick={() => fill(suggestion.text)}
                         variant="ghost"
                       >
-                        <span className="grid size-9 shrink-0 place-items-center rounded-full bg-card text-foreground">
-                          <suggestion.icon className="size-[18px]" />
-                        </span>
-                        <span className="leading-snug">{suggestion.text}</span>
+                        <suggestion.icon className="size-[18px] shrink-0 text-muted-foreground" />
+                        <span className="flex-1 leading-snug">{suggestion.text}</span>
+                        <ArrowRightIcon className="size-4 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover/suggestion:opacity-100 group-focus-visible/suggestion:opacity-100" />
                       </Button>
                     </li>
                   ))}
@@ -323,9 +326,7 @@ export function ChatThread({
         {empty && page && (
           <div className="flex flex-1 flex-col justify-center gap-8 py-6">
             <div className="flex flex-col items-center gap-2 text-center">
-              <span className="mb-3 grid size-14 place-items-center rounded-2xl bg-foreground text-background">
-                <Logo size={28} />
-              </span>
+              <LogoBadge className="mb-3" size={56} />
               <p className="text-3xl font-semibold tracking-tight">
                 {greeting ? `Olá, ${greeting}` : 'Olá'}
               </p>
@@ -337,11 +338,11 @@ export function ChatThread({
               {suggestions.map(suggestion => (
                 <li key={suggestion.text}>
                   <Button
-                    className="h-full min-h-20 w-full items-start justify-start gap-3 rounded-2xl bg-card p-4 text-left text-[0.9375rem] font-normal whitespace-normal text-foreground shadow-[0_1px_3px_rgb(15_23_42/0.06)] hover:bg-card hover:shadow-[0_6px_20px_-8px_rgb(37_99_235/0.35)]"
+                    className="h-full min-h-20 w-full items-start justify-start gap-3 rounded-2xl border bg-card p-4 text-left text-[0.9375rem] font-normal whitespace-normal text-foreground hover:bg-foreground/5"
                     onClick={() => fill(suggestion.text)}
                     variant="ghost"
                   >
-                    <span className="grid size-8 shrink-0 place-items-center rounded-full bg-accent text-primary">
+                    <span className="grid size-8 shrink-0 place-items-center rounded-full bg-foreground/5 text-foreground">
                       <suggestion.icon className="size-4" />
                     </span>
                     <span className="pt-1 leading-snug">{suggestion.text}</span>
@@ -449,7 +450,7 @@ export function ChatThread({
       {page ? (
         <div className="mx-auto w-full max-w-3xl shrink-0 px-1 pt-2">
           <form
-            className="flex flex-col gap-2 rounded-3xl bg-card p-3 pl-4 shadow-[0_12px_40px_-16px_rgb(37_99_235/0.35)] transition-shadow focus-within:shadow-[0_12px_40px_-12px_rgb(37_99_235/0.5)]"
+            className="flex flex-col gap-2 rounded-3xl border bg-card p-3 pl-4 transition-colors focus-within:border-foreground/30"
             onSubmit={onSubmit}
           >
             <Waiting files={files} onRemove={remove} />
@@ -461,7 +462,7 @@ export function ChatThread({
               onChange={event => setDraft(event.target.value)}
               onKeyDown={onKeyDown}
               onPaste={onPaste}
-              placeholder={`Escreva para ${bot.name}…`}
+              placeholder="Pergunte ou conte um gasto…"
               ref={input}
               value={draft}
             />
@@ -478,7 +479,7 @@ export function ChatThread({
               ) : (
                 <Button
                   aria-label="Enviar"
-                  className="size-10 rounded-full"
+                  className={SEND}
                   disabled={Boolean(unavailable) || !canSend}
                   size="icon"
                   type="submit"
@@ -496,7 +497,7 @@ export function ChatThread({
         <>
           {/* After Mercado Pago's: one rounded line, the + on the left and sending on the right. */}
           <form
-            className="mt-4 flex shrink-0 flex-col gap-2 rounded-[28px] border bg-card p-2 transition-colors focus-within:border-primary/50"
+            className="mt-4 flex shrink-0 flex-col gap-2 rounded-[28px] border bg-card p-2 transition-colors focus-within:border-foreground/30"
             onSubmit={onSubmit}
           >
             <Waiting files={files} onRemove={remove} />
@@ -513,7 +514,7 @@ export function ChatThread({
                 onChange={event => setDraft(event.target.value)}
                 onKeyDown={onKeyDown}
                 onPaste={onPaste}
-                placeholder="Pergunte algo"
+                placeholder="Pergunte ou conte um gasto…"
                 ref={input}
                 rows={1}
                 value={draft}
@@ -523,7 +524,7 @@ export function ChatThread({
               ) : (
                 <Button
                   aria-label="Enviar"
-                  className="size-10 shrink-0 rounded-full transition-transform active:scale-95"
+                  className={cn(SEND, 'shrink-0 transition-transform active:scale-95')}
                   disabled={!canSend}
                   size="icon"
                   type="submit"
@@ -541,6 +542,10 @@ export function ChatThread({
     </div>
   );
 }
+
+/** Enviar: ink with something to send, a faint outline with nothing yet (not a dimmed button). */
+const SEND =
+  'size-10 rounded-full disabled:border disabled:bg-transparent disabled:text-muted-foreground disabled:opacity-100';
 
 /** Parar, in place of Enviar while the Bot writes: it keeps what was written so far. */
 function StopButton({ className, onStop }: { className: string; onStop: () => void }) {
@@ -629,7 +634,10 @@ export function AttachMenu({
       <DropdownMenuTrigger asChild>
         <Button
           aria-label="Adicionar à conversa"
-          className={cn('rounded-full', small ? 'size-7' : 'size-9 bg-muted hover:bg-accent')}
+          className={cn(
+            'rounded-full text-muted-foreground hover:bg-foreground/5 hover:text-foreground',
+            small ? 'size-7' : 'size-9'
+          )}
           disabled={disabled}
           size="icon"
           type="button"

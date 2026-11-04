@@ -1,10 +1,9 @@
-import { ArrowUpIcon, SlidersHorizontalIcon } from 'lucide-react';
+import { ArrowUpIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useRef, useState, type ClipboardEvent, type FormEvent } from 'react';
 
 import { Button } from '@zapbots/ui/components/button';
 import { Input } from '@zapbots/ui/components/input';
-import { cn } from '@zapbots/ui/lib/utils';
 
 import { CHAT_SUGGESTIONS, useChatPanel } from '../components/ChatPanel';
 import { AttachMenu, Waiting } from '../components/ChatThread';
@@ -15,8 +14,7 @@ import {
   pastedFiles,
   type ChatAttachment,
 } from '../lib/attachments';
-import { HOME_CARDS, rise, SIZE_CLASS, stagger } from '../home/cards';
-import { CustomizeHome, useHomeLayout } from '../home/CustomizeHome';
+import { rise, stagger } from '../home/cards';
 import { useI18n } from '../lib/i18n';
 
 /**
@@ -63,13 +61,13 @@ function Ask({ name }: { name: string }) {
   };
 
   return (
-    <motion.section className="flex flex-col gap-5 pt-2 pb-3 md:pt-6" variants={rise}>
+    <motion.section className="flex flex-col items-center gap-5 text-center" variants={rise}>
       <div className="flex flex-col gap-1">
         <p className="text-sm text-muted-foreground first-letter:uppercase">{date}</p>
         <h1 className="text-4xl md:text-5xl">{t('welcome.hello', { name })}</h1>
       </div>
       <form
-        className="flex h-14 w-full items-center gap-2 rounded-full border bg-card pr-2 pl-3 ring-seal/40 transition-shadow focus-within:ring-2"
+        className="flex h-14 w-full items-center gap-2 rounded-full border bg-card pr-2 pl-3 text-left ring-seal/40 transition-shadow focus-within:ring-2"
         onSubmit={onSubmit}
       >
         <AttachMenu
@@ -116,7 +114,7 @@ function Ask({ name }: { name: string }) {
           {error && <p className="text-sm text-destructive">{error}</p>}
         </div>
       )}
-      <div className="-mt-1 flex flex-wrap gap-2">
+      <div className="-mt-1 flex flex-wrap justify-center gap-2">
         {CHAT_SUGGESTIONS.map(suggestion => (
           <Button
             className="h-8 rounded-full px-3 font-normal text-muted-foreground hover:text-foreground"
@@ -133,64 +131,16 @@ function Ask({ name }: { name: string }) {
   );
 }
 
-/**
- * The Página inicial: the greeting and the line to ask the Caishen on top, then the cards the User
- * chose, from every area, in their order (Personalizar), each leading to its screen.
- */
+/** The Página inicial: only the greeting and the line to ask the Caishen, in the middle of the screen. */
 export function DashboardPage({ user }: { user: { name: string } }) {
-  const { t } = useI18n();
-  const { change, layout } = useHomeLayout();
-  const [customizing, setCustomizing] = useState(false);
-  const shown = layout?.filter(card => !card.hidden) ?? [];
-
   return (
     <motion.div
       animate="shown"
-      className="mx-auto flex w-full max-w-5xl flex-col gap-5"
+      className="mx-auto flex min-h-[calc(100svh-var(--header-height)-8rem)] w-full max-w-3xl flex-col justify-center"
       initial="hidden"
       variants={stagger}
     >
       <Ask name={user.name.split(' ')[0]!} />
-
-      {layout && (
-        <>
-          <motion.div className="-mb-2 flex justify-end" variants={rise}>
-            <Button onClick={() => setCustomizing(true)} size="sm" variant="ghost">
-              <SlidersHorizontalIcon />
-              {t('home.customize')}
-            </Button>
-          </motion.div>
-
-          {shown.length === 0 ? (
-            <p className="py-10 text-center text-sm text-muted-foreground">
-              {t('home.customize.empty')}
-            </p>
-          ) : (
-            <div className="grid gap-5 lg:grid-cols-3">
-              {shown.map(({ key }) => {
-                const { Component, area, size } = HOME_CARDS[key];
-                return (
-                  <motion.div
-                    className={cn('min-w-0', SIZE_CLASS[size])}
-                    data-area={area}
-                    key={key}
-                    variants={rise}
-                  >
-                    <Component />
-                  </motion.div>
-                );
-              })}
-            </div>
-          )}
-
-          <CustomizeHome
-            layout={layout}
-            onChange={change}
-            onOpenChange={setCustomizing}
-            open={customizing}
-          />
-        </>
-      )}
     </motion.div>
   );
 }

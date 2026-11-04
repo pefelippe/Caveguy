@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { Field } from '@zapbots/ui/blocks/field';
-import { Logo } from '@zapbots/ui/blocks/logo';
+import { LogoBadge } from '@zapbots/ui/blocks/logo';
 import { Button } from '@zapbots/ui/components/button';
 import { Card } from '@zapbots/ui/components/card';
 import { Progress } from '@zapbots/ui/components/progress';
@@ -78,7 +78,7 @@ export function WelcomePage({ user }: { user: { name: string; timezone?: string 
     <main className="min-h-svh bg-background">
       <div className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-8 md:py-12">
         <div className="flex items-center justify-between gap-4">
-          <Logo />
+          <LogoBadge size={40} />
           <Button disabled={loading} onClick={() => void done()} variant="ghost">
             {t('onboarding.skip')}
           </Button>

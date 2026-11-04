@@ -3,7 +3,7 @@ import { AnimatePresence, MotionConfig, motion, type Variants } from 'motion/rea
 import { type FormEvent, type ReactNode, useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
-import { Logo } from '@zapbots/ui/blocks/logo';
+import { LogoBadge } from '@zapbots/ui/blocks/logo';
 import { Button } from '@zapbots/ui/components/button';
 import { Checkbox } from '@zapbots/ui/components/checkbox';
 import { Input } from '@zapbots/ui/components/input';
@@ -560,7 +560,7 @@ function AuthCard({
           transition={{ duration: 0.5, ease: EASE }}
         >
           <Link className="flex items-center gap-2.5 text-header" to="/">
-            <Logo size={24} />
+            <LogoBadge size={28} />
             <span className="text-lg font-semibold tracking-tight text-foreground">Caishen</span>
           </Link>
         </motion.header>
@@ -574,11 +574,11 @@ function AuthCard({
           >
             <motion.div className="flex flex-col items-center text-center" variants={stagger}>
               <motion.div
-                className="grid size-16 place-items-center rounded-2xl bg-foreground text-header-foreground shadow-lg"
+                className="rounded-full"
                 variants={pop}
                 whileHover={{ rotate: -6, scale: 1.06 }}
               >
-                <Logo size={30} />
+                <LogoBadge size={64} />
               </motion.div>
               <motion.h1 className="mt-6 text-3xl font-bold tracking-tight" variants={rise}>
                 {title}

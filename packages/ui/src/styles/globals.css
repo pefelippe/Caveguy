@@ -18,13 +18,13 @@
  * and a faint tint on nested panels (a deeper sky,
  * #0077CC, where it is text: #0099FF on white is only 3:1). Loud: Amber Red, the seal, used
  * sparingly: the brand, the Caishen's ink, Finanças and the landing page's calls to act. Text and
- * ordinary buttons are a navy ink, so the red stays rare. No shadow at rest.
+ * ordinary buttons are a neutral black ink, so the red stays rare. No shadow at rest.
  * Pessoal takes the sky; Fitness and the rest keep jade and gold.
  */
 :root {
   --radius: 0.5rem;
-  --ink-black: #0f1b2a;
-  --ink-soft: #24344a;
+  --ink-black: #111113;
+  --ink-soft: #2e2e33;
   --sky: #0099ff;
   --sky-ink: #0077cc;
   --cloud: #fdfdfe;
@@ -42,7 +42,7 @@
   --secondary: #e3ecf5;
   --secondary-foreground: var(--ink-black);
   --muted: #f3f7fb;
-  --muted-foreground: #556273;
+  --muted-foreground: #6b6b70;
   --accent: #e5eef7;
   --accent-foreground: var(--ink-black);
   --destructive: oklch(0.5 0.19 22);
@@ -54,19 +54,19 @@
   --input: #c9d6e3;
   --ring: var(--sky);
 
-  /* The menu on the left sits on the same paper as the screen; the open entry takes the sky. */
-  --sidebar: var(--background);
-  --sidebar-foreground: var(--ink-soft);
-  --sidebar-primary: var(--sky-ink);
+  /* The menu on the left is dark ink with light text, in both themes; the open entry takes the sky. */
+  --sidebar: var(--ink-black);
+  --sidebar-foreground: #c9c9ce;
+  --sidebar-primary: #4db3ff;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #e1ebf5;
-  --sidebar-accent-foreground: var(--ink-black);
+  --sidebar-accent: #232326;
+  --sidebar-accent-foreground: #ffffff;
   --sidebar-border: transparent;
   --sidebar-ring: var(--sky);
 
   /* The dark bar of the sign-in and the send buttons: plain ink. */
   --header: var(--ink-black);
-  --header-foreground: #f2f6fb;
+  --header-foreground: #f4f4f5;
   --header-muted: var(--ink-soft);
   /* The highlight on ink: the gold of the ingot. */
   --gold: #d9a63e;
@@ -95,36 +95,36 @@
   --sky: #33adff;
   --sky-ink: #5cbcff;
   --seal: #ff5a3a;
-  --background: #0a121d;
-  --foreground: #f2f6fb;
-  --card: #111b28;
-  --card-foreground: #f2f6fb;
-  --popover: #162231;
-  --popover-foreground: #f2f6fb;
-  --primary: #f2f6fb;
-  --primary-foreground: #0f1b2a;
-  --secondary: #1a2634;
-  --secondary-foreground: #f2f6fb;
-  --muted: #172230;
-  --muted-foreground: #9aa8b8;
-  --accent: #1f2c3c;
-  --accent-foreground: #f2f6fb;
+  --background: #0b0b0c;
+  --foreground: #f4f4f5;
+  --card: #141416;
+  --card-foreground: #f4f4f5;
+  --popover: #1a1a1d;
+  --popover-foreground: #f4f4f5;
+  --primary: #f4f4f5;
+  --primary-foreground: #111113;
+  --secondary: #1c1c1f;
+  --secondary-foreground: #f4f4f5;
+  --muted: #18181b;
+  --muted-foreground: #a1a1a8;
+  --accent: #232326;
+  --accent-foreground: #f4f4f5;
   --destructive: oklch(0.65 0.19 22);
   --success: oklch(0.7 0.12 155);
   --warning: oklch(0.76 0.13 75);
-  --border: #223041;
-  --input: #2e3d4f;
+  --border: #27272a;
+  --input: #3a3a40;
   --ring: var(--sky);
 
-  --sidebar: var(--background);
-  --sidebar-foreground: #dfe6ee;
-  --sidebar-primary: var(--sky-ink);
-  --sidebar-accent: #162331;
-  --sidebar-accent-foreground: #f2f6fb;
+  --sidebar: #070708;
+  --sidebar-foreground: #c9c9ce;
+  --sidebar-primary: #4db3ff;
+  --sidebar-accent: #1c1c1f;
+  --sidebar-accent-foreground: #ffffff;
   --sidebar-border: transparent;
   --sidebar-ring: var(--sky);
 
-  --ink-neutral: #f2f6fb;
+  --ink-neutral: #f4f4f5;
   --bot-finance: var(--seal);
   --area-finance: var(--seal);
   --area-personal: var(--sky-ink);

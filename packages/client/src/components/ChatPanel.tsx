@@ -1,4 +1,4 @@
-import { BellIcon, GaugeIcon, ListOrderedIcon, Maximize2Icon, XIcon } from 'lucide-react';
+import { BellIcon, ListOrderedIcon, Maximize2Icon, WalletIcon, XIcon } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -12,13 +12,13 @@ import { BotPanel, PANEL_BUTTON } from './BotPanel';
 import type { Suggestion } from './ChatThread';
 
 const STORAGE_KEY = 'zapbots.chatPanel';
-const WIDTH = 460;
+const WIDTH = 440;
 const EASE = [0.22, 1, 0.36, 1] as const;
 /** Questions offered while a Conversation is still blank. */
 export const CHAT_SUGGESTIONS: Suggestion[] = [
   { icon: BellIcon, text: 'O que merece minha atenção agora?' },
-  { icon: ListOrderedIcon, text: 'Qual das minhas dívidas devo quitar primeiro?' },
-  { icon: GaugeIcon, text: 'Como está meu Score e o que mais pesa nele?' },
+  { icon: WalletIcon, text: 'Quanto sobra este mês?' },
+  { icon: ListOrderedIcon, text: 'Qual dívida devo quitar primeiro?' },
 ];
 
 function storedOpen(): boolean {
@@ -127,7 +127,7 @@ export function ChatPanel({ greeting }: { greeting?: string }) {
         <motion.aside
           animate={shown}
           aria-label={t('chat.panel')}
-          className="fixed inset-0 z-40 flex origin-bottom-right flex-col overflow-hidden bg-card md:inset-auto md:right-6 md:bottom-6 md:h-[min(52rem,calc(100svh-6rem))] md:rounded-3xl md:border md:shadow-[0_24px_60px_-20px_rgb(15_23_42/0.3)]"
+          className="fixed inset-0 z-40 flex origin-bottom-right flex-col overflow-hidden bg-card md:inset-auto md:right-6 md:bottom-6 md:h-[min(52rem,calc(100svh-6rem))] md:rounded-[20px] md:border md:shadow-[0_24px_60px_-20px_rgb(0_0_0/0.25)]"
           exit={hidden}
           initial={hidden}
           key="chat"
@@ -170,6 +170,7 @@ export function ChatPanel({ greeting }: { greeting?: string }) {
               firstMessage={firstMessage}
               greeting={greeting}
               key={blank}
+              onLeave={desktop ? undefined : close}
               startBlank
               suggestions={CHAT_SUGGESTIONS}
             />

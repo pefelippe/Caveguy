@@ -75,7 +75,7 @@ export function Layout({ user }: Props) {
               style={
                 {
                   '--header-height': 'calc(4rem + env(safe-area-inset-top))',
-                  '--sidebar-width': '15.25rem',
+                  '--sidebar-width': '14.5rem',
                   '--sidebar-width-icon': '4.5rem',
                 } as CSSProperties
               }

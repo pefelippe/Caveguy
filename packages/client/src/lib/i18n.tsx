@@ -95,7 +95,7 @@ const STRINGS = {
     en: 'Confirm to delete it. This cannot be undone.',
     pt: 'Confirme para apagar. Não dá para desfazer.',
   },
-  'header.chat': { en: 'Agent', pt: 'Agente' },
+  'header.talk': { en: 'Caishen Chat', pt: 'Caishen Chat' },
   'header.menu': { en: 'Open the menu', pt: 'Abrir o menu' },
   'integrations.title': { en: 'Integrations', pt: 'Integrações' },
   'menu.plan': { en: 'Plan', pt: 'Plano' },

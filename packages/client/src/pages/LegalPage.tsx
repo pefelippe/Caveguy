@@ -2,7 +2,7 @@ import { ArrowLeftIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 
-import { Logo } from '@zapbots/ui/blocks/logo';
+import { LogoBadge } from '@zapbots/ui/blocks/logo';
 import { Button } from '@zapbots/ui/components/button';
 
 import { COMPANY, LEGAL_UPDATED } from '../lib/legal';
@@ -43,7 +43,7 @@ function LegalDocument({
       <header className="border-b bg-card">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
           <Link className="flex items-center gap-2.5 text-header" to="/">
-            <Logo size={24} />
+            <LogoBadge size={28} />
             <span className="text-lg font-semibold tracking-tight text-foreground">Caishen</span>
           </Link>
           <Button asChild size="sm" variant="ghost">

@@ -4,7 +4,7 @@ import { formatDecimal } from '@zapbots/fitness';
 import { PrinterIcon } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 
-import { Logo } from '@zapbots/ui/blocks/logo';
+import { LogoBadge } from '@zapbots/ui/blocks/logo';
 import { PageSkeleton } from '@zapbots/ui/blocks/page-skeleton';
 import { Badge } from '@zapbots/ui/components/badge';
 import { Button } from '@zapbots/ui/components/button';
@@ -30,7 +30,7 @@ export function WorkoutSharePage() {
       <header className="border-b bg-card print:hidden">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
           <Link className="flex items-center gap-2.5 text-header" to="/landing">
-            <Logo size={24} />
+            <LogoBadge size={28} />
             <span className="text-lg font-semibold tracking-tight text-foreground">Caishen</span>
           </Link>
           {plan && (

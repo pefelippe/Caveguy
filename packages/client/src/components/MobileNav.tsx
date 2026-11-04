@@ -9,6 +9,7 @@ import { cn } from '@zapbots/ui/lib/utils';
 
 import { useI18n } from '../lib/i18n';
 import { activeItem, useNav, type NavItem } from '../lib/nav';
+import { UnreadBadge, useAlerts } from './Alerts';
 import { useChatPanel } from './ChatPanel';
 
 /** The four screens a thumb reaches without opening anything; the Agente sits in the middle. */
@@ -35,6 +36,7 @@ export function MobileNav() {
   const nav = useNav();
   const { t } = useI18n();
   const { open: chatOpen, toggle } = useChatPanel();
+  const { unread } = useAlerts();
   const [more, setMore] = useState(false);
 
   const all = [...nav.main, ...nav.groups.flatMap(group => group.items), ...nav.account];
@@ -68,12 +70,13 @@ export function MobileNav() {
             <Button
               aria-label={t('chat.toggle')}
               aria-pressed={chatOpen || onChat}
-              className="size-12 rounded-full transition-transform active:scale-95 [&_svg]:size-[22px]"
+              className="relative size-12 rounded-full transition-transform active:scale-95 [&_svg]:size-[22px]"
               disabled={onChat}
               onClick={toggle}
               size="icon"
             >
               <AgentIcon />
+              <UnreadBadge className="-top-0.5 -right-0.5" count={unread.length} />
             </Button>
           </div>
           {tab(TABS[2]!)}
