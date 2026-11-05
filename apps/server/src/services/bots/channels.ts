@@ -9,7 +9,7 @@ export type OutsideChannel = 'WHATSAPP';
 
 const TITLES: Record<OutsideChannel, string> = { WHATSAPP: 'WhatsApp' };
 
-/** The Organization's Conversation on `channel`, created on its first message. */
+/** The Viewer's own Conversation on `channel` in their Organization, created on its first message. */
 export async function channelConversation(
   viewer: Viewer,
   channel: OutsideChannel
@@ -21,7 +21,8 @@ export async function channelConversation(
       .where(
         and(
           eq(schema.conversation.organizationId, viewer.organizationId),
-          eq(schema.conversation.channel, channel)
+          eq(schema.conversation.channel, channel),
+          eq(schema.conversation.userId, viewer.userId)
         )
       );
     return row?.id;
@@ -32,7 +33,7 @@ export async function channelConversation(
   // Two first messages at once: the lock lets one create it, and the other finds it.
   return db.transaction(async tx => {
     await tx.execute(
-      sql`select pg_advisory_xact_lock(hashtext(${`channel:${viewer.organizationId}:${channel}`}))`
+      sql`select pg_advisory_xact_lock(hashtext(${`channel:${viewer.organizationId}:${viewer.userId}:${channel}`}))`
     );
     const [row] = await tx
       .select({ id: schema.conversation.id })
@@ -40,7 +41,8 @@ export async function channelConversation(
       .where(
         and(
           eq(schema.conversation.organizationId, viewer.organizationId),
-          eq(schema.conversation.channel, channel)
+          eq(schema.conversation.channel, channel),
+          eq(schema.conversation.userId, viewer.userId)
         )
       );
     if (row) return row.id;
@@ -50,6 +52,8 @@ export async function channelConversation(
         botId: bot!.id,
         channel,
         organizationId: viewer.organizationId,
+        // Each Member of a shared Organization talks in their own thread (docs/adr/0038).
+        userId: viewer.userId,
         // Not the default title, so the first message does not rename it.
         title: TITLES[channel],
       })

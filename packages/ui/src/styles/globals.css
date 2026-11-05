@@ -16,7 +16,7 @@
 /*
  * The Caveman look (docs/adr/0035), after the grug app: a neutral grey screen, white cards drawn by
  * a dark line with a hard offset shadow, like a sticker, and titles in a hand-drawn face (Patrick
- * Hand). The menu and the dark theme are plain black, never brown.
+ * Hand). The menu is white in the light theme and black in the dark one, never brown.
  *
  * Two quiet colours and one loud. Quiet: Cloudy White (#FDFDFE) for the screen, the menu and
  * the cards (set apart by a border), and Sky Blue (#0099FF) for the open menu entry, links, focus
@@ -68,13 +68,14 @@
   --input: #c9c9cf;
   --ring: var(--sky);
 
-  /* The menu on the left is dark ink with light text, in both themes; the open entry takes the sky. */
-  --sidebar: var(--ink-black);
-  --sidebar-foreground: #d4d4d8;
-  --sidebar-primary: #4db3ff;
+  /* The menu on the left is white over the grey screen, set apart by the step in tone; the open
+     entry is a grey step with a red mark. Black in the dark theme. */
+  --sidebar: #ffffff;
+  --sidebar-foreground: #3f3f46;
+  --sidebar-primary: var(--ink-black);
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #26262b;
-  --sidebar-accent-foreground: #ffffff;
+  --sidebar-accent: #ececee;
+  --sidebar-accent-foreground: var(--ink-black);
   --sidebar-border: transparent;
   --sidebar-ring: var(--sky);
 
@@ -134,7 +135,7 @@
 
   --sidebar: #000000;
   --sidebar-foreground: #d4d4d8;
-  --sidebar-primary: #4db3ff;
+  --sidebar-primary: #f4f4f5;
   --sidebar-accent: #1f1f23;
   --sidebar-accent-foreground: #ffffff;
   --sidebar-border: transparent;

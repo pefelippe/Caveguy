@@ -42,6 +42,24 @@ export async function deleteAccount(viewer: Viewer, confirm: string): Promise<vo
     : [];
   const alone = shared.filter(row => row.members === 1).map(row => row.organizationId);
 
+  // A shared Organization is never left without an owner, nor its subscription with no one to stop it.
+  const others = shared.filter(row => row.members > 1).map(row => row.organizationId);
+  if (others.length) {
+    const owners = await db
+      .select({ organizationId: schema.member.organizationId, userId: schema.member.userId })
+      .from(schema.member)
+      .where(and(inArray(schema.member.organizationId, others), eq(schema.member.role, 'owner')));
+    const soleOwner = others.some(id => {
+      const ofOrganization = owners.filter(row => row.organizationId === id);
+      return ofOrganization.length === 1 && ofOrganization[0]!.userId === viewer.userId;
+    });
+    if (soleOwner) {
+      throw new AccountError(
+        'Você é o único dono de uma organização com outros membros. Passe a posse para alguém ou remova os membros antes de excluir a conta.'
+      );
+    }
+  }
+
   if (alone.length) {
     const subscriptions = await db
       .select()

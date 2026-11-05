@@ -8,6 +8,7 @@ import { cn } from '@zapbots/ui/lib/utils';
 
 import { refreshOnReturn } from '../lib/apollo';
 import { isRailPath } from '../lib/nav';
+import { useOrganizationReload } from '../lib/organizations';
 import { AgentButton, AppHeader } from './AppHeader';
 import { AppSidebar } from './AppSidebar';
 import { ChatPanel, ChatPanelProvider } from './ChatPanel';
@@ -51,6 +52,8 @@ export function Layout({ user }: Props) {
   }, [rail]);
 
   useEffect(refreshOnReturn, []);
+  // Another tab switched Organization: this one follows (docs/adr/0038).
+  useOrganizationReload();
 
   const changeOpen = (next: boolean) => {
     setOpen(next);

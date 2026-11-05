@@ -303,7 +303,8 @@ braço ou coxa.
 
 **Organização** (`Organization`):
 O espaço que isola dados; todo registro pertence a exatamente uma Organização.
-Cada Usuário ganha uma Organização pessoal no primeiro login. Tem página
+Cada Usuário ganha uma Organização pessoal no primeiro login e pode entrar, por
+Convite, na de outra pessoa ou empresa; os Membros veem tudo dela. Tem página
 própria, com o nome e os Usuários; o Plano é dela, mas tem página à parte.
 _Avoid_: tenant, workspace, conta
 
@@ -319,6 +320,12 @@ O nível de permissão de um Membro: `admin` (gerencia Membros e configurações
 `member` (uso normal). Quem cria a Organização é `owner`, um `admin` que não pode
 ser removido.
 _Avoid_: perfil, permissão
+
+**Convite** (`Invitation`):
+O pedido para um e-mail entrar numa Organização com um Papel, feito por um `owner`
+ou `admin`. Vai por e-mail e como link; vale 7 dias e só a conta com aquele e-mail
+aceita. Quem aceita vira Membro e pode trocar de Organização pelo menu da foto.
+_Avoid_: convite de equipe, invite
 
 ### Plano
 

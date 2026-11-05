@@ -1,41 +1,14 @@
 import { APP_NAME } from '@zapbots/finance';
 import { createHmac } from 'node:crypto';
 
-import { auth } from '@zapbots/auth';
 import { closeDb } from '@zapbots/database';
 import { afterAll, describe, expect, it } from 'vitest';
+
+import { browser } from '../../test/helpers';
 
 afterAll(async () => {
   await closeDb();
 });
-
-const ORIGIN = process.env.CLIENT_ORIGIN ?? 'http://localhost:5173';
-
-/** A browser talking to Better Auth's own handler, keeping its cookies. */
-function browser() {
-  const cookies = new Map<string, string>();
-  return async (path: string, body?: unknown) => {
-    const response = await auth.handler(
-      new Request(`${ORIGIN}/api/auth${path}`, {
-        body: body === undefined ? undefined : JSON.stringify(body),
-        headers: {
-          'content-type': 'application/json',
-          cookie: [...cookies].map(([name, value]) => `${name}=${value}`).join('; '),
-          origin: ORIGIN,
-        },
-        method: body === undefined ? 'GET' : 'POST',
-      })
-    );
-    for (const line of response.headers.getSetCookie()) {
-      const [pair] = line.split(';');
-      const [name, ...value] = pair!.split('=');
-      if (/max-age=0/i.test(line)) cookies.delete(name!);
-      else cookies.set(name!, value.join('='));
-    }
-    const text = await response.text();
-    return { body: text ? JSON.parse(text) : null, status: response.status };
-  };
-}
 
 /** The current 6-digit code for a base32 secret, as an authenticator app works it out (RFC 6238). */
 function totp(base32: string) {

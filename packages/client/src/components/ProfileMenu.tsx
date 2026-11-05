@@ -1,16 +1,28 @@
 import {
+  BuildingIcon,
   ChevronDownIcon,
   CreditCardIcon,
   LanguagesIcon,
   LogOutIcon,
+  PlusIcon,
   SettingsIcon,
   UserIcon,
   type LucideIcon,
 } from 'lucide-react';
+import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@zapbots/ui/components/avatar';
 import { Button } from '@zapbots/ui/components/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@zapbots/ui/components/dialog';
+import { Input } from '@zapbots/ui/components/input';
 import { Tabs, TabsList, TabsTrigger } from '@zapbots/ui/components/tabs';
 import {
   DropdownMenu,
@@ -32,6 +44,7 @@ import { HEADER_ICON } from '../lib/header';
 
 import { authClient } from '../lib/auth';
 import { isLanguage, LANGUAGES, useI18n, type Language, type StringKey } from '../lib/i18n';
+import { reloadOrganization, switchOrganization } from '../lib/organizations';
 import { useThemeChoice, type ThemeChoice } from '../lib/theme';
 
 export interface ProfileUser {
@@ -90,6 +103,10 @@ export function ProfileMenu({ user }: { user: ProfileUser }) {
   const { language, setLanguage, t } = useI18n();
   const navigate = useNavigate();
   const { choice, setChoice } = useThemeChoice();
+  const { data: session } = authClient.useSession();
+  const { data: organizations } = authClient.useListOrganizations();
+  const active = session?.session.activeOrganizationId ?? '';
+  const [creating, setCreating] = useState(false);
 
   // Saved on the User too: the session's language wins on the next load (App.tsx).
   const changeLanguage = async (next: Language) => {
@@ -122,6 +139,34 @@ export function ProfileMenu({ user }: { user: ProfileUser }) {
             <div className="truncate text-sm text-muted-foreground">{user.email}</div>
           </div>
         </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {/* Every Organization the User is a Member of; picking one reloads the app in it. */}
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger className="gap-3 px-3 py-2.5">
+            <BuildingIcon className="size-[18px] text-muted-foreground" />
+            {t('orgs.label')}
+            <span className="ml-auto max-w-32 truncate pr-1 text-muted-foreground">
+              {organizations?.find(organization => organization.id === active)?.name}
+            </span>
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent className="max-w-72">
+            <DropdownMenuRadioGroup
+              onValueChange={id => id !== active && void switchOrganization(id)}
+              value={active}
+            >
+              {organizations?.map(organization => (
+                <DropdownMenuRadioItem key={organization.id} value={organization.id}>
+                  <span className="truncate">{organization.name}</span>
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="gap-2" onSelect={() => setCreating(true)}>
+              <PlusIcon className="size-4" />
+              {t('orgs.new')}
+            </DropdownMenuItem>
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           {ACCOUNT.map(entry => (
@@ -176,6 +221,65 @@ export function ProfileMenu({ user }: { user: ProfileUser }) {
           {t('profile.signOut')}
         </DropdownMenuItem>
       </DropdownMenuContent>
+      <NewOrganization onOpenChange={setCreating} open={creating} />
     </DropdownMenu>
+  );
+}
+
+/** Nova organização: a name, then it is created, made active and opened. */
+function NewOrganization({
+  onOpenChange,
+  open,
+}: {
+  onOpenChange: (open: boolean) => void;
+  open: boolean;
+}) {
+  const { t } = useI18n();
+  const [name, setName] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<StringKey | null>(null);
+
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    setBusy(true);
+    setError(null);
+    const result = await authClient.organization.create({
+      name: name.trim(),
+      slug: `org-${crypto.randomUUID()}`,
+    });
+    setBusy(false);
+    if (!result.error) return reloadOrganization();
+    setError(
+      result.error.code === 'YOU_HAVE_REACHED_THE_MAXIMUM_NUMBER_OF_ORGANIZATIONS'
+        ? 'orgs.limit'
+        : 'orgs.failed'
+    );
+  };
+
+  return (
+    <Dialog onOpenChange={onOpenChange} open={open}>
+      <DialogContent className="sm:max-w-md">
+        <form className="flex flex-col gap-4" onSubmit={event => void submit(event)}>
+          <DialogHeader>
+            <DialogTitle>{t('orgs.newTitle')}</DialogTitle>
+            <DialogDescription>{t('orgs.newText')}</DialogDescription>
+          </DialogHeader>
+          <Input
+            aria-label={t('org.name')}
+            autoFocus
+            maxLength={80}
+            onChange={event => setName(event.target.value)}
+            placeholder={t('org.name')}
+            value={name}
+          />
+          {error && <p className="text-sm text-destructive">{t(error)}</p>}
+          <DialogFooter>
+            <Button disabled={busy || !name.trim()} type="submit">
+              {t('orgs.create')}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

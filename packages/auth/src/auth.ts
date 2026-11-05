@@ -3,13 +3,16 @@ import { db, schema } from '@zapbots/database';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { organization, twoFactor } from 'better-auth/plugins';
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, count, eq } from 'drizzle-orm';
 
-import { sendResetPasswordEmail } from './email';
+import { sendInvitationEmail, sendResetPasswordEmail } from './email';
 import { googleEnabled, signInMethods } from './methods';
 import { ensurePersonalOrganization } from './personal';
 
 const clientOrigin = process.env.CLIENT_ORIGIN ?? 'http://localhost:5173';
+
+/** How many Organizations a User may own, their personal one included. */
+export const MAX_OWNED_ORGANIZATIONS = 5;
 
 export const auth = betterAuth({
   // Two ways in: email and password, and Google. Linking lets someone who signed up with a password
@@ -84,7 +87,29 @@ export const auth = betterAuth({
     sendResetPassword: ({ url, user }) => sendResetPasswordEmail(user.email, url),
   },
   plugins: [
-    organization(),
+    // Members from outside, by invitation, and switching between Organizations (docs/adr/0038).
+    organization({
+      cancelPendingInvitationsOnReInvite: true,
+      invitationExpiresIn: 7 * 24 * 60 * 60,
+      // Each Organization has its own free Limits: a few of one's own, not a way around them.
+      organizationLimit: async user => {
+        const [owned] = await db
+          .select({ total: count() })
+          .from(schema.member)
+          .where(and(eq(schema.member.userId, user.id), eq(schema.member.role, 'owner')));
+        return (owned?.total ?? 0) >= MAX_OWNED_ORGANIZATIONS;
+      },
+      // Sign-up never verifies the address; an invitation is accepted only by the account whose
+      // e-mail it names.
+      requireEmailVerificationOnInvitation: false,
+      sendInvitationEmail: ({ email, id, inviter, organization }) =>
+        sendInvitationEmail({
+          email,
+          id,
+          inviterName: inviter.user.name || inviter.user.email,
+          organizationName: organization.name,
+        }),
+    }),
     signInMethods(),
     // A code from an authenticator app after the password, once the User turns it on in Perfil
     // (docs/adr/0026). Google sign-in is left to Google's own verification.

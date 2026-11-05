@@ -24,7 +24,7 @@ import { activeItem, useNav, type NavGroup, type NavItem } from '../lib/nav';
 // the same edge as the mark on top. On the dark menu the open entry is white on a lighter ink; hovering one gives it the same ground. Collapsed,
 // each is its icon alone.
 const ITEM =
-  'h-10 gap-3 rounded-lg px-3 text-[0.9375rem] font-normal text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:font-medium data-[active=true]:text-sidebar-accent-foreground hover:data-[active=true]:bg-sidebar-accent hover:data-[active=true]:text-sidebar-accent-foreground [&>svg]:size-5 group-data-[collapsible=icon]:size-10! group-data-[collapsible=icon]:p-[10px]!';
+  'h-10 gap-3 rounded-lg px-3 text-[0.9375rem] font-normal text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:font-medium data-[active=true]:text-sidebar-accent-foreground data-[active=true]:before:absolute data-[active=true]:before:inset-y-2.5 data-[active=true]:before:left-0 data-[active=true]:before:w-[3px] data-[active=true]:before:rounded-full data-[active=true]:before:bg-seal hover:data-[active=true]:bg-sidebar-accent hover:data-[active=true]:text-sidebar-accent-foreground [&>svg]:size-5 group-data-[collapsible=icon]:size-10! group-data-[collapsible=icon]:p-[10px]!';
 
 function NavItems({ active, items }: { active: NavItem | undefined; items: NavItem[] }) {
   const { isMobile, setOpenMobile } = useSidebar();
@@ -76,7 +76,7 @@ function Group({ active, group }: { active: NavItem | undefined; group: NavGroup
       className="p-0 [&_[data-sidebar=menu-button]>svg]:text-(--area,currentColor)"
       data-area={group.area}
     >
-      <SidebarGroupLabel className="mt-6 mb-1 h-6 px-3 text-[0.8125rem] font-medium text-sidebar-foreground/60">
+      <SidebarGroupLabel className="mt-6 mb-1 h-6 px-3 text-[0.8125rem] font-medium text-sidebar-foreground/80">
         {group.label}
       </SidebarGroupLabel>
       <SidebarGroupContent>

@@ -8,6 +8,7 @@ import { APP_BASE, IN_APP } from './lib/area';
 import { authClient } from './lib/auth';
 import { isLanguage, useI18n } from './lib/i18n';
 import { DOCUMENTS_ENABLED } from './lib/nav';
+import { forgetNext, pendingNext, rememberNext } from './lib/organizations';
 import { useAppliedTheme } from './lib/theme';
 import { useDocumentTitle } from './lib/title';
 import { LoginPage, ResetPasswordPage } from './pages/LoginPage';
@@ -37,6 +38,7 @@ const MoneyPage = page(() => import('./pages/MoneyPage'), 'MoneyPage');
 const PayoffPage = page(() => import('./pages/PayoffPage'), 'PayoffPage');
 const DashboardPage = page(() => import('./pages/DashboardPage'), 'DashboardPage');
 const WelcomePage = page(() => import('./pages/WelcomePage'), 'WelcomePage');
+const InvitePage = page(() => import('./pages/InvitePage'), 'InvitePage');
 const ChatPage = page(() => import('./pages/ChatPage'), 'ChatPage');
 const JobsPage = page(() => import('./pages/JobsPage'), 'JobsPage');
 const JobPage = page(() => import('./pages/JobPage'), 'JobPage');
@@ -123,6 +125,12 @@ export function App() {
   // The site stays light; the User's theme is the app's.
   useAppliedTheme(Boolean(session) && IN_APP);
 
+  // The address kept while signed out (an invitation) is opened once, then forgotten.
+  const next = session && IN_APP ? pendingNext() : null;
+  useEffect(() => {
+    if (next && pathname === next) forgetNext();
+  }, [next, pathname]);
+
   // Signed in, the User's own language wins over the one this browser remembered.
   useEffect(() => {
     if (isLanguage(language)) setLanguage(language);
@@ -157,11 +165,17 @@ export function App() {
 
   // Every User has a personal Organization from their first session on (docs/adr/0007).
   if (!session) {
+    // An invitation's link opened signed out comes back after the sign-in (docs/adr/0038).
+    rememberNext(pathname);
     return <Leave to="/sign-in" />;
   }
 
-  // A new User goes through the welcome wizard first.
-  if (!session.user.onboardedAt && pathname !== '/welcome') {
+  if (next && pathname !== next) {
+    return <Navigate replace to={next} />;
+  }
+
+  // A new User goes through the welcome wizard first; an invitation is answered before it.
+  if (!session.user.onboardedAt && pathname !== '/welcome' && !pathname.startsWith('/invite/')) {
     return <Navigate replace to="/welcome" />;
   }
 
@@ -175,6 +189,14 @@ export function App() {
           </Suspense>
         }
         path="welcome"
+      />
+      <Route
+        element={
+          <Suspense fallback={<Splash />}>
+            <InvitePage />
+          </Suspense>
+        }
+        path="invite/:id"
       />
       <Route element={<Layout user={session.user} />}>
         <Route

@@ -67,3 +67,44 @@ export async function sendResetPasswordEmail(email: string, url: string): Promis
     });
   }
 }
+
+/**
+ * Sends an invitation to join an Organization (docs/adr/0038). Without RESEND_API_KEY it is printed
+ * on the server console. A refused send is only logged: whoever invited can still copy the link.
+ */
+export async function sendInvitationEmail({
+  email,
+  id,
+  inviterName,
+  organizationName,
+}: {
+  email: string;
+  id: string;
+  inviterName: string;
+  organizationName: string;
+}): Promise<void> {
+  const url = `${clientOrigin}/app/invite/${id}`;
+  const intro = `${inviterName} convidou você para a organização ${organizationName} no ${APP_NAME}. Lá vocês veem e cuidam dos mesmos dados.`;
+  const outro = 'O convite vale por 7 dias e só pode ser aceito com este e-mail.';
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    console.log(`✉️  invitation for ${email} to ${organizationName}: ${url}`);
+    return;
+  }
+  const escape = (text: string) => text.replace(/[&<>"']/g, char => `&#${char.charCodeAt(0)};`);
+  const response = await fetch('https://api.resend.com/emails', {
+    body: JSON.stringify({
+      from: process.env.EMAIL_FROM ?? `${APP_NAME} <onboarding@resend.dev>`,
+      html: `<p>${escape(intro)}</p><p><a href="${url}">Ver o convite</a></p><p>${outro}</p>`,
+      subject: `Convite para ${organizationName} no ${APP_NAME}`,
+      text: `${intro}\n\n${url}\n\n${outro}`,
+      to: email,
+    }),
+    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+    method: 'POST',
+  }).catch((error: unknown) => error);
+  if (!(response instanceof Response) || !response.ok) {
+    const detail = response instanceof Response ? await response.text() : String(response);
+    console.error(`Invitation e-mail not sent: ${detail}`);
+  }
+}

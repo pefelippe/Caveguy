@@ -319,9 +319,10 @@ const PRIVACY: Clause[] = [
           <strong>Fitness (dados de saúde):</strong> fichas de treino e os treinos feitos, refeições
           com calorias e macros, as suas metas de macros, as noites de sono e medidas do corpo
           (peso, gordura, circunferências). São dados pessoais sensíveis (art. 11 da LGPD): você os
-          informa por vontade própria, eles servem só para mostrar a você o seu próprio
-          acompanhamento, não são compartilhados com ninguém nem usados para publicidade ou perfil,
-          e saem junto com a sua conta. Você pode apagar cada registro quando quiser.
+          informa por vontade própria, eles servem só para mostrar o seu acompanhamento, não são
+          usados para publicidade ou perfil e saem junto com a sua conta. Na sua organização pessoal
+          só você os vê; se você os registrar numa organização compartilhada, os membros dela também
+          veem. Você pode apagar cada registro quando quiser.
         </li>
         <li>
           <strong>Fichas para outras pessoas:</strong> se você monta fichas para alunos ou clientes,
@@ -476,6 +477,14 @@ const PRIVACY: Clause[] = [
           Alguns desses operadores ficam fora do Brasil, principalmente nos Estados Unidos. Essas
           transferências seguem o art. 33 da LGPD, com contratos e salvaguardas dos próprios
           operadores. Também podemos compartilhar dados quando a lei ou uma autoridade exigir.
+        </p>
+        <p>
+          <strong>Organizações compartilhadas:</strong> você pode convidar pessoas para uma
+          organização sua ou entrar na de outra pessoa ou empresa. Todos os membros de uma
+          organização veem e editam tudo o que está nela (finanças, tarefas, agenda, fitness,
+          workflows e conversas), e veem o nome e o e-mail uns dos outros. Ao convidar alguém,
+          enviamos ao e-mail informado o seu nome e o nome da organização. O que está na sua
+          organização pessoal só aparece para outras pessoas se você as convidar para ela.
         </p>
       </>
     ),

@@ -393,6 +393,13 @@
       "when": 1793913161149,
       "tag": "0055_thin_carmella_unuscione",
       "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1793919055227,
+      "tag": "0056_soft_paper_doll",
+      "breakpoints": true
     }
   ]
 }

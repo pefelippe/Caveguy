@@ -531,6 +531,71 @@ const STRINGS = {
   'models.perBot': { en: 'Model of each Bot', pt: 'Modelo de cada Bot' },
   ...PERSONAL_STRINGS,
   ...FITNESS_STRINGS,
+  'orgs.label': { en: 'Organization', pt: 'Organização' },
+  'orgs.new': { en: 'New organization', pt: 'Nova organização' },
+  'orgs.newTitle': { en: 'New organization', pt: 'Nova organização' },
+  'orgs.newText': {
+    en: 'A company, a family, a project: its own money, tasks and plan. You can invite people to it.',
+    pt: 'Uma empresa, a família, um projeto: com dinheiro, tarefas e plano próprios. Você pode convidar pessoas para ela.',
+  },
+  'orgs.create': { en: 'Create and open', pt: 'Criar e abrir' },
+  'orgs.limit': {
+    en: 'You already own the most organizations allowed.',
+    pt: 'Você já é dono do máximo de organizações permitido.',
+  },
+  'orgs.failed': {
+    en: 'It did not work. Try again in a moment.',
+    pt: 'Não deu certo. Tente de novo em instantes.',
+  },
+  'invite.title': { en: 'Invite people', pt: 'Convidar pessoas' },
+  'invite.text': {
+    en: 'Whoever joins sees and edits everything in this organization: money, tasks, agenda, fitness and conversations.',
+    pt: 'Quem entrar vê e edita tudo desta organização: dinheiro, tarefas, agenda, fitness e conversas.',
+  },
+  'invite.email': { en: 'E-mail', pt: 'E-mail' },
+  'invite.send': { en: 'Send invitation', pt: 'Enviar convite' },
+  'invite.sent': {
+    en: 'Invitation sent. You can also copy its link below.',
+    pt: 'Convite enviado. Você também pode copiar o link abaixo.',
+  },
+  'invite.pending': { en: 'Pending invitations', pt: 'Convites pendentes' },
+  'invite.until': { en: 'until {date}', pt: 'até {date}' },
+  'invite.copy': { en: 'Copy link', pt: 'Copiar link' },
+  'invite.copied': { en: 'Link copied', pt: 'Link copiado' },
+  'invite.personal': {
+    en: 'The link only works for the invited e-mail.',
+    pt: 'O link só funciona para o e-mail convidado.',
+  },
+  'invite.cancel': { en: 'Cancel', pt: 'Cancelar' },
+  'invite.pageTitle': { en: 'Join {name}', pt: 'Entrar em {name}' },
+  'invite.pageText': {
+    en: '{inviter} invited you as {role}. You will see and edit everything in it, and can switch back to your own organization from the menu under your photo.',
+    pt: '{inviter} convidou você como {role}. Você vai ver e editar tudo dela, e volta para a sua organização pelo menu da sua foto.',
+  },
+  'invite.accept': { en: 'Accept and open', pt: 'Aceitar e abrir' },
+  'invite.decline': { en: 'Decline', pt: 'Recusar' },
+  'invite.notYours': {
+    en: 'This invitation is for another e-mail. You are signed in as {email}.',
+    pt: 'Este convite é para outro e-mail. Você entrou como {email}.',
+  },
+  'invite.switchAccount': { en: 'Sign in with another account', pt: 'Entrar com outra conta' },
+  'invite.gone': {
+    en: 'This invitation expired, was cancelled or was already used.',
+    pt: 'Este convite expirou, foi cancelado ou já foi usado.',
+  },
+  'invite.home': { en: 'Go to the app', pt: 'Ir para o app' },
+  'members.remove': { en: 'Remove', pt: 'Remover' },
+  'members.removeTitle': { en: 'Remove {name}?', pt: 'Remover {name}?' },
+  'members.removeText': {
+    en: 'They stop seeing this organization at once. What they wrote here stays.',
+    pt: 'A pessoa deixa de ver esta organização na hora. O que ela escreveu aqui fica.',
+  },
+  'members.leave': { en: 'Leave organization', pt: 'Sair da organização' },
+  'members.leaveTitle': { en: 'Leave {name}?', pt: 'Sair de {name}?' },
+  'members.leaveText': {
+    en: 'You stop seeing it and go back to your own organization. Only an invitation brings you back.',
+    pt: 'Você deixa de ver esta organização e volta para a sua. Só um novo convite traz você de volta.',
+  },
   ...LANDING_STRINGS,
 } satisfies Record<string, Record<Language, string>>;
 

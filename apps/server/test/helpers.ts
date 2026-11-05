@@ -1,5 +1,5 @@
 import { ApolloServer } from '@apollo/server';
-import type { Viewer } from '@zapbots/auth';
+import { auth, type Viewer } from '@zapbots/auth';
 import { db, schema } from '@zapbots/database';
 import { type Context, typeDefs } from '@zapbots/graphql/server';
 
@@ -60,4 +60,33 @@ export async function gql(
     data: data ?? null,
     errors: (errors ?? []).map(error => String(error.extensions?.code ?? error.message)),
   };
+}
+
+const ORIGIN = process.env.CLIENT_ORIGIN ?? 'http://localhost:5173';
+
+/**
+ * A browser talking to Better Auth's own handler, keeping its cookies; `headers()` gives them as a
+ * request would carry them, for `resolveViewer`.
+ */
+export function browser() {
+  const cookies = new Map<string, string>();
+  const cookie = () => [...cookies].map(([name, value]) => `${name}=${value}`).join('; ');
+  const call = async (path: string, body?: unknown) => {
+    const response = await auth.handler(
+      new Request(`${ORIGIN}/api/auth${path}`, {
+        body: body === undefined ? undefined : JSON.stringify(body),
+        headers: { 'content-type': 'application/json', cookie: cookie(), origin: ORIGIN },
+        method: body === undefined ? 'GET' : 'POST',
+      })
+    );
+    for (const line of response.headers.getSetCookie()) {
+      const [pair] = line.split(';');
+      const [name, ...value] = pair!.split('=');
+      if (/max-age=0/i.test(line)) cookies.delete(name!);
+      else cookies.set(name!, value.join('='));
+    }
+    const text = await response.text();
+    return { body: text ? JSON.parse(text) : null, status: response.status };
+  };
+  return Object.assign(call, { headers: () => new Headers({ cookie: cookie() }) });
 }

@@ -483,13 +483,16 @@ export const conversation = pgTable(
     replyingSince: timestamp('replying_since', { withTimezone: true }),
     /** Parar was pressed: the reply being written ends with what it has. */
     stopRequestedAt: timestamp('stop_requested_at', { withTimezone: true }),
+    /** The Member an outside channel's Conversation belongs to (docs/adr/0038); null in the app. */
+    userId: text('user_id').references(() => user.id, { onDelete: 'cascade' }),
     ...timestamps,
   },
   table => [
     index('conversation_bot_idx').on(table.botId, table.updatedAt),
-    // One WhatsApp Conversation per Organization, even when two first messages arrive at once.
-    uniqueIndex('conversation_whatsapp_once')
-      .on(table.organizationId)
+    // One WhatsApp Conversation per Member of an Organization, even when two first messages
+    // arrive at once.
+    uniqueIndex('conversation_whatsapp_member_once')
+      .on(table.organizationId, table.userId)
       .where(sql`${table.channel} = 'WHATSAPP'`),
   ]
 );
