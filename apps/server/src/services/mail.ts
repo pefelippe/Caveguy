@@ -1,3 +1,4 @@
+import { APP_NAME } from '@zapbots/finance';
 import { reportError } from '../sentry';
 
 /** Where links in e-mails lead. */
@@ -34,7 +35,7 @@ export async function sendEmail({
   try {
     const response = await fetch('https://api.resend.com/emails', {
       body: JSON.stringify({
-        from: process.env.EMAIL_FROM ?? 'Caishen <onboarding@resend.dev>',
+        from: process.env.EMAIL_FROM ?? `${APP_NAME} <onboarding@resend.dev>`,
         html,
         subject,
         text,

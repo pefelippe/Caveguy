@@ -1,12 +1,11 @@
 import { useMutation, useQuery } from '@apollo/client/react';
 import {
-  BotPanelDocument,
+  AgentPanelDocument,
   ConversationsDocument,
   DeleteConversationDocument,
   StartConversationDocument,
-  type BotKey,
 } from '@zapbots/graphql/client';
-import { BellIcon, HistoryIcon, PlusIcon } from 'lucide-react';
+import { HistoryIcon, PlusIcon } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -15,9 +14,9 @@ import { Button } from '@zapbots/ui/components/button';
 import { Skeleton } from '@zapbots/ui/components/skeleton';
 import { cn } from '@zapbots/ui/lib/utils';
 
+import { greetingOf, suggestionsOf, useAgents } from '../lib/agents';
 import type { ChatAttachment } from '../lib/attachments';
-import { useI18n } from '../lib/i18n';
-import { AlertList, UnreadBadge, useAlerts } from './Alerts';
+import { AgentTabs } from './AgentTabs';
 import { BotGlyph } from './BotGlyph';
 import { ChatThread, type Suggestion } from './ChatThread';
 import { ConversationList, type Conversation } from './ConversationList';
@@ -28,7 +27,7 @@ export const PANEL_BUTTON =
   'relative size-9 rounded-lg text-muted-foreground hover:bg-foreground/5 hover:text-foreground aria-pressed:bg-foreground/5 aria-pressed:text-foreground [&_svg]:size-[18px]!';
 
 /** What the panel shows under its header: the open Conversation, the earlier ones, or the Avisos. */
-type View = 'alerts' | 'chat' | 'history';
+type View = 'chat' | 'history';
 
 interface Props {
   /** Buttons at the end of the header, given the open Conversation: on the panel, opening it on
@@ -36,17 +35,22 @@ interface Props {
   actions?: (conversationId: string | null) => ReactNode;
   /** The User's first name, greeted while the Conversation is empty. */
   greeting?: string;
-  bot: BotKey;
   className?: string;
   /** Sent as soon as the blank Conversation opens. */
   firstMessage?: string;
   /** Files sent with it. */
   firstFiles?: ChatAttachment[];
-  /** Called when an Aviso leads to another screen (on a phone, the panel covers it). */
-  onLeave?: () => void;
   /** Opens on a blank Conversation instead of the latest one. */
   startBlank?: boolean;
+  /** Overrides the open Agente's own suggestions. */
   suggestions?: Suggestion[];
+}
+
+/** The open Agente's panel, with the tabs to switch Agente on top; switching starts it afresh. */
+export function BotPanel(props: Props) {
+  const { active } = useAgents();
+  if (!active) return <Skeleton className={cn('h-64 w-full', props.className)} />;
+  return <AgentPanel {...props} botId={active.id} key={active.id} />;
 }
 
 /**
@@ -54,20 +58,18 @@ interface Props {
  * the header's buttons swap what is shown under it, and the thread stays mounted meanwhile, so a
  * reply being written goes on.
  */
-export function BotPanel({
+function AgentPanel({
   actions,
-  bot: key,
+  botId,
   className,
   firstFiles,
   firstMessage,
   greeting,
-  onLeave,
   startBlank,
   suggestions,
-}: Props) {
-  const { t } = useI18n();
-  const { data } = useQuery(BotPanelDocument, { variables: { key } });
-  const bot = data?.bot;
+}: Props & { botId: string }) {
+  const { data } = useQuery(AgentPanelDocument, { variables: { id: botId } });
+  const bot = data?.botById;
   const { data: list } = useQuery(ConversationsDocument, {
     skip: !bot,
     variables: { botId: bot?.id ?? '' },
@@ -79,7 +81,6 @@ export function BotPanel({
     refetchQueries: [ConversationsDocument],
   });
   const { hidden, remove: removeLater } = useUndoableDelete();
-  const { unread } = useAlerts();
   // `undefined` follows the latest Conversation; `null` is a blank one not yet saved.
   const [chosen, setChosen] = useState<string | null | undefined>(startBlank ? null : undefined);
   // Remounts the thread only when the User asks for another Conversation. Saving the first Message
@@ -118,10 +119,10 @@ export function BotPanel({
   const toggle = (next: View) => setView(current => (current === next ? 'chat' : next));
 
   return (
-    <section className={cn('flex min-h-0 flex-col gap-4', className)} data-bot={key}>
+    <section className={cn('flex min-h-0 flex-col gap-3', className)} data-bot={bot.key}>
       <header className="flex items-center gap-1">
         <div className="flex min-w-0 flex-1 items-center gap-2.5 pl-1">
-          <BotGlyph bot={key} size={28} />
+          <BotGlyph bot={bot.key} outfit={bot.outfit} size={28} />
           <span className="truncate text-base font-semibold">{bot.name}</span>
         </div>
         <Button
@@ -145,24 +146,9 @@ export function BotPanel({
         >
           <HistoryIcon />
         </Button>
-        <Button
-          aria-label={
-            unread.length
-              ? `${t('notifications.label')} (${unread.length})`
-              : t('notifications.label')
-          }
-          aria-pressed={view === 'alerts'}
-          className={PANEL_BUTTON}
-          onClick={() => toggle('alerts')}
-          size="icon"
-          title={t('notifications.label')}
-          variant="ghost"
-        >
-          <BellIcon />
-          <UnreadBadge className="-top-0.5 -right-0.5" count={unread.length} />
-        </Button>
         {actions?.(conversationId)}
       </header>
+      <AgentTabs />
       {view === 'history' && (
         <ConversationList
           chosen={conversationId}
@@ -170,14 +156,6 @@ export function BotPanel({
           newButton={false}
           onDelete={remove}
           onOpen={open}
-        />
-      )}
-      {view === 'alerts' && (
-        <AlertList
-          onOpen={() => {
-            setView('chat');
-            onLeave?.();
-          }}
         />
       )}
       {!data.aiStatus.configured ? (
@@ -189,7 +167,7 @@ export function BotPanel({
               <Link className="underline underline-offset-4" to="/integrations#ai">
                 Integrações
               </Link>{' '}
-              e o Caishen passa a responder.
+              e o {bot.name} passa a responder.
             </AlertDescription>
           </Alert>
         )
@@ -201,9 +179,9 @@ export function BotPanel({
           ensureConversation={ensureConversation}
           firstFiles={thread === 0 ? firstFiles : undefined}
           firstMessage={thread === 0 ? firstMessage : undefined}
-          greeting={greeting}
+          greeting={greetingOf(bot.key, greeting)}
           key={thread}
-          suggestions={suggestions}
+          suggestions={suggestions ?? suggestionsOf(bot.key)}
         />
       )}
     </section>

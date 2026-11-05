@@ -2,11 +2,15 @@ import type { Viewer } from '@zapbots/auth';
 import { db, schema } from '@zapbots/database';
 import {
   amortizationSchedule,
+  annualToMonthlyRate,
+  Decimal,
   formatCnpj,
   outstandingBalance,
   parseMoney,
+  parsePercent,
   prepaymentEffect,
   READ_TOOLS,
+  rentVsBuy,
   today,
 } from '@zapbots/finance';
 import { eq } from 'drizzle-orm';
@@ -183,6 +187,91 @@ async function payoffPlan(viewer: Viewer, args: Record<string, unknown>): Promis
   ].join('\n');
 }
 
+function rateOf(raw: unknown, what: string): Decimal {
+  const rate = typeof raw === 'string' || typeof raw === 'number' ? parsePercent(raw) : null;
+  if (!rate || rate.gte(10)) throw new ToolInputError(`${what} inválida: mande em %, ex.: "1,5".`);
+  return rate;
+}
+
+function monthsOf(raw: unknown): number {
+  const months = Number(raw);
+  if (!Number.isInteger(months) || months < 1 || months > 600) {
+    throw new ToolInputError('Prazo inválido: mande os meses, de 1 a 600.');
+  }
+  return months;
+}
+
+const percentText = (fraction: Decimal) =>
+  `${fraction.times(100).toDecimalPlaces(2).toString().replace('.', ',')}%`;
+
+/** Price against SAC for one loan: no data of the User's, only the numbers given. */
+async function compareFinancing(_: Viewer, args: Record<string, unknown>): Promise<string> {
+  const principalCents = amountOf(args.amount, 'Valor');
+  const rate = rateOf(args.rate, 'Taxa');
+  const monthlyRate = args.ratePeriod === 'anual' ? annualToMonthlyRate(rate) : rate;
+  const termMonths = monthsOf(args.months);
+  const line = (system: 'PRICE' | 'SAC') => {
+    const rows = amortizationSchedule({
+      firstDueDate: today(),
+      monthlyRate,
+      principalCents,
+      system,
+      termMonths,
+    });
+    const paid = rows.reduce((total, row) => total + row.installmentCents, 0);
+    const interest = rows.reduce((total, row) => total + row.interestCents, 0);
+    return `- ${system === 'PRICE' ? 'Price' : 'SAC'}: 1ª parcela ${money(rows[0]!.installmentCents)}, última ${money(rows.at(-1)!.installmentCents)}, total pago ${money(paid)}, juros ${money(interest)}.`;
+  };
+  return [
+    `${money(principalCents)} em ${termMonths} meses a ${percentText(monthlyRate)} ao mês:`,
+    line('PRICE'),
+    line('SAC'),
+  ].join('\n');
+}
+
+/** Renting against financing a home, as the Calculadoras did: the same money out each month. */
+async function rentOrBuy(_: Viewer, args: Record<string, unknown>): Promise<string> {
+  const propertyCents = amountOf(args.property, 'Preço do imóvel');
+  const downPaymentCents =
+    typeof args.downPayment === 'string' || typeof args.downPayment === 'number'
+      ? (parseMoney(args.downPayment) ?? 0)
+      : 0;
+  const rentCents = amountOf(args.rent, 'Aluguel');
+  const optional = (raw: unknown, fallback: string, what: string) =>
+    raw === undefined || raw === null || raw === '' ? new Decimal(fallback) : rateOf(raw, what);
+  const closingCostsCents =
+    args.closingCosts === undefined || args.closingCosts === null || args.closingCosts === ''
+      ? Math.round(propertyCents * 0.05)
+      : amountOf(args.closingCosts, 'Custos de compra');
+  const input = {
+    appreciationRate: optional(args.appreciation, '0.04', 'Valorização'),
+    closingCostsCents,
+    downPaymentCents,
+    financingRate: rateOf(args.financingRate, 'Taxa do financiamento'),
+    investmentRate: optional(args.investmentReturn, '0.08', 'Rendimento'),
+    propertyCents,
+    rentAdjustmentRate: optional(args.rentAdjustment, '0.04', 'Reajuste'),
+    rentCents,
+    system: 'SAC' as const,
+    termMonths: monthsOf(args.months),
+  };
+  if (downPaymentCents > propertyCents) return 'A entrada passa do preço do imóvel.';
+  const outcome = rentVsBuy(input);
+  if (!outcome) return 'Não deu para calcular com esses valores.';
+  const last = outcome.points.at(-1)!;
+  const span = (months: number) =>
+    months % 12 ? `${months} meses` : `${months / 12} ano${months === 12 ? '' : 's'}`;
+  return [
+    `Em ${span(input.termMonths)}, gastando o mesmo por mês:`,
+    `- comprando (SAC): patrimônio de ${money(last.buyerWealthCents)}; paga ${money(outcome.totalInstallmentsCents)} em parcelas, ${money(outcome.totalInterestCents)} de juros`,
+    `- alugando e investindo: patrimônio de ${money(last.renterWealthCents)}; paga ${money(outcome.totalRentCents)} de aluguel`,
+    outcome.buyerAheadFrom
+      ? `- comprar fica à frente a partir do mês ${outcome.buyerAheadFrom}.`
+      : '- comprar não fica à frente em nenhum momento do prazo.',
+    `Premissas: valorização ${percentText(input.appreciationRate)} ao ano, rendimento ${percentText(input.investmentRate)} ao ano, reajuste do aluguel ${percentText(input.rentAdjustmentRate)} ao ano, custos de compra ${money(closingCostsCents)}.`,
+  ].join('\n');
+}
+
 const regimeLine = (name: string, option: RegimeOption | null) => {
   if (!option) return `- ${name}: a Receita não informa.`;
   if (option.opted)
@@ -224,6 +313,8 @@ async function companyLookup(viewer: Viewer, args: Record<string, unknown>): Pro
 
 const RUN: Record<string, (viewer: Viewer, args: Record<string, unknown>) => Promise<string>> = {
   company_lookup: companyLookup,
+  compare_financing: compareFinancing,
+  rent_vs_buy: rentOrBuy,
   list_expenses: listExpenses,
   payoff_plan: payoffPlan,
   period_summary: periodSummary,

@@ -1,4 +1,4 @@
-import { HouseIcon, LayoutGridIcon, RepeatIcon, SheetIcon, type LucideIcon } from 'lucide-react';
+import { CalendarIcon, HouseIcon, LayoutGridIcon, SheetIcon, type LucideIcon } from 'lucide-react';
 import { useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 
@@ -9,18 +9,17 @@ import { cn } from '@zapbots/ui/lib/utils';
 
 import { useI18n } from '../lib/i18n';
 import { activeItem, useNav, type NavItem } from '../lib/nav';
-import { UnreadBadge, useAlerts } from './Alerts';
 import { useChatPanel } from './ChatPanel';
 
 /** The four screens a thumb reaches without opening anything; the Agente sits in the middle. */
 const TABS: {
   icon: LucideIcon;
-  label: 'tabs.entries' | 'tabs.expenses' | 'tabs.home';
+  label: 'tabs.calendar' | 'tabs.home' | 'tabs.money';
   to: string;
 }[] = [
   { icon: HouseIcon, label: 'tabs.home', to: '/' },
-  { icon: SheetIcon, label: 'tabs.entries', to: '/caishen/entries' },
-  { icon: RepeatIcon, label: 'tabs.expenses', to: '/caishen/fixed' },
+  { icon: SheetIcon, label: 'tabs.money', to: '/caishen' },
+  { icon: CalendarIcon, label: 'tabs.calendar', to: '/personal/calendar' },
 ];
 
 const TAB =
@@ -36,7 +35,6 @@ export function MobileNav() {
   const nav = useNav();
   const { t } = useI18n();
   const { open: chatOpen, toggle } = useChatPanel();
-  const { unread } = useAlerts();
   const [more, setMore] = useState(false);
 
   const all = [...nav.main, ...nav.groups.flatMap(group => group.items), ...nav.account];
@@ -76,7 +74,6 @@ export function MobileNav() {
               size="icon"
             >
               <AgentIcon />
-              <UnreadBadge className="-top-0.5 -right-0.5" count={unread.length} />
             </Button>
           </div>
           {tab(TABS[2]!)}

@@ -8,7 +8,7 @@ import { cn } from '@zapbots/ui/lib/utils';
 
 import { refreshOnReturn } from '../lib/apollo';
 import { isRailPath } from '../lib/nav';
-import { AppHeader } from './AppHeader';
+import { AgentButton, AppHeader } from './AppHeader';
 import { AppSidebar } from './AppSidebar';
 import { ChatPanel, ChatPanelProvider } from './ChatPanel';
 import { ChatRepliesProvider } from './ChatReplies';
@@ -101,6 +101,7 @@ export function Layout({ user }: Props) {
                   <MobileNav />
                 </div>
                 <div className="contents print:hidden">
+                  <AgentButton />
                   <ChatPanel greeting={user.name.split(' ')[0]} />
                 </div>
               </CommandMenu>

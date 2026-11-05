@@ -1,3 +1,4 @@
+import { APP_NAME } from '@zapbots/finance';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 
 import {
@@ -93,7 +94,7 @@ function MenuTop() {
       <Link aria-label={t('rail.caishen')} className="flex items-center gap-2.5" to="/">
         <LogoBadge size={40} />
         <span className="text-xl font-semibold tracking-tight text-sidebar-accent-foreground group-data-[collapsible=icon]:hidden">
-          Caishen
+          {APP_NAME}
         </span>
       </Link>
     </SidebarHeader>

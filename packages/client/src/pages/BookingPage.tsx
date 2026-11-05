@@ -1,3 +1,4 @@
+import { APP_NAME } from '@zapbots/finance';
 import { useMutation, useQuery } from '@apollo/client/react';
 import {
   BookDocument,
@@ -55,7 +56,7 @@ function PublicFrame({ children }: { children: ReactNode }) {
         <div className="mx-auto flex max-w-3xl items-center gap-2.5 px-4 py-4 sm:px-6">
           <Link className="flex items-center gap-2.5 text-header" to="/landing">
             <LogoBadge size={28} />
-            <span className="text-lg font-semibold tracking-tight text-foreground">Caishen</span>
+            <span className="text-lg font-semibold tracking-tight text-foreground">{APP_NAME}</span>
           </Link>
         </div>
       </header>

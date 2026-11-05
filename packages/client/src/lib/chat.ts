@@ -1,3 +1,4 @@
+import { APP_NAME } from '@zapbots/finance';
 import type { ChatAttachment } from './attachments';
 
 /** Events of `POST /api/chat/:conversationId`, in the order the server sends them. */
@@ -31,7 +32,7 @@ export async function streamChat(options: {
     method: 'POST',
   });
   if (!response.ok || !response.body) {
-    options.onEvent({ message: 'Não foi possível falar com o Caishen.', type: 'error' });
+    options.onEvent({ message: `Não foi possível falar com o ${APP_NAME}.`, type: 'error' });
     return;
   }
 

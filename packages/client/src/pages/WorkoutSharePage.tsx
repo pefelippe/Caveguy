@@ -1,3 +1,4 @@
+import { APP_NAME } from '@zapbots/finance';
 import { useQuery } from '@apollo/client/react';
 import { PublicWorkoutPlanDocument } from '@zapbots/graphql/client';
 import { formatDecimal } from '@zapbots/fitness';
@@ -31,7 +32,7 @@ export function WorkoutSharePage() {
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
           <Link className="flex items-center gap-2.5 text-header" to="/landing">
             <LogoBadge size={28} />
-            <span className="text-lg font-semibold tracking-tight text-foreground">Caishen</span>
+            <span className="text-lg font-semibold tracking-tight text-foreground">{APP_NAME}</span>
           </Link>
           {plan && (
             <Button onClick={() => window.print()} size="sm" variant="outline">
@@ -103,7 +104,7 @@ export function WorkoutSharePage() {
               <p className="rounded-xl bg-muted p-4 text-sm whitespace-pre-line">{plan.notes}</p>
             )}
             <p className="text-xs text-muted-foreground">
-              Ficha anotada no Caishen. Não substitui a orientação de um profissional de educação
+              Ficha anotada no {APP_NAME}. Não substitui a orientação de um profissional de educação
               física: em caso de dor ou dúvida, pare e procure um.
             </p>
           </Card>

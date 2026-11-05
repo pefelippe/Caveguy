@@ -1,3 +1,4 @@
+import { APP_NAME } from '@zapbots/finance';
 import { useMutation, useQuery } from '@apollo/client/react';
 import {
   ConnectionsDocument,
@@ -23,10 +24,10 @@ import {
   NotionLogo,
   SpotifyLogo,
   StravaLogo,
-  TelegramLogo,
   TodoistLogo,
   WhatsAppLogo,
   GoogleSheetsLogo,
+  GoogleCalendarLogo,
   GoogleTasksLogo,
   ICloudLogo,
   ZapierLogo,
@@ -44,8 +45,8 @@ import { ExternalCalendarsLinker } from './ExternalCalendarsLinker';
 import { GoogleTasksLinker } from './GoogleTasksLinker';
 import { HealthLinker } from './HealthLinker';
 import { AutomationLinker } from './AutomationLinker';
+import { GoogleCalendarLinker } from './GoogleCalendarLinker';
 import { SpotifyLinker } from './SpotifyLinker';
-import { TelegramLinker } from './TelegramLinker';
 import { FormError } from './FormError';
 import { OpenFinanceLinker } from './OpenFinanceLinker';
 
@@ -94,7 +95,7 @@ const CARDS: {
   {
     category: 'chat',
     description:
-      'Conte um gasto, confirme Propostas pelos botões e pergunte sobre suas finanças pelo WhatsApp. O Caishen só responde, nunca puxa conversa.',
+      'Conte um gasto, confirme Propostas pelos botões e pergunte sobre suas finanças pelo WhatsApp. O Financeiro só responde, nunca puxa conversa.',
     id: 'whatsapp',
     kind: 'WHATSAPP',
     mark: { color: '#25D366', icon: WhatsAppLogo },
@@ -139,20 +140,20 @@ const CARDS: {
   {
     category: 'agenda',
     description:
+      'Entre com sua conta Google e os seus próximos compromissos aparecem aqui. Só leitura: nada muda no seu Google Agenda.',
+    id: 'google-calendar',
+    kind: 'GOOGLE_CALENDAR',
+    mark: { color: '#4285F4', icon: GoogleCalendarLogo },
+    name: 'Google Agenda',
+  },
+  {
+    category: 'agenda',
+    description:
       'As tarefas do Google (as do Gmail e da Agenda) entram nas suas Tarefas, numa Lista para cada lista de lá. Só leitura: o que muda lá aparece aqui, e o que você faz aqui fica aqui.',
     id: 'google-tasks',
     kind: 'GOOGLE_TASKS',
     mark: { color: '#2684FC', icon: GoogleTasksLogo },
     name: 'Google Tarefas',
-  },
-  {
-    category: 'chat',
-    description:
-      'Converse com o Caishen pelo Telegram: conte um gasto, confirme Propostas pelos botões e pergunte sobre suas finanças. Ele só responde, nunca puxa conversa.',
-    id: 'telegram',
-    kind: 'TELEGRAM',
-    mark: { color: '#26A5E4', icon: TelegramLogo },
-    name: 'Telegram',
   },
   {
     category: 'chat',
@@ -165,8 +166,7 @@ const CARDS: {
   },
   {
     category: 'automation',
-    description:
-      'Zapier, Make, n8n ou qualquer script lançam Gastos no Caishen: um pedido, uma compra, uma conta paga em outro app. Eles mandam para um endereço só seu, e cada gasto entra uma vez.',
+    description: `Zapier, Make, n8n ou qualquer script lançam Gastos no ${APP_NAME}: um pedido, uma compra, uma conta paga em outro app. Eles mandam para um endereço só seu, e cada gasto entra uma vez.`,
     id: 'automation',
     kind: 'AUTOMATION',
     mark: { color: '#FF4F00', icon: ZapierLogo },
@@ -286,7 +286,7 @@ export function ConnectionsSettings() {
       <header className="flex flex-col gap-1">
         <h1>Integrações</h1>
         <p className="max-w-prose text-muted-foreground">
-          As ferramentas em que o Caishen entra por você. Ele só lê: nada é alterado lá fora.
+          As ferramentas em que o {APP_NAME} entra por você. Ele só lê: nada é alterado lá fora.
         </p>
       </header>
 
@@ -391,11 +391,11 @@ function Details({ connection }: { connection: Connection }): ReactNode {
       {connection.kind === 'EXTERNAL_CALENDARS' && <ExternalCalendarsLinker />}
       {connection.kind === 'HEALTH' && <HealthLinker />}
       {connection.kind === 'AUTOMATION' && <AutomationLinker />}
-      {connection.kind === 'TELEGRAM' && connection.available && (
-        <TelegramLinker connected={connection.connected} />
-      )}
       {connection.kind === 'SPOTIFY' && connection.available && (
         <SpotifyLinker connected={connection.connected} />
+      )}
+      {connection.kind === 'GOOGLE_CALENDAR' && connection.available && (
+        <GoogleCalendarLinker connected={connection.connected} />
       )}
       {connection.kind === 'GOOGLE_TASKS' && connection.available && (
         <GoogleTasksLinker connected={connection.connected} />
@@ -437,7 +437,7 @@ function WhatsappLinker({ connected }: { connected: boolean }) {
           Desconectar
         </Button>
         <span className="text-sm text-muted-foreground">
-          Ou mande SAIR para o Caishen no WhatsApp.
+          Ou mande SAIR para o {APP_NAME} no WhatsApp.
         </span>
         {unlinking.error && <FormError error={unlinking.error} />}
       </div>
@@ -454,7 +454,7 @@ function WhatsappLinker({ connected }: { connected: boolean }) {
       {code ? (
         <div className="flex flex-col gap-3 rounded-xl bg-secondary/60 p-4">
           <p>
-            Mande este código para o Caishen no WhatsApp até as {expires}:{' '}
+            Mande este código para o {APP_NAME} no WhatsApp até as {expires}:{' '}
             <strong className="text-lg tracking-widest tabular-nums">{code.code}</strong>
           </p>
           <div className="flex flex-wrap gap-2">
@@ -476,7 +476,7 @@ function WhatsappLinker({ connected }: { connected: boolean }) {
           </div>
           <p className="text-sm text-muted-foreground">
             No computador, abra o link no celular ou digite o código numa conversa com o número do
-            Caishen. Esta tela muda sozinha quando ele receber.
+            {APP_NAME}. Esta tela muda sozinha quando ele receber.
           </p>
         </div>
       ) : (

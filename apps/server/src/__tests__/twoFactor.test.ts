@@ -1,3 +1,4 @@
+import { APP_NAME } from '@zapbots/finance';
 import { createHmac } from 'node:crypto';
 
 import { auth } from '@zapbots/auth';
@@ -61,7 +62,7 @@ describe('two-step verification', () => {
     const enabled = await owner('/two-factor/enable', { password });
     const secret = new URL(enabled.body.totpURI).searchParams.get('secret')!;
     expect(enabled.body.backupCodes).toHaveLength(10);
-    expect(new URL(enabled.body.totpURI).searchParams.get('issuer')).toBe('Caishen');
+    expect(new URL(enabled.body.totpURI).searchParams.get('issuer')).toBe(APP_NAME);
     // Nothing changes until the first code proves the app has it.
     expect((await owner('/get-session')).body.user.twoFactorEnabled).toBe(false);
     expect((await owner('/two-factor/verify-totp', { code: totp(secret) })).status).toBe(200);

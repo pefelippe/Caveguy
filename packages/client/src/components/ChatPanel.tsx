@@ -1,4 +1,4 @@
-import { BellIcon, ListOrderedIcon, Maximize2Icon, WalletIcon, XIcon } from 'lucide-react';
+import { Maximize2Icon, XIcon } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -9,17 +9,10 @@ import type { ChatAttachment } from '../lib/attachments';
 import { useI18n } from '../lib/i18n';
 import { useDesktop } from '../lib/media';
 import { BotPanel, PANEL_BUTTON } from './BotPanel';
-import type { Suggestion } from './ChatThread';
 
 const STORAGE_KEY = 'zapbots.chatPanel';
 const WIDTH = 440;
 const EASE = [0.22, 1, 0.36, 1] as const;
-/** Questions offered while a Conversation is still blank. */
-export const CHAT_SUGGESTIONS: Suggestion[] = [
-  { icon: BellIcon, text: 'O que merece minha atenção agora?' },
-  { icon: WalletIcon, text: 'Quanto sobra este mês?' },
-  { icon: ListOrderedIcon, text: 'Qual dívida devo quitar primeiro?' },
-];
 
 function storedOpen(): boolean {
   try {
@@ -164,15 +157,12 @@ export function ChatPanel({ greeting }: { greeting?: string }) {
                   </Button>
                 </>
               )}
-              bot="FINANCE"
               className="h-full"
               firstFiles={firstFiles}
               firstMessage={firstMessage}
               greeting={greeting}
               key={blank}
-              onLeave={desktop ? undefined : close}
               startBlank
-              suggestions={CHAT_SUGGESTIONS}
             />
           </div>
         </motion.aside>

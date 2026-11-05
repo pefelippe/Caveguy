@@ -78,6 +78,50 @@ export const PAYOFF_PLAN: ToolSpec = {
   },
 };
 
+const RATE = (what: string) =>
+  ({ description: `${what}, em % (ex.: "1,5" para 1,5%).`, type: 'string' }) as const;
+
+export const COMPARE_FINANCING: ToolSpec = {
+  description:
+    'Calculadora de financiamento: para um valor, uma taxa e um prazo, compara Price (parcela fixa) e SAC (parcela que cai): primeira e última parcela, total pago e total de juros. Não usa os dados da pessoa.',
+  name: 'compare_financing',
+  parameters: {
+    properties: {
+      amount: AMOUNT('O valor financiado'),
+      months: { description: 'O prazo em meses, ex.: 360.', type: 'integer' },
+      rate: RATE('A taxa de juros'),
+      ratePeriod: {
+        description: 'Se a taxa é ao mês ou ao ano.',
+        enum: ['mensal', 'anual'],
+        type: 'string',
+      },
+    },
+    required: ['amount', 'rate', 'ratePeriod', 'months'],
+    type: 'object',
+  },
+};
+
+export const RENT_VS_BUY: ToolSpec = {
+  description:
+    'Calculadora de alugar ou financiar um imóvel: os dois gastam o mesmo por mês e quem paga menos investe a diferença. Diz quem termina com mais patrimônio e a partir de quando comprar fica à frente. Os valores que a pessoa não deu usam premissas, que a resposta lista.',
+  name: 'rent_vs_buy',
+  parameters: {
+    properties: {
+      appreciation: RATE('Valorização do imóvel ao ano (padrão 4)'),
+      closingCosts: AMOUNT('ITBI, cartório e taxas (padrão 5% do imóvel)'),
+      downPayment: AMOUNT('A entrada'),
+      financingRate: RATE('Juros do financiamento ao ano'),
+      investmentReturn: RATE('Rendimento líquido do que se investe, ao ano (padrão 8)'),
+      months: { description: 'Prazo do financiamento em meses, ex.: 360.', type: 'integer' },
+      property: AMOUNT('O preço do imóvel'),
+      rent: AMOUNT('O aluguel por mês'),
+      rentAdjustment: RATE('Reajuste do aluguel ao ano (padrão 4)'),
+    },
+    required: ['property', 'downPayment', 'rent', 'financingRate', 'months'],
+    type: 'object',
+  },
+};
+
 export const COMPANY_LOOKUP: ToolSpec = {
   description:
     'Consulta um CNPJ na Receita (dados públicos): razão social, situação cadastral, atividade (CNAE), abertura, cidade e se é optante do Simples Nacional ou MEI, com as datas. Sem CNPJ, consulta a empresa da pessoa, se ela tiver cadastrado.',
@@ -98,5 +142,7 @@ export const READ_TOOLS: ToolSpec[] = [
   LIST_EXPENSES,
   SIMULATE_PREPAYMENT,
   PAYOFF_PLAN,
+  COMPARE_FINANCING,
+  RENT_VS_BUY,
   COMPANY_LOOKUP,
 ];

@@ -65,9 +65,30 @@ enum DataSource {
   OPEN_FINANCE
 }
 
-"A Bot of the catalog, by its code name. `FINANCE` is Caishen."
+"An Agente of the catalog, by its code name (docs/adr/0035). `CUSTOM` is one the User made."
 enum BotKey {
   FINANCE
+  PERSONAL
+  FITNESS
+  CUSTOM
+}
+
+"The outfits a custom Agente can wear (docs/adr/0035); the fixed ones wear their own."
+enum AgentOutfit {
+  COOK
+  EXPLORER
+  ARTIST
+  SCHOLAR
+  MUSICIAN
+  BUILDER
+}
+
+input AgentInput {
+  "1 to 40 characters."
+  name: String!
+  "What it does, in the User's words: 1 to 1000 characters."
+  instructions: String!
+  outfit: AgentOutfit!
 }
 
 enum MessageRole {
@@ -104,9 +125,9 @@ enum ConnectionKind {
   EXTERNAL_CALENDARS
   HEALTH
   GOOGLE_TASKS
-  TELEGRAM
   SPOTIFY
   AUTOMATION
+  GOOGLE_CALENDAR
 }
 
 "What a Connection is for; the Conexões page has one section per category."
@@ -195,6 +216,7 @@ type BankSync {
 enum ConversationChannel {
   APP
   WHATSAPP
+  "Telegram, removed (docs/adr/0037): its old Conversations still show."
   TELEGRAM
 }
 
@@ -220,7 +242,9 @@ type Query {
   recordFields(kind: RecordKind!, id: ID!): [RecordField!]!
   "The Organization's team: every Bot of the catalog."
   bots: [Bot!]!
+  "The fixed Agente with this key (not `CUSTOM`: use `botById`)."
   bot(key: BotKey!): Bot!
+  botById(id: ID!): Bot
   "Models the Organization's keys reach; empty while it has none."
   models: [Model!]!
   "The Organization's keys to Model providers, masked (docs/adr/0022)."
@@ -272,8 +296,8 @@ type Mutation {
   setAiKey(provider: AiProvider!, key: String!): AiKey!
   "Removes the Organization's key to a Model provider; owners and admins only."
   removeAiKey(provider: AiProvider!): Boolean!
-  "A Stripe Checkout page for the Pro Plan; owners and admins only."
-  startCheckout: String!
+  "A Stripe Checkout page for a paid Plan (Pro by default); owners and admins only."
+  startCheckout(plan: PlanKey): String!
   "Stripe's portal to manage the Subscription; owners and admins only."
   openBillingPortal: String!
   "Adds a Usage code's Jobs and Messages to this month's Limit; owners and admins only."
@@ -291,6 +315,12 @@ type Mutation {
   finishOnboarding: Boolean!
   "Picks the Model a Bot uses; null goes back to the server default."
   setBotModel(id: ID!, model: String): Bot!
+  "Makes a custom Agente; at most 10 per Organization."
+  createBot(input: AgentInput!): Bot!
+  "Changes a custom Agente. The fixed ones cannot be changed."
+  updateBot(id: ID!, input: AgentInput!): Bot!
+  "Deletes a custom Agente with its Conversations. The fixed ones cannot be deleted."
+  deleteBot(id: ID!): Boolean!
   startConversation(botId: ID!): Conversation!
   deleteConversation(id: ID!): Boolean!
   "Parar: the reply being written ends with what it has. False when there was none."
@@ -328,6 +358,8 @@ type Mutation {
   addRecurringExpense(input: RecurringExpenseInput!): RecurringExpense!
   "Saves how the Holder splits the income and where each spending category goes (docs/adr/0018)."
   saveBudget(input: BudgetInput!): Holder!
+  "Sets a Limite de categoria; a null or zero `limitCents` removes it."
+  setCategoryLimit(holderId: ID!, category: String!, limitCents: Cents): Holder!
   "The rate a foreign payment really got on `date`; null goes back to the PTAX."
   setIncomeRate(incomeSourceId: ID!, date: Date!, rate: Float): Boolean!
   deleteTax(id: ID!): Boolean!
@@ -442,6 +474,22 @@ type Holder {
   budget(month: String!): Budget!
   "Plano de Quitação: `monthlyExtraCents` a month, from tomorrow, to the dearest Credit Operation first."
   payoffPlan(monthlyExtraCents: Cents!): PayoffPlan!
+  "The month's (`YYYY-MM`) spending by category, largest first, as the Fluxo de caixa counts it."
+  spending(month: String!): [CategorySpending!]!
+  "Limites de categoria, each with what the month (`YYYY-MM`) has spent on it."
+  categoryLimits(month: String!): [CategoryLimit!]!
+}
+
+type CategorySpending {
+  category: String!
+  amountCents: Cents!
+}
+
+type CategoryLimit {
+  id: ID!
+  category: String!
+  limitCents: Cents!
+  spentCents: Cents!
 }
 
 enum BudgetMethod {
@@ -531,6 +579,12 @@ type Bot {
   "One line on what the Bot does, in pt-BR."
   description: String!
   personality: String!
+  "Whether the User made it; only these can be changed or deleted."
+  custom: Boolean!
+  "What a custom Agente does, in its User's words; null for the fixed ones."
+  instructions: String
+  "A custom Agente's outfit; null for the fixed ones, which wear their own."
+  outfit: AgentOutfit
   "OpenRouter model id in use (own choice or the server default)."
   model: String!
   "The Bot's latest Jobs, newest first; at most 20."
@@ -546,6 +600,7 @@ enum AlertKind {
   ABOVE_MARKET
   STALE_ASSESSMENT
   ROUTINE_FAILED
+  OVER_LIMIT
 }
 
 type Alert {
@@ -1285,6 +1340,7 @@ input CreateRoutineInput {
 enum PlanKey {
   FREE
   PRO
+  MAX
 }
 
 type Plan {
@@ -1296,6 +1352,8 @@ type Plan {
   jobs: Int!
   "Messages per month."
   messages: Int!
+  "How many custom Agentes the Plan lets an Organization keep."
+  agents: Int!
 }
 
 type Allowance {
@@ -2073,19 +2131,6 @@ extend type Mutation {
   syncGoogleTasks: GoogleTasksResult!
 }
 
-# Telegram: the Caishen's bot answers a linked User's private chat (docs/adr/0031).
-
-"A link the Viewer opens in Telegram to connect it: `t.me/<bot>?start=<code>`, valid 15 minutes."
-type TelegramLinkCode {
-  url: String!
-  expiresAt: DateTime!
-}
-
-extend type Mutation {
-  startTelegramLink: TelegramLinkCode!
-  unlinkTelegram: Boolean!
-}
-
 # Automação: Zapier, Make or n8n send Gastos to a secret address (docs/adr/0033).
 
 type AutomationInbox {
@@ -2140,4 +2185,24 @@ extend type Mutation {
   "The address of Spotify's consent screen; it comes back to /api/spotify/callback."
   startSpotifyLink: String!
   unlinkSpotify: Boolean!
+}
+
+# Google Agenda through Nango, which holds its OAuth (docs/adr/0034).
+
+type GoogleCalendarEvent {
+  title: String!
+  start: DateTime!
+  end: DateTime
+  allDay: Boolean!
+}
+
+extend type Query {
+  "The next events on the Viewer's main Google calendar, read live; empty when not linked."
+  googleCalendarEvents: [GoogleCalendarEvent!]!
+}
+
+extend type Mutation {
+  "A short-lived token that opens Nango's Connect window for Google Agenda."
+  startGoogleCalendarLink: String!
+  unlinkGoogleCalendar: Boolean!
 }

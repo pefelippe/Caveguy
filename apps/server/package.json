@@ -7,7 +7,6 @@
   "scripts": {
     "dev": "tsx watch --env-file-if-exists=../../.env src/index.ts",
     "lint:tsc": "tsc",
-    "telegram:webhook": "tsx --env-file-if-exists=../../.env src/scripts/telegramWebhook.ts",
     "usage-code": "tsx --env-file-if-exists=../../.env src/scripts/usageCode.ts",
     "start": "tsx --env-file-if-exists=../../.env src/index.ts",
     "test:unit": "vitest --run --passWithNoTests"
@@ -15,6 +14,7 @@
   "dependencies": {
     "@apollo/server": "5.5.0",
     "@as-integrations/express5": "1.1.2",
+    "@nangohq/node": "0.72.0",
     "@sentry/node": "11.8.0",
     "@vercel/functions": "3.10.1",
     "@zapbots/ai": "workspace:*",

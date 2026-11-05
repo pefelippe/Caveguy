@@ -4,6 +4,7 @@ fragment PlanFields on Plan {
   priceCents
   jobs
   messages
+  agents
 }
 
 fragment BillingFields on Billing {
@@ -38,8 +39,8 @@ query Billing {
   }
 }
 
-mutation StartCheckout {
-  startCheckout
+mutation StartCheckout($plan: PlanKey) {
+  startCheckout(plan: $plan)
 }
 
 mutation OpenBillingPortal {

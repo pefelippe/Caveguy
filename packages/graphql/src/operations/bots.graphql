@@ -5,6 +5,9 @@ fragment BotFields on Bot {
   description
   personality
   model
+  custom
+  instructions
+  outfit
 }
 
 fragment AlertFields on Alert {
@@ -178,4 +181,45 @@ mutation DismissAlert($bot: BotKey!, $id: ID!) {
       ...AlertFields
     }
   }
+}
+
+"The Agentes the app switches between, fixed ones first (docs/adr/0035)."
+query Agents {
+  aiStatus {
+    configured
+  }
+  billing {
+    plan {
+      key
+      agents
+    }
+  }
+  bots {
+    ...BotFields
+  }
+}
+
+query AgentPanel($id: ID!) {
+  aiStatus {
+    configured
+  }
+  botById(id: $id) {
+    ...BotFields
+  }
+}
+
+mutation CreateBot($input: AgentInput!) {
+  createBot(input: $input) {
+    ...BotFields
+  }
+}
+
+mutation UpdateBot($id: ID!, $input: AgentInput!) {
+  updateBot(id: $id, input: $input) {
+    ...BotFields
+  }
+}
+
+mutation DeleteBot($id: ID!) {
+  deleteBot(id: $id)
 }

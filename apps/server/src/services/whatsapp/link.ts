@@ -1,3 +1,4 @@
+import { APP_NAME } from '@zapbots/finance';
 import type { Viewer } from '@zapbots/auth';
 import { db, schema } from '@zapbots/database';
 import { and, eq, gt, isNull, or } from 'drizzle-orm';
@@ -49,7 +50,7 @@ export async function startWhatsappLink(viewer: Viewer) {
       .onConflictDoNothing()
       .returning();
     if (row) {
-      const text = `Conectar ao Caishen: ${code}`;
+      const text = `Conectar ao ${APP_NAME}: ${code}`;
       return { code, expiresAt, url: `https://wa.me/${number}?text=${encodeURIComponent(text)}` };
     }
   }

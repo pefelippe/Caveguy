@@ -429,26 +429,39 @@ export const statement = pgTable(
   table => [unique('statement_card_month_unique').on(table.creditCardId, table.referenceMonth)]
 );
 
-export const botKey = pgEnum('bot_key', ['FINANCE']);
+export const botKey = pgEnum('bot_key', ['FINANCE', 'PERSONAL', 'FITNESS', 'CUSTOM']);
 export const messageRole = pgEnum('message_role', ['USER', 'BOT']);
 export const jobStatus = pgEnum('job_status', ['QUEUED', 'RUNNING', 'DONE', 'FAILED']);
 export const routineCadence = pgEnum('routine_cadence', ['WEEKLY', 'MONTHLY']);
 
 /**
- * A Bot an Organization has on its team. Name and personality come from the catalog in code; only
- * the Model is chosen here (docs/adr/0010).
+ * An Agente an Organization has on its team. The fixed ones (Financeiro, Pessoal, Fitness) take
+ * name and personality from the catalog in code, one per Organization; a `CUSTOM` one keeps its own
+ * `name`, `instructions` and `outfit`, and there may be several (docs/adr/0010, 0036).
  */
 export const bot = pgTable(
   'bot',
   {
     id: uuid('id').primaryKey().defaultRandom(),
+    /** What a custom Agente does, as its User wrote it; `null` on the fixed ones. */
+    instructions: text('instructions'),
     key: botKey('key').notNull(),
     /** OpenRouter model id; `null` follows the server default. */
     model: text('model'),
+    /** A custom Agente's name; `null` on the fixed ones, which is what keeps them one each. */
+    name: text('name'),
     organizationId: organizationId(),
+    /** Brutus's outfit a custom Agente wears (`OUTFITS` in the client); `null` on the fixed ones. */
+    outfit: text('outfit'),
     ...timestamps,
   },
-  table => [unique('bot_organization_key_unique').on(table.organizationId, table.key)]
+  // One of each fixed Agente; custom ones carry a name and stay out. Not `key <> 'CUSTOM'`: a new
+  // enum value cannot be used in the transaction that adds it, and migrations run in one.
+  table => [
+    uniqueIndex('bot_organization_key_unique_fixed')
+      .on(table.organizationId, table.key)
+      .where(sql`${table.name} is null`),
+  ]
 );
 
 /** Where a Conversation happens: the app's chat, or WhatsApp (docs/adr/0019). */
@@ -770,7 +783,7 @@ export const scrEntry = pgTable('scr_entry', {
     .references(() => scrSnapshot.id, { onDelete: 'cascade' }),
 });
 
-export const plan = pgEnum('plan', ['FREE', 'PRO']);
+export const plan = pgEnum('plan', ['FREE', 'PRO', 'MAX']);
 
 /**
  * Subscription: an Organization's paid Plan, as Stripe last reported it (docs/adr/0011). An
@@ -873,6 +886,25 @@ export const budget = pgTable('budget', {
 });
 
 /**
+ * Limite de categoria: the most a Holder means to spend on one category in a month, measured
+ * against the same spending the Fluxo de caixa shows. One per category.
+ */
+export const categoryLimit = pgTable(
+  'category_limit',
+  {
+    category: text('category').notNull(),
+    holderId: uuid('holder_id')
+      .notNull()
+      .references(() => holder.id, { onDelete: 'cascade' }),
+    id: uuid('id').primaryKey().defaultRandom(),
+    limitCents: cents('limit_cents').notNull(),
+    organizationId: organizationId(),
+    ...timestamps,
+  },
+  table => [uniqueIndex('category_limit_holder_category').on(table.holderId, table.category)]
+);
+
+/**
  * WhatsApp link: the number a User talks to the Caishen from, kept as Meta sends it (the `wa_id`,
  * not normalized). Unlinked rows stay, with `unlinkedAt`, so a number can link again (docs/adr/0019).
  */
@@ -936,6 +968,7 @@ export const whatsappUsage = pgTable('whatsapp_usage', {
 });
 
 /**
+ * Telegram is gone (docs/adr/0037); its tables stay, as migrations only add.
  * Telegram link: the private chat a User talks to the Caishen's bot from, by Telegram's chat id.
  * Unlinked rows stay, with `unlinkedAt`, like WhatsApp's (docs/adr/0031).
  */

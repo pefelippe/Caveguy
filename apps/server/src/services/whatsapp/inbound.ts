@@ -1,3 +1,4 @@
+import { APP_NAME } from '@zapbots/finance';
 import type { Viewer } from '@zapbots/auth';
 import { db, schema, type MessageRow } from '@zapbots/database';
 import { and, eq } from 'drizzle-orm';
@@ -28,14 +29,10 @@ export interface WebhookPayload {
   object?: string;
 }
 
-const HOW_TO_LINK =
-  'Oi! Eu sou o Caishen, o assistente de finanças. Para conversar comigo por aqui, abra o app, vá em Integrações e conecte o WhatsApp: ele gera um código para você me mandar.';
-const BAD_CODE =
-  'Esse código não vale mais. Gere outro em Integrações, no app do Caishen, e me mande em até 15 minutos.';
-const LINKED =
-  'Pronto, seu WhatsApp está conectado ao Caishen. Pode me contar um gasto ("gastei 45 no mercado hoje") ou perguntar sobre as suas finanças. Para desconectar, mande SAIR.';
-const UNLINKED =
-  'Desconectei este WhatsApp do Caishen. Para voltar, gere um código em Integrações.';
+const HOW_TO_LINK = `Oi! Eu sou o ${APP_NAME}, o assistente de finanças. Para conversar comigo por aqui, abra o app, vá em Integrações e conecte o WhatsApp: ele gera um código para você me mandar.`;
+const BAD_CODE = `Esse código não vale mais. Gere outro em Integrações, no app do ${APP_NAME}, e me mande em até 15 minutos.`;
+const LINKED = `Pronto, seu WhatsApp está conectado ao ${APP_NAME}. Pode me contar um gasto ("gastei 45 no mercado hoje") ou perguntar sobre as suas finanças. Para desconectar, mande SAIR.`;
+const UNLINKED = `Desconectei este WhatsApp do ${APP_NAME}. Para voltar, gere um código em Integrações.`;
 const ONLY_TEXT =
   'Por enquanto eu só leio texto por aqui. Escreva o que quer registrar ou perguntar.';
 const FAILED = 'Não consegui responder agora. Tente de novo em instantes.';

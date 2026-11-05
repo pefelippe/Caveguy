@@ -1,0 +1,9 @@
+# O Nango guarda o OAuth dos serviços de fora, começando pelo Google Agenda
+
+Cada serviço novo com login (Google Agenda, Gmail, Outlook, Spotify…) pedia o mesmo trabalho: um app OAuth, a tela de consentimento, guardar o token selado, renová-lo e tratar quando ele é revogado. O Spotify (ADR 0032) fez tudo isso à mão. Para não repetir a cada serviço, o OAuth passa a ser do Nango (`@nangohq/node` no servidor, `@nangohq/frontend` na página): a janela dele faz o login, ele guarda e renova os tokens, e nós chamamos a API do serviço pelo proxy dele (`services/nango.ts`).
+
+Nada do Nango fica no nosso banco. Ao abrir a janela, o servidor cria uma sessão com o id do Usuário como `end_user` e só a integração pedida (`allowed_integrations`). Depois, a conexão do Usuário é achada pedindo ao Nango as conexões desse `end_user`. O navegador nunca diz qual conexão é a sua, então ninguém lê a agenda de outra pessoa colando um id. Não usamos os webhooks do Nango por enquanto: a janela avisa a página quando termina, e a página lê de novo o estado das Integrações.
+
+Começa pelo Google Agenda, só leitura: o card `#google-calendar` mostra os próximos compromissos, lidos na hora e não guardados. Precisa de `NANGO_API_KEY`; sem ela o card diz que ainda não está ligado. No painel do Nango fica a integração (`google-calendar`, ou o id em `NANGO_CALENDAR_INTEGRATION`) com o app OAuth do Google. As Agendas de fora por link `.ics` (ADR 0028), o Google Tarefas e o Drive continuam como estão.
+
+O Nango passa a guardar tokens dos Usuários, então é um processador novo: os Termos e a Política mudam antes de abrir isto em produção (ADR 0027). Excluir conta apaga a conexão no Nango antes de apagar o Usuário. O Gmail continua de fora: o escopo de ler e-mail é restrito no Google e pede auditoria de segurança todo ano, com ou sem Nango.

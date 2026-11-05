@@ -442,3 +442,47 @@ mutation SaveBudget($input: BudgetInput!) {
     id
   }
 }
+
+query MoneyHome($month: String!, $monthlyExtraCents: Cents!) {
+  viewerHolder {
+    id
+    month(month: $month) {
+      month
+      incomeCents
+      commitmentsCents
+      expensesCents
+      balanceCents
+    }
+    upcomingDues {
+      label
+      dueDate
+      amountCents
+    }
+    creditOperations {
+      id
+      outstandingBalanceCents
+      installmentCents
+    }
+    payoffPlan(monthlyExtraCents: $monthlyExtraCents) {
+      debtFreeOn
+      debtFreeWithoutPlanOn
+      interestSavedCents
+    }
+    categoryLimits(month: $month) {
+      id
+      category
+      limitCents
+      spentCents
+    }
+    spending(month: $month) {
+      category
+      amountCents
+    }
+  }
+}
+
+mutation SetCategoryLimit($holderId: ID!, $category: String!, $limitCents: Cents) {
+  setCategoryLimit(holderId: $holderId, category: $category, limitCents: $limitCents) {
+    id
+  }
+}

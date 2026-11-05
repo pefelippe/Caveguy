@@ -8,7 +8,7 @@ import {
   type BillingQuery,
 } from '@zapbots/graphql/client';
 import { CheckIcon, CreditCardIcon, ExternalLinkIcon } from 'lucide-react';
-import { useRef, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import { PageHeading } from '@zapbots/ui/blocks/field';
@@ -86,11 +86,13 @@ export function PlanSettings() {
   // Stripe hands back the same Checkout page instead of opening a second one.
   const checkoutKey = useRef<string | null>(null);
   const [portal, portalState] = useMutation(OpenBillingPortalDocument);
+  // Which Plan's Assinar was clicked, so its error shows under it.
+  const [buying, setBuying] = useState<string | null>(null);
 
   if (loading && !data) return <PageSkeleton />;
   if (!data) return <p>{t('common.loadFailed')}</p>;
   const billing = data.billing;
-  const onPro = billing.plan.key === 'PRO';
+  const onFree = billing.plan.key === 'FREE';
 
   const goTo = async (start: () => Promise<string | undefined>) => {
     const url = await start().catch(() => undefined);
@@ -98,7 +100,7 @@ export function PlanSettings() {
   };
 
   const status = (() => {
-    if (!onPro) return null;
+    if (onFree) return null;
     if (billing.cancelAtPeriodEnd && billing.currentPeriodEnd) {
       return t('billing.endsOn', { date: formatDate(billing.currentPeriodEnd) });
     }
@@ -114,7 +116,7 @@ export function PlanSettings() {
       {params.get('checkout') === 'ok' && (
         <Alert>
           <CheckIcon />
-          <AlertTitle>{t('billing.thanks')}</AlertTitle>
+          <AlertTitle>{t('billing.thanks', { plan: billing.plan.name })}</AlertTitle>
           <AlertDescription>{t('billing.thanksText')}</AlertDescription>
         </Alert>
       )}
@@ -178,20 +180,23 @@ export function PlanSettings() {
         </div>
       </Card>
 
-      <section aria-label={t('billing.plans')} className="grid gap-4 md:grid-cols-2">
+      <section aria-label={t('billing.plans')} className="grid gap-4 md:grid-cols-3">
         {data.plans.map(plan => (
           <PlanCard current={plan.key === billing.plan.key} key={plan.key} plan={plan}>
-            {plan.key === 'PRO' && !onPro && (
+            {plan.key !== 'FREE' && onFree && (
               <div className="flex flex-col gap-2">
                 <Button
                   className="self-start bg-card text-primary hover:bg-card/90"
                   disabled={!billing.configured || checkoutState.loading}
                   onClick={() => {
+                    if (buying !== plan.key) checkoutKey.current = null;
+                    setBuying(plan.key);
                     checkoutKey.current ??= crypto.randomUUID();
                     void goTo(async () => {
                       try {
                         const result = await checkout({
                           context: { headers: { 'Idempotency-Key': checkoutKey.current } },
+                          variables: { plan: plan.key },
                         });
                         return result.data?.startCheckout;
                       } catch (error) {
@@ -205,12 +210,14 @@ export function PlanSettings() {
                   size="lg"
                 >
                   <CreditCardIcon />
-                  {t('billing.upgrade')}
+                  {t('billing.upgrade', { plan: plan.name })}
                 </Button>
                 {!billing.configured && (
                   <p className="text-sm text-primary-foreground/80">{t('billing.notConfigured')}</p>
                 )}
-                {checkoutState.error && <FormError error={checkoutState.error} />}
+                {checkoutState.error && buying === plan.key && (
+                  <FormError error={checkoutState.error} />
+                )}
               </div>
             )}
           </PlanCard>
@@ -277,7 +284,8 @@ function PlanCard({
         {[
           t('billing.jobsPerMonth', { count: plan.jobs }),
           t('billing.messagesPerMonth', { count: plan.messages }),
-          t(pro ? 'billing.proModels' : 'billing.freeModels'),
+          t(plan.key === 'FREE' ? 'billing.freeModels' : 'billing.proModels'),
+          ...(plan.agents ? [t('billing.customAgents', { count: plan.agents })] : []),
         ].map(item => (
           <li className="flex items-center gap-2.5" key={item}>
             <CheckIcon className={cn('size-4 shrink-0', !pro && 'text-primary')} />

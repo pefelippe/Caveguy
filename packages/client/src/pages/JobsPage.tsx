@@ -44,6 +44,7 @@ const FROM_ALERTS: Partial<Record<AlertKind, string>> = {
   ABOVE_MARKET: 'Monte um roteiro para renegociar ou portar a Operação com taxa acima do mercado.',
   DUE_SOON: 'Organize o que vence nos próximos 7 dias por ordem de prioridade.',
   HIGH_UTILIZATION: 'Como reduzir o uso do limite do Cartão sem atrasar nenhuma conta?',
+  OVER_LIMIT: 'Onde dá para cortar nas categorias que passaram do limite este mês?',
   OVERDUE: 'Monte um plano para regularizar o que está em atraso, começando pelo mais urgente.',
 };
 

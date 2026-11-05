@@ -1,3 +1,4 @@
+import { APP_NAME } from '@zapbots/finance';
 import { createHash, randomBytes } from 'node:crypto';
 
 import type { Viewer } from '@zapbots/auth';
@@ -105,5 +106,5 @@ export async function calendarFeedFile(token: string): Promise<null | string> {
       });
     }
   }
-  return icsCalendar({ entries, name: 'Caishen', timeZone });
+  return icsCalendar({ entries, name: APP_NAME, timeZone });
 }

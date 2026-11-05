@@ -156,7 +156,7 @@ export function ChatRepliesProvider({ children }: { children: ReactNode }) {
         // The list of Conversations shows the latest Message; bring it up to date.
         await apollo.refetchQueries({ include: [ConversationsDocument] });
       } catch {
-        setError(id, 'Não foi possível falar com o Caishen.');
+        setError(id, 'Não foi possível falar com o Agente.');
       }
       busy.current.delete(id);
       setPending(({ [id]: _, ...rest }) => rest);

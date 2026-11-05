@@ -1,3 +1,4 @@
+import { APP_NAME } from '@zapbots/finance';
 import type { Resolvers } from '@zapbots/graphql/server';
 import { plansOn, sleepMinutes } from '@zapbots/fitness';
 
@@ -97,7 +98,7 @@ export const fitnessResolvers: Resolvers = {
   },
   PublicWorkoutPlan: {
     exercises: plan => planExercises(plan.id),
-    ownerName: plan => ('ownerName' in plan ? String(plan.ownerName) : 'Caishen'),
+    ownerName: plan => ('ownerName' in plan ? String(plan.ownerName) : APP_NAME),
   },
   WorkoutPlan: {
     exercises: plan => planExercises(plan.id),

@@ -1,3 +1,4 @@
+import { APP_NAME } from '@zapbots/finance';
 import { CheckIcon, CopyIcon, ShieldCheckIcon } from 'lucide-react';
 import { useEffect, useState, type FormEvent } from 'react';
 import QRCode from 'react-qr-code';
@@ -79,7 +80,7 @@ export function TwoFactorCard() {
     setPending(true);
     setError(null);
     if (mode.action === 'enable') {
-      const result = await authClient.twoFactor.enable({ issuer: 'Caishen', password });
+      const result = await authClient.twoFactor.enable({ issuer: APP_NAME, password });
       if (result.error) return fail(result.error, 'twoFactor.error.generic');
       // Without an e-mail OTP sender configured, enabling is always by authenticator app.
       if (result.data.method !== 'totp') return fail({}, 'twoFactor.error.generic');

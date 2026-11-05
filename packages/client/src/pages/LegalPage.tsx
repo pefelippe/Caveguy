@@ -1,11 +1,10 @@
-import { ArrowLeftIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 
-import { LogoBadge } from '@zapbots/ui/blocks/logo';
-import { Button } from '@zapbots/ui/components/button';
+import { APP_NAME } from '@zapbots/finance';
 
 import { COMPANY, LEGAL_UPDATED } from '../lib/legal';
+import { SiteHeader } from './LandingPage';
 
 interface Clause {
   body: ReactNode;
@@ -39,21 +38,8 @@ function LegalDocument({
   title: string;
 }) {
   return (
-    <div className="min-h-svh bg-background text-foreground">
-      <header className="border-b bg-card">
-        <div className="mx-auto flex max-w-3xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
-          <Link className="flex items-center gap-2.5 text-header" to="/">
-            <LogoBadge size={28} />
-            <span className="text-lg font-semibold tracking-tight text-foreground">Caishen</span>
-          </Link>
-          <Button asChild size="sm" variant="ghost">
-            <Link to="/">
-              <ArrowLeftIcon />
-              Voltar
-            </Link>
-          </Button>
-        </div>
-      </header>
+    <div className="landing min-h-svh" data-theme="landing">
+      <SiteHeader />
       <main className="page-enter mx-auto max-w-3xl px-4 py-10 sm:px-6 sm:py-14">
         <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{title}</h1>
         <p className="mt-2 text-sm text-muted-foreground">Em vigor desde {LEGAL_UPDATED}.</p>
@@ -98,25 +84,26 @@ const TERMS: Clause[] = [
     body: (
       <>
         <p>
-          O Caishen é um assistente de finanças pessoais: você registra ou importa receitas, gastos,
-          dívidas, cartões e impostos, vê o fluxo de caixa do mês, simula pagamentos e conversa com
-          um agente de inteligência artificial (o Caishen) sobre os seus dados.
+          O {APP_NAME} é um app de assistentes pessoais: você conversa com Agentes de inteligência
+          artificial (o Financeiro, o Pessoal, o Fitness e, no plano Max, os que você cria) sobre a
+          sua vida. Você registra ou importa receitas, gastos, dívidas e cartões, vê o fluxo de
+          caixa do mês, organiza a agenda e as tarefas e anota os seus treinos.
         </p>
         <p>
           O serviço é oferecido por {COMPANY.name}, CNPJ {COMPANY.cnpj}, com sede em {COMPANY.city}{' '}
-          (“nós”). Ao criar uma conta ou usar o Caishen, você aceita estes Termos e a{' '}
+          (“nós”). Ao criar uma conta ou usar o {APP_NAME}, você aceita estes Termos e a{' '}
           {to('/privacy', 'Política de Privacidade')}. Se não concordar, não use o serviço.
         </p>
       </>
     ),
     id: 'servico',
-    title: 'O que é o Caishen',
+    title: `O que é o ${APP_NAME}`,
   },
   {
     body: (
       <ul>
         <li>
-          O Caishen <strong>não é instituição financeira</strong>, não oferece crédito, não
+          O {APP_NAME} <strong>não é instituição financeira</strong>, não oferece crédito, não
           intermedeia investimentos e <strong>nunca movimenta o seu dinheiro</strong>.
         </li>
         <li>
@@ -136,19 +123,20 @@ const TERMS: Clause[] = [
       </ul>
     ),
     id: 'nao-e',
-    title: 'O que o Caishen não é',
+    title: `O que o ${APP_NAME} não é`,
   },
   {
     body: (
       <>
         <p>
-          O agente do Caishen é uma <strong>inteligência artificial</strong>: um modelo de linguagem
-          de terceiros que responde com base nos seus dados e no que você escreve. Ele pode errar,
-          entender mal ou apresentar uma informação desatualizada. Confira as respostas importantes.
+          Os Agentes do {APP_NAME} são <strong>inteligência artificial</strong>: um modelo de
+          linguagem de terceiros que responde com base nos seus dados e no que você escreve. Ele
+          pode errar, entender mal ou apresentar uma informação desatualizada. Confira as respostas
+          importantes.
         </p>
         <p>
-          O agente só lê. Quando ele sugere criar, corrigir ou apagar um registro, nada é gravado
-          até você confirmar a proposta. Workflows também só leem os seus dados.
+          Os Agentes só leem. Quando o Financeiro sugere criar, corrigir ou apagar um registro, nada
+          é gravado até você confirmar a proposta. Workflows também só leem os seus dados.
         </p>
         <p>
           Se você estiver passando por um momento difícil, procure ajuda: o CVV atende de graça, a
@@ -171,7 +159,7 @@ const TERMS: Clause[] = [
           Informe dados verdadeiros e cadastre só dados seus ou de quem autorizou você a fazê-lo.
         </li>
         <li>
-          Não use o Caishen para atividades ilegais, para tentar acessar dados de outras pessoas,
+          Não use o {APP_NAME} para atividades ilegais, para tentar acessar dados de outras pessoas,
           sobrecarregar ou atacar o serviço, ou para extrair as respostas da IA em massa.
         </li>
       </ul>
@@ -183,17 +171,19 @@ const TERMS: Clause[] = [
     body: (
       <>
         <p>
-          O plano <strong>Gratuito</strong> tem limites mensais de mensagens e Workflows. O plano{' '}
-          <strong>Pro</strong> custa o valor mostrado na página Plano no momento da assinatura
-          (hoje, R$ 19,00 por mês) e amplia esses limites. Os pagamentos são processados pelo
-          Stripe; não guardamos os dados do seu cartão.
+          O plano <strong>Gratuito</strong> tem limites mensais de mensagens e Workflows. Os planos
+          pagos custam o valor mostrado na página Plano no momento da assinatura: o{' '}
+          <strong>Pro</strong> (hoje, R$ 39,90 por mês) amplia esses limites, e o{' '}
+          <strong>Max</strong> (hoje, R$ 99,90 por mês) amplia mais e é o único que cria Agentes
+          personalizados. Os pagamentos são processados pelo Stripe; não guardamos os dados do seu
+          cartão.
         </p>
         <ul>
           <li>
-            <strong>Renovação automática:</strong> a assinatura do Pro se renova sozinha a cada mês,
-            na mesma data, no mesmo valor, até você cancelar. A data da próxima cobrança fica sempre
-            visível na página Plano. Se o preço mudar, avisamos por e-mail com pelo menos 30 dias de
-            antecedência, e você pode cancelar antes de a mudança valer.
+            <strong>Renovação automática:</strong> a assinatura de um plano pago se renova sozinha a
+            cada mês, na mesma data, no mesmo valor, até você cancelar. A data da próxima cobrança
+            fica sempre visível na página Plano. Se o preço mudar, avisamos por e-mail com pelo
+            menos 30 dias de antecedência, e você pode cancelar antes de a mudança valer.
           </li>
           <li>
             <strong>Cancelar é tão simples quanto assinar:</strong> em Plano, “Gerenciar
@@ -220,9 +210,9 @@ const TERMS: Clause[] = [
           serviço, como descreve a {to('/privacy', 'Política de Privacidade')}.
         </p>
         <p>
-          O software, a marca e o conteúdo do Caishen são nossos ou licenciados para nós. Você pode
-          usá-los enquanto tiver uma conta, para uso pessoal, sem copiar, revender ou desmontar o
-          serviço.
+          O software, a marca e o conteúdo do {APP_NAME} são nossos ou licenciados para nós. Você
+          pode usá-los enquanto tiver uma conta, para uso pessoal, sem copiar, revender ou desmontar
+          o serviço.
         </p>
       </>
     ),
@@ -238,7 +228,7 @@ const TERMS: Clause[] = [
           parar de funcionar.
         </p>
         <p>
-          Trabalhamos para manter o Caishen disponível e correto, mas ele é oferecido como está:
+          Trabalhamos para manter o {APP_NAME} disponível e correto, mas ele é oferecido como está:
           pode haver interrupções, erros e mudanças de funcionalidades. Na medida permitida pela
           lei, não respondemos por decisões financeiras tomadas com base nas respostas ou cálculos
           do serviço, nem por perdas indiretas. Nada nestes Termos limita os direitos que o Código
@@ -259,7 +249,7 @@ const TERMS: Clause[] = [
         </p>
         <p>
           Podemos mudar estes Termos. Mudanças relevantes são avisadas por e-mail ou no aplicativo
-          com antecedência; continuar usando o Caishen depois delas significa aceitá-las.
+          com antecedência; continuar usando o {APP_NAME} depois delas significa aceitá-las.
         </p>
       </>
     ),
@@ -284,7 +274,7 @@ export function TermsPage() {
       clauses={TERMS}
       intro={
         <p>
-          Estes Termos explicam as regras de uso do Caishen: o que o serviço faz e não faz, como
+          Estes Termos explicam as regras de uso do {APP_NAME}: o que o serviço faz e não faz, como
           funcionam os planos e como cancelar.
         </p>
       }
@@ -381,12 +371,11 @@ const PRIVACY: Clause[] = [
         </li>
         <li>
           <strong>Integrações que você ligar:</strong> o número de WhatsApp vinculado e as mensagens
-          trocadas por ele; a conversa do Telegram vinculada (só o número interno dela) e as
-          mensagens trocadas por ela; contas e transações do Open Finance (Pluggy), quando
-          disponível; chaves de provedores de IA que você colar (guardadas cifradas); o acesso ao
-          Spotify, se você conectar (guardado cifrado, com o nome da conta; o que você ouve não é
-          guardado); os gastos que suas automações (Zapier, Make, n8n ou outra) mandarem para o seu
-          endereço de envio, que entram como os de uma planilha.
+          trocadas por ele; contas e transações do Open Finance (Pluggy), quando disponível; chaves
+          de provedores de IA que você colar (guardadas cifradas); o acesso ao Spotify, se você
+          conectar (guardado cifrado, com o nome da conta; o que você ouve não é guardado); os
+          gastos que suas automações (Zapier, Make, n8n ou outra) mandarem para o seu endereço de
+          envio, que entram como os de uma planilha.
         </li>
         <li>
           <strong>Pagamento:</strong> o identificador de cliente e de assinatura no Stripe e o
@@ -428,10 +417,13 @@ const PRIVACY: Clause[] = [
     body: (
       <>
         <p>
-          Para responder no chat e nos Workflows, o Caishen envia a um provedor de modelo de
-          linguagem a sua mensagem, os anexos e um resumo dos seus dados financeiros necessários
-          para aquela resposta. Os provedores possíveis são OpenRouter (que encaminha ao modelo
-          escolhido), Anthropic, Google e OpenAI, conforme o modelo configurado em Integrações.
+          Para responder no chat e nos Workflows, o {APP_NAME} envia a um provedor de modelo de
+          linguagem a sua mensagem, os anexos e um resumo dos dados que aquele Agente usa: o
+          Financeiro, os seus dados financeiros; o Pessoal, a sua Agenda, Tarefas e Metas; o
+          Fitness, só as suas Fichas de treino (nunca peso, sono, medidas ou outros dados de saúde);
+          um Agente que você criou, só o nome e as instruções que você escreveu nele. Os provedores
+          possíveis são OpenRouter (que encaminha ao modelo escolhido), Anthropic, Google e OpenAI,
+          conforme o modelo configurado em Integrações.
         </p>
         <p>
           Modelos gratuitos oferecidos pelo OpenRouter podem ter políticas próprias, inclusive
@@ -463,7 +455,6 @@ const PRIVACY: Clause[] = [
           </li>
           <li>Google: login com o Google e, se você ligar, o Google Drive e o Google Tarefas.</li>
           <li>Meta (WhatsApp Cloud API): mensagens, se você vincular um número.</li>
-          <li>Telegram: mensagens, se você vincular uma conversa.</li>
           <li>
             Spotify: o que você está ouvindo e ouviu há pouco, lido na hora e não guardado, se você
             conectar a sua conta.
@@ -558,8 +549,8 @@ const PRIVACY: Clause[] = [
   {
     body: (
       <p>
-        O Caishen não é destinado a menores de 18 anos e não coleta de propósito dados de crianças
-        ou adolescentes.
+        O {APP_NAME} não é destinado a menores de 18 anos e não coleta de propósito dados de
+        crianças ou adolescentes.
       </p>
     ),
     id: 'menores',
@@ -583,7 +574,7 @@ export function PrivacyPage() {
       clauses={PRIVACY}
       intro={
         <p>
-          Esta Política explica quais dados pessoais o Caishen coleta, para quê, com quem
+          Esta Política explica quais dados pessoais o {APP_NAME} coleta, para quê, com quem
           compartilha e como você exerce os seus direitos, conforme a Lei Geral de Proteção de Dados
           (Lei nº 13.709/2018). Veja também os {to('/terms', 'Termos de Uso')}.
         </p>

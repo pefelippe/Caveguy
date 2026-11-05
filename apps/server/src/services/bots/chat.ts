@@ -6,7 +6,7 @@ import { owned } from '../../resolvers/guards';
 import { PlanLimitError, requireWithinLimit } from '../billing/billing';
 import { aiConfigured, botModel, listModels, ModelError, talk, type ModelMessage } from '../models';
 import { attachedNote, userContent, type ChatAttachment } from './attachments';
-import { CATALOG } from './catalog';
+import { botName } from './catalog';
 import { botPrompt } from './prompt';
 import { attachProposals, PROPOSAL_TOOLS, proposalNote, proposeFromToolCall } from './proposals';
 import { isReadTool, READ_AGENT_TOOLS, runReadTool } from './tools';
@@ -111,7 +111,7 @@ export async function replyInConversation(options: {
   content: string;
   conversationId: string;
   /** Where the Conversation happens: the app's chat (the default) or WhatsApp (docs/adr/0019). */
-  mode?: 'chat' | 'telegram' | 'whatsapp';
+  mode?: 'chat' | 'whatsapp';
   /**
    * Answers the User's last Message again instead of a new one, in place of the reply after it:
    * `retry` as it is, `edit` with `content` in its place. Only in the app.
@@ -158,16 +158,16 @@ export async function replyInConversation(options: {
 
   const model = await botModel(viewer.organizationId, bot.model);
   if (!model) {
-    throw new ChatError(`Nenhum Modelo disponível. Escolha um para ${CATALOG[bot.key].name}.`);
+    throw new ChatError(`Nenhum Modelo disponível. Escolha um para ${botName(bot)}.`);
   }
 
   // Models that cannot call tools still chat; they just cannot read with tools or propose records
-  // (docs/adr/0013, 0021).
+  // (docs/adr/0013, 0021). Only the Financeiro has tools (docs/adr/0036).
   const listed = (await listModels(viewer.organizationId)).find(entry => entry.id === model);
-  const canUseTools = listed?.supportsTools ?? true;
+  const canUseTools = bot.key === 'FINANCE' && (listed?.supportsTools ?? true);
   if (listed && !listed.readsImages && attachments.some(file => file.kind === 'IMAGE')) {
     throw new ChatError(
-      `O Modelo de ${CATALOG[bot.key].name} não lê imagens. Escolha um com visão em Integrações, ou mande o texto.`
+      `O Modelo de ${botName(bot)} não lê imagens. Escolha um com visão em Integrações, ou mande o texto.`
     );
   }
   // In the app one reply is written at a time, and Parar can end it; WhatsApp answers each message
@@ -294,7 +294,7 @@ async function answer({
   content: string;
   conversation: typeof schema.conversation.$inferSelect;
   history: MessageRow[];
-  mode: 'chat' | 'telegram' | 'whatsapp';
+  mode: 'chat' | 'whatsapp';
   model: string;
   proposals: (typeof schema.proposal.$inferSelect)[];
   screen?: string;

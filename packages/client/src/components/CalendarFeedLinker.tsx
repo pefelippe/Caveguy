@@ -1,3 +1,4 @@
+import { APP_NAME } from '@zapbots/finance';
 import { useMutation, useQuery } from '@apollo/client/react';
 import {
   CalendarFeedDocument,
@@ -77,7 +78,7 @@ export function CalendarFeedLinker() {
         </Button>
         <Button asChild size="sm" variant="outline">
           <a
-            href={`https://outlook.live.com/calendar/0/addfromweb?url=${encodeURIComponent(url)}&name=Caishen`}
+            href={`https://outlook.live.com/calendar/0/addfromweb?url=${encodeURIComponent(url)}&name=${APP_NAME}`}
             rel="noreferrer"
             target="_blank"
           >

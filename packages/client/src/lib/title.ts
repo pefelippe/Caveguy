@@ -1,3 +1,4 @@
+import { APP_NAME } from '@zapbots/finance';
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 
@@ -47,6 +48,6 @@ export function useDocumentTitle(inApp: boolean) {
     // Outside the app, `/` is the landing page.
     const path = !inApp && pathname === '/' ? '/landing' : pathname;
     const name = pageTitle(path);
-    document.title = name ? `${name} · Caishen` : 'Caishen';
+    document.title = name ? `${name} · ${APP_NAME}` : APP_NAME;
   }, [pathname, inApp]);
 }

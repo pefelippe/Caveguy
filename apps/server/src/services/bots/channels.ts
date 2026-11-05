@@ -5,9 +5,9 @@ import { and, desc, eq, sql } from 'drizzle-orm';
 import { ensureBots } from './catalog';
 
 /** Channels outside the app the Caishen answers in: one Conversation each per Organization. */
-export type OutsideChannel = 'TELEGRAM' | 'WHATSAPP';
+export type OutsideChannel = 'WHATSAPP';
 
-const TITLES: Record<OutsideChannel, string> = { TELEGRAM: 'Telegram', WHATSAPP: 'WhatsApp' };
+const TITLES: Record<OutsideChannel, string> = { WHATSAPP: 'WhatsApp' };
 
 /** The Organization's Conversation on `channel`, created on its first message. */
 export async function channelConversation(

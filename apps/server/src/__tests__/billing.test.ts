@@ -22,12 +22,14 @@ beforeAll(async () => {
 beforeEach(() => {
   process.env.STRIPE_SECRET_KEY = 'sk_test_1';
   process.env.STRIPE_PRICE_PRO = 'price_pro';
+  process.env.STRIPE_PRICE_MAX = 'price_max';
   process.env.STRIPE_WEBHOOK_SECRET = 'whsec_test';
 });
 afterEach(() => {
   mswServer.resetHandlers();
   delete process.env.STRIPE_SECRET_KEY;
   delete process.env.STRIPE_PRICE_PRO;
+  delete process.env.STRIPE_PRICE_MAX;
   delete process.env.STRIPE_WEBHOOK_SECRET;
 });
 afterAll(async () => {
@@ -54,8 +56,8 @@ describe('startCheckout', () => {
     expect(first.errors).toEqual([]);
     expect(retry.data.startCheckout).toBe(first.data.startCheckout);
     expect(stripe.keys).toEqual([
-      `checkout:${viewer.organizationId}:click-0001`,
-      `checkout:${viewer.organizationId}:click-0001`,
+      `checkout:${viewer.organizationId}:price_pro:click-0001`,
+      `checkout:${viewer.organizationId}:price_pro:click-0001`,
     ]);
   });
 
@@ -67,6 +69,27 @@ describe('startCheckout', () => {
 
     expect(result.errors).toEqual([]);
     expect(stripe.keys).toEqual([null]);
+  });
+
+  it("opens Max's Price, and refuses a second paid Plan", async () => {
+    const stripe = checkoutHandler();
+    mswServer.use(stripe.handler);
+    const viewer = await createViewer();
+    const max = /* GraphQL */ `
+      mutation {
+        startCheckout(plan: MAX)
+      }
+    `;
+
+    expect((await gql(viewer, max)).errors).toEqual([]);
+    expect(stripe.forms[0]!.get('line_items[0][price]')).toBe('price_max');
+
+    await db.insert(schema.subscription).values({
+      organizationId: viewer.organizationId,
+      plan: 'PRO',
+      status: 'active',
+    });
+    expect((await gql(viewer, max)).errors).toEqual(['BAD_USER_INPUT']);
   });
 });
 
@@ -157,6 +180,20 @@ describe('the Stripe webhook', () => {
 
     expect(await eventRows(active.id)).toHaveLength(1);
     expect(await subscriptionOf(organizationId)).toMatchObject({ plan: 'PRO', status: 'active' });
+  });
+
+  it("takes a subscription to Max's Price as the Max Plan", async () => {
+    const { organizationId } = await createViewer();
+    const stripe = subscriptionsHandler();
+    stripe.subscriptions.set(`sub_${organizationId}`, {
+      ...subscriptionObject(organizationId, 'active'),
+      items: { data: [{ price: { id: 'price_max' } }] },
+    });
+    mswServer.use(stripe.handler);
+
+    expect(await deliver(subscriptionEvent(organizationId, 'active'))).toBe(200);
+
+    expect(await subscriptionOf(organizationId)).toMatchObject({ plan: 'MAX', status: 'active' });
   });
 
   it('keeps how the subscription is now when an older event arrives after a newer one', async () => {

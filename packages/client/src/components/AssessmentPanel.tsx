@@ -1,3 +1,4 @@
+import { APP_NAME } from '@zapbots/finance';
 import { useMutation } from '@apollo/client/react';
 import {
   AddReportedScoreDocument,
@@ -73,7 +74,7 @@ export function AssessmentPanel({ holder }: { holder: Holder }) {
             <div className="flex flex-wrap items-center gap-4">
               <ScoreBadge band={latest.band} large score={latest.score} />
               <p className="text-xs text-muted-foreground">
-                Score de 0 a 1000 nas faixas do SPC, calculado pelo Caishen a partir dos dados
+                Score de 0 a 1000 nas faixas do SPC, calculado pelo {APP_NAME} a partir dos dados
                 cadastrados. Não é o score de nenhum birô.
                 <br />
                 Pontualidade {latest.breakdown.punctuality}/500 · Capacidade{' '}
@@ -195,8 +196,8 @@ function ReportedScores({ holder, ourScore }: { holder: Holder; ourScore: number
                     <TableCell className="text-xs whitespace-normal">
                       {Math.abs(gap) >= DIVERGENCE_POINTS && (
                         <span className="text-destructive">
-                          Diverge {Math.abs(gap)} pts do Score do Caishen: confira se faltam dados
-                          cadastrados
+                          Diverge {Math.abs(gap)} pts do Score do {APP_NAME}: confira se faltam
+                          dados cadastrados
                         </span>
                       )}
                     </TableCell>

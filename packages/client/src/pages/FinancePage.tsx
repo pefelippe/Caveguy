@@ -795,7 +795,7 @@ function IncomeSection({ holder }: { holder: Holder }) {
   return (
     <Part
       count={holder.incomeSources.length}
-      empty="Nenhuma renda cadastrada. Sem ela, o Caishen não sabe quanto sobra no mês."
+      empty="Nenhuma renda cadastrada. Sem ela, o Financeiro não sabe quanto sobra no mês."
       id="income"
       intro="O que entra todo mês, já com os descontos."
       title="Salário"

@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from '@apollo/client/react';
 import {
+  AgentPanelDocument,
   BillingDocument,
-  BotPanelDocument,
   ConversationsDocument,
   DeleteConversationDocument,
   StartConversationDocument,
@@ -22,21 +22,19 @@ import { Button } from '@zapbots/ui/components/button';
 import { Sheet, SheetContent, SheetTitle } from '@zapbots/ui/components/sheet';
 import { Skeleton } from '@zapbots/ui/components/skeleton';
 
-import { CHAT_SUGGESTIONS } from '../components/ChatPanel';
+import { AgentTabs } from '../components/AgentTabs';
 import { ChatThread, type Suggestion } from '../components/ChatThread';
 import { ConversationList } from '../components/ConversationList';
 import { useUndoableDelete } from '../components/Toaster';
+import { greetingOf, suggestionsOf, useAgents } from '../lib/agents';
 
 type Conversation = ConversationsQuery['conversations'][number];
 
-/** On the page there is room for four: the panel's three, and one for a statement to attach. */
-const PAGE_SUGGESTIONS: Suggestion[] = [
-  ...CHAT_SUGGESTIONS,
-  {
-    icon: FileSpreadsheetIcon,
-    text: 'Vou anexar meu extrato: organize os gastos por categoria.',
-  },
-];
+/** On the page the Financeiro has room for one more: a statement to attach. */
+const STATEMENT: Suggestion = {
+  icon: FileSpreadsheetIcon,
+  text: 'Vou anexar meu extrato: organize os gastos por categoria.',
+};
 
 const BANNER_KEY = 'zapbots.agentBanner';
 
@@ -84,8 +82,15 @@ function PlanBanner() {
  * which has its title and Model on top and greets the User while it is empty.
  */
 export function ChatPage({ user }: { user: { name: string } }) {
-  const { data } = useQuery(BotPanelDocument, { variables: { key: 'FINANCE' } });
-  const bot = data?.bot;
+  const { active } = useAgents();
+  if (!active) return <Skeleton className="mx-auto mt-6 h-64 w-full max-w-3xl rounded-2xl" />;
+  return <AgentChat botId={active.id} key={active.id} user={user} />;
+}
+
+/** The page for one Agente; switching Agente remounts it on that one's Conversations. */
+function AgentChat({ botId, user }: { botId: string; user: { name: string } }) {
+  const { data } = useQuery(AgentPanelDocument, { variables: { id: botId } });
+  const bot = data?.botById;
   const { data: list } = useQuery(ConversationsDocument, {
     skip: !bot,
     variables: { botId: bot?.id ?? '' },
@@ -151,7 +156,8 @@ export function ChatPage({ user }: { user: { name: string } }) {
         </SheetContent>
       </Sheet>
 
-      <section className="page-enter flex min-w-0 flex-1 flex-col pt-3 md:pt-4" data-bot="FINANCE">
+      <section className="page-enter flex min-w-0 flex-1 flex-col pt-3 md:pt-4" data-bot={bot?.key}>
+        <AgentTabs className="mx-auto w-full max-w-3xl px-1 pb-2" />
         <header className="mx-auto flex w-full max-w-3xl items-center gap-2 px-1 pb-3">
           <Button
             aria-label="Conversas"
@@ -194,13 +200,17 @@ export function ChatPage({ user }: { user: { name: string } }) {
             className="min-h-0 flex-1"
             conversationId={chosen}
             ensureConversation={ensureConversation}
-            greeting={user.name.split(' ')[0]}
+            greeting={greetingOf(bot.key, user.name.split(' ')[0])}
             key={thread}
-            suggestions={PAGE_SUGGESTIONS}
+            suggestions={
+              bot.key === 'FINANCE'
+                ? [...suggestionsOf(bot.key), STATEMENT]
+                : suggestionsOf(bot.key)
+            }
             unavailable={
               data.aiStatus.configured
                 ? undefined
-                : 'O Caishen ainda não responde: cole a chave de um provedor de IA em Integrações.'
+                : `${bot.name} ainda não responde: cole a chave de um provedor de IA em Integrações.`
             }
             variant="page"
           />

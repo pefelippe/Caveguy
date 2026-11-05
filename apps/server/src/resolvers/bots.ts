@@ -1,12 +1,23 @@
 import type { Viewer } from '@zapbots/auth';
 import { db, schema, type RoutineRow } from '@zapbots/database';
 import type { Resolvers } from '@zapbots/graphql/server';
-import { and, asc, desc, eq, inArray } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNotNull, sql } from 'drizzle-orm';
 import { GraphQLError } from 'graphql';
 
-import { PlanLimitError, requireWithinLimit } from '../services/billing/billing';
+import { PlanLimitError, requireWithinLimit, subscriptionOf } from '../services/billing/billing';
+import { PLANS, planInForce } from '../services/billing/plans';
 import { markAlerts, viewerAlerts } from '../services/bots/alerts';
-import { CATALOG, ensureBots, type BotKey } from '../services/bots/catalog';
+import {
+  botDescription,
+  botName,
+  CATALOG,
+  ensureBots,
+  MAX_AGENT_INSTRUCTIONS,
+  MAX_AGENT_NAME,
+  OUTFITS,
+  type BotKey,
+  type Outfit,
+} from '../services/bots/catalog';
 import { isReplying, stopReply } from '../services/bots/chat';
 import {
   cancelJob,
@@ -106,22 +117,45 @@ async function botById(id: string) {
   return row!;
 }
 
-/** The Viewer's Organization's Bot with this key. */
+/** The Viewer's Organization's fixed Agente with this key. */
 async function viewerBot(viewer: Viewer, key: BotKey) {
   const bots = await ensureBots(viewer.organizationId);
-  return bots.find(bot => bot.key === key) ?? notFound('Bot');
+  return bots.find(bot => bot.key === key && bot.name === null) ?? notFound('Agente');
+}
+
+/** A custom Agente's fields, trimmed and checked (docs/adr/0035). */
+function validAgent(input: { instructions: string; name: string; outfit: string }) {
+  const name = input.name.trim();
+  const instructions = input.instructions.trim();
+  if (!name || name.length > MAX_AGENT_NAME)
+    badInput(`Dê um nome de até ${MAX_AGENT_NAME} caracteres`);
+  if (!instructions || instructions.length > MAX_AGENT_INSTRUCTIONS) {
+    badInput(`Diga o que o Agente faz em até ${MAX_AGENT_INSTRUCTIONS} caracteres`);
+  }
+  if (!OUTFITS.includes(input.outfit as Outfit)) badInput('Roupa desconhecida');
+  return { instructions, name, outfit: input.outfit };
+}
+
+/** Loads one of the Viewer's custom Agentes; the fixed ones cannot be changed or deleted. */
+async function findCustomBot(viewer: Viewer, id: string) {
+  const bot = await findBot(viewer, id);
+  if (bot.key !== 'CUSTOM' || bot.name === null) badInput('Este Agente não pode ser mudado');
+  return bot;
 }
 
 export const botResolvers: Resolvers = {
   Bot: {
     alerts: async (bot, _, context) =>
-      (await viewerAlerts(requireViewer(context), bot.key)).map(alert => ({
+      (await viewerAlerts(requireViewer(context), bot)).map(alert => ({
         ...alert,
         id: alert.key,
       })),
-    description: bot => CATALOG[bot.key].description,
+    custom: bot => bot.key === 'CUSTOM',
+    description: bot => botDescription(bot),
+    instructions: bot => (bot.key === 'CUSTOM' ? bot.instructions : null),
     model: bot => botModel(bot.organizationId, bot.model),
-    name: bot => CATALOG[bot.key].name,
+    name: bot => botName(bot),
+    outfit: bot => (bot.key === 'CUSTOM' ? (bot.outfit as Outfit | null) : null),
     personality: bot => CATALOG[bot.key].personality,
     // The Bot was loaded through the Viewer's Organization, so its Jobs are theirs too.
     recentJobs: (bot, { limit }) =>
@@ -231,15 +265,63 @@ export const botResolvers: Resolvers = {
     },
     confirmProposal: (_, { id }, context) => confirmProposal(requireViewer(context), id),
     cancelProposal: (_, { id }, context) => cancelProposal(requireViewer(context), id),
-    dismissAlert: async (_, { bot, id }, context) => {
+    // shortcut: Alerts are named by key, so a custom Agente's bell maps to none; switch to an id
+    // when the app shows Alerts outside the Financeiro.
+    dismissAlert: async (_, { bot: key, id }, context) => {
       const viewer = requireViewer(context);
+      const bot = await viewerBot(viewer, key);
       await markAlerts(viewer, bot, [id], 'DISMISSED');
-      return viewerBot(viewer, bot);
+      return bot;
     },
-    markAlertsRead: async (_, { bot, ids }, context) => {
+    markAlertsRead: async (_, { bot: key, ids }, context) => {
       const viewer = requireViewer(context);
+      const bot = await viewerBot(viewer, key);
       await markAlerts(viewer, bot, ids, 'READ');
-      return viewerBot(viewer, bot);
+      return bot;
+    },
+    createBot: async (_, { input }, context) => {
+      const viewer = requireViewer(context);
+      const fields = validAgent(input);
+      await ensureBots(viewer.organizationId);
+      return db.transaction(async tx => {
+        // Two requests at once must not both take the last place.
+        await tx.execute(
+          sql`select pg_advisory_xact_lock(hashtext(${`agents:${viewer.organizationId}`}))`
+        );
+        const customs = await tx
+          .select({ id: schema.bot.id })
+          .from(schema.bot)
+          .where(and(owned(schema.bot, viewer), isNotNull(schema.bot.name)));
+        const allowed = PLANS[planInForce(await subscriptionOf(viewer.organizationId))].agents;
+        if (!allowed) badInput('Agentes personalizados são do Plano Max.');
+        if (customs.length >= allowed) {
+          badInput(`Você já tem ${allowed} Agentes seus. Apague um para criar outro.`);
+        }
+        const [row] = await tx
+          .insert(schema.bot)
+          .values({ ...fields, key: 'CUSTOM', organizationId: viewer.organizationId })
+          .returning();
+        return row!;
+      });
+    },
+    updateBot: async (_, { id, input }, context) => {
+      const viewer = requireViewer(context);
+      await findCustomBot(viewer, id);
+      const [row] = await db
+        .update(schema.bot)
+        .set(validAgent(input))
+        .where(owned(schema.bot, viewer, id))
+        .returning();
+      return row!;
+    },
+    deleteBot: async (_, { id }, context) => {
+      const viewer = requireViewer(context);
+      await findCustomBot(viewer, id);
+      const deleted = await db
+        .delete(schema.bot)
+        .where(owned(schema.bot, viewer, id))
+        .returning({ id: schema.bot.id });
+      return deleted.length > 0;
     },
     editProposal: (_, { id, values }, context) => editProposal(requireViewer(context), id, values),
     deleteConversation: async (_, { id }, context) => {
@@ -354,6 +436,13 @@ export const botResolvers: Resolvers = {
       };
     },
     bot: (_, { key }, context) => viewerBot(requireViewer(context), key),
+    botById: async (_, { id }, context) => {
+      const [row] = await db
+        .select()
+        .from(schema.bot)
+        .where(owned(schema.bot, requireViewer(context), id));
+      return row ?? null;
+    },
     bots: (_, __, context) => ensureBots(requireViewer(context).organizationId),
     conversation: async (_, { id }, context) => {
       const [row] = await db

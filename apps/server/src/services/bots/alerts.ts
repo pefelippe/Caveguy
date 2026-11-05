@@ -1,5 +1,5 @@
 import type { Viewer } from '@zapbots/auth';
-import { db, schema } from '@zapbots/database';
+import { db, schema, type BotRow } from '@zapbots/database';
 import { addDays, dateOf, Decimal, overdueCents, today } from '@zapbots/finance';
 import { and, desc, eq, gte, inArray, isNotNull, sql } from 'drizzle-orm';
 
@@ -11,8 +11,8 @@ import {
   statementDueDate,
   upcomingDues,
 } from '../obligations';
+import { categoryLimits } from '../categoryLimits';
 import { viewerHolder } from '../viewerHolder';
-import type { BotKey } from './catalog';
 
 /** Something a Bot points out on its own, computed from the data; no Model is involved. */
 export interface BotAlert {
@@ -28,12 +28,15 @@ export interface BotAlert {
     | 'DUE_SOON'
     | 'HIGH_UTILIZATION'
     | 'OVERDUE'
+    | 'OVER_LIMIT'
     | 'ROUTINE_FAILED'
     | 'STALE_ASSESSMENT';
   message: string;
 }
 
 const DUE_SOON_DAYS = 7;
+/** A Limite de categoria this far spent is worth a word; past it, another. */
+const NEAR_LIMIT = 0.8;
 /** A Statement using this share of the Card's limit weighs on the Score (Utilização de Limite). */
 const HIGH_UTILIZATION = new Decimal('0.8');
 const STALE_ASSESSMENT_DAYS = 30;
@@ -86,10 +89,24 @@ async function financeAlerts(viewer: Viewer): Promise<BotAlert[]> {
   for (const due of await upcomingDues(holder.id, asOf)) {
     if (due.dueDate > until) continue;
     alerts.push({
-      href: '/caishen/entries',
+      href: '/caishen',
       key: `DUE_SOON:${due.label}:${due.dueDate}`,
       kind: 'DUE_SOON',
       message: `${due.label} vence em ${day(due.dueDate)}: ${money(due.amountCents)}.`,
+    });
+  }
+
+  for (const limit of await categoryLimits(holder.id, asOf.slice(0, 7))) {
+    const share = limit.spentCents / limit.limitCents;
+    if (share < NEAR_LIMIT) continue;
+    const over = share >= 1;
+    alerts.push({
+      href: '/caishen',
+      key: `OVER_LIMIT:${limit.category}:${asOf.slice(0, 7)}:${over ? 'over' : 'near'}`,
+      kind: 'OVER_LIMIT',
+      message: over
+        ? `${limit.category} passou do limite do mês: ${money(limit.spentCents)} de ${money(limit.limitCents)}.`
+        : `${limit.category} já usou ${Math.floor(share * 100)}% do limite do mês: ${money(limit.spentCents)} de ${money(limit.limitCents)}.`,
     });
   }
 
@@ -139,12 +156,13 @@ async function financeAlerts(viewer: Viewer): Promise<BotAlert[]> {
   }
 
   const order = {
-    ABOVE_MARKET: 3,
+    ABOVE_MARKET: 4,
     DUE_SOON: 1,
-    HIGH_UTILIZATION: 2,
+    HIGH_UTILIZATION: 3,
+    OVER_LIMIT: 2,
     OVERDUE: 0,
-    ROUTINE_FAILED: 5,
-    STALE_ASSESSMENT: 4,
+    ROUTINE_FAILED: 6,
+    STALE_ASSESSMENT: 5,
   } as const;
   return alerts.sort((a, b) => order[a.kind] - order[b.kind]);
 }
@@ -153,14 +171,10 @@ async function financeAlerts(viewer: Viewer): Promise<BotAlert[]> {
  * A Bot's Alerts for the Viewer, most urgent first: overdue, due soon, high card usage, rates above
  * the market, then an outdated Assessment.
  */
-export async function botAlerts(viewer: Viewer, key: BotKey): Promise<BotAlert[]> {
-  const ofField = await (async () => {
-    switch (key) {
-      case 'FINANCE':
-        return financeAlerts(viewer);
-    }
-  })();
-  return [...ofField, ...(await failedRoutineAlerts(viewer, key))];
+export async function botAlerts(viewer: Viewer, bot: BotRow): Promise<BotAlert[]> {
+  // Only the Financeiro computes Alerts from data (docs/adr/0036).
+  const ofField = bot.key === 'FINANCE' ? await financeAlerts(viewer) : [];
+  return [...ofField, ...(await failedRoutineAlerts(viewer, bot))];
 }
 
 /** An Alert as its User sees it in the bell: `read` once opened or marked. */
@@ -169,8 +183,8 @@ export interface SeenAlert extends BotAlert {
 }
 
 /** A Bot's Alerts for the Viewer, as `botAlerts`, less the ones they removed, each read or not. */
-export async function viewerAlerts(viewer: Viewer, key: BotKey): Promise<SeenAlert[]> {
-  const alerts = await botAlerts(viewer, key);
+export async function viewerAlerts(viewer: Viewer, bot: BotRow): Promise<SeenAlert[]> {
+  const alerts = await botAlerts(viewer, bot);
   if (!alerts.length) return [];
   const marks = await db
     .select()
@@ -196,11 +210,11 @@ export async function viewerAlerts(viewer: Viewer, key: BotKey): Promise<SeenAle
  */
 export async function markAlerts(
   viewer: Viewer,
-  key: BotKey,
+  bot: BotRow,
   keys: string[],
   mark: 'DISMISSED' | 'READ'
 ): Promise<void> {
-  const current = new Set((await botAlerts(viewer, key)).map(alert => alert.key));
+  const current = new Set((await botAlerts(viewer, bot)).map(alert => alert.key));
   const known = [...new Set(keys)].filter(alertKey => current.has(alertKey));
   if (!known.length) return;
   const now = new Date();
@@ -228,7 +242,7 @@ export async function markAlerts(
  * Routine Jobs that failed in the last week. Nobody watched them run, so the failure is pointed
  * out; Jobs the User asked for were failed in front of them.
  */
-async function failedRoutineAlerts(viewer: Viewer, key: BotKey): Promise<BotAlert[]> {
+async function failedRoutineAlerts(viewer: Viewer, bot: BotRow): Promise<BotAlert[]> {
   const since = new Date(Date.now() - FAILED_ROUTINE_DAYS * 86_400_000);
   const rows = await db
     .select({
@@ -237,11 +251,10 @@ async function failedRoutineAlerts(viewer: Viewer, key: BotKey): Promise<BotAler
       instructions: schema.job.instructions,
     })
     .from(schema.job)
-    .innerJoin(schema.bot, eq(schema.bot.id, schema.job.botId))
     .where(
       and(
         eq(schema.job.organizationId, viewer.organizationId),
-        eq(schema.bot.key, key),
+        eq(schema.job.botId, bot.id),
         eq(schema.job.status, 'FAILED'),
         isNotNull(schema.job.routineId),
         gte(schema.job.finishedAt, since)

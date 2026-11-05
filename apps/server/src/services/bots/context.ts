@@ -1,6 +1,7 @@
 import type { Viewer } from '@zapbots/auth';
 import { db, schema, type AssessmentRow } from '@zapbots/database';
 import {
+  addDays,
   amortizationSchedule,
   dateOf,
   Decimal,
@@ -15,7 +16,12 @@ import {
 import { desc, eq, inArray } from 'drizzle-orm';
 
 import { marketRate, marketRates } from '../bacen';
+import { listWorkoutPlans, planExercises } from '../fitness/workouts';
 import { monthlyIncome, payoffPlanFor, scheduleInputFor, upcomingDues } from '../obligations';
+import { agenda } from '../personal/agenda';
+import { viewerToday } from '../personal/clock';
+import { listGoals } from '../personal/goals';
+import { listTasks } from '../personal/tasks';
 import { viewerHolder } from '../viewerHolder';
 import type { BotKey } from './catalog';
 
@@ -270,10 +276,96 @@ async function finance(viewer: Viewer): Promise<string> {
   ].join('\n');
 }
 
-/** What a Bot knows about the Viewer: the data of its own field, already formatted. */
+const AGENDA_DAYS = 14;
+const OPEN_TASKS = 30;
+const WEEKDAYS = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
+
+/** The Pessoal's data (docs/adr/0036): the next two weeks of the Agenda, open Tarefas, Metas. */
+async function personal(viewer: Viewer): Promise<string> {
+  const from = await viewerToday(viewer);
+  const [items, tasks, goals] = await Promise.all([
+    agenda(viewer, from, addDays(from, AGENDA_DAYS - 1)),
+    listTasks(viewer, {}),
+    listGoals(viewer),
+  ]);
+  const hours = (start: null | string, end: null | string) =>
+    start ? (end ? ` das ${start} às ${end}` : ` às ${start}`) : '';
+  const agendaLine = (item: (typeof items)[number]) => {
+    const what =
+      item.kind === 'DUE'
+        ? `conta a vencer: ${item.title}${item.amountCents == null ? '' : `, ${money(item.amountCents)}`}`
+        : item.kind === 'TASK'
+          ? `Tarefa: ${item.title}${item.done ? ' (feita)' : ''}`
+          : `${item.title}${item.source ? ` (agenda ${item.source})` : ''}`;
+    return `${day(item.date)}${hours(item.startTime, item.endTime)}: ${what}`;
+  };
+  const goalLine = (goal: (typeof goals)[number]) => {
+    const amount = (value: number) =>
+      goal.kind === 'MONEY' ? money(value) : `${value}${goal.unit ? ` ${goal.unit}` : ''}`;
+    const progress =
+      goal.kind === 'CHECK'
+        ? goal.progress >= goal.target
+          ? 'feita'
+          : 'por fazer'
+        : `${amount(goal.progress)} de ${amount(goal.target)}`;
+    return `${goal.title}: ${progress}${goal.dueOn ? `, até ${day(goal.dueOn)}` : ''}`;
+  };
+  return [
+    '## Pessoal',
+    `Agenda dos próximos ${AGENDA_DAYS} dias (Eventos, prazos de Tarefas e contas):`,
+    list(items.map(agendaLine), 'Nada na Agenda.'),
+    'Tarefas abertas:',
+    list(
+      tasks
+        .slice(0, OPEN_TASKS)
+        .map(
+          task =>
+            `${task.title}${task.dueOn ? `, para ${day(task.dueOn)}${task.dueTime ? ` às ${task.dueTime}` : ''}` : ''}${task.priority === 'HIGH' ? ' (prioridade alta)' : ''}`
+        ),
+      'Nenhuma Tarefa aberta.'
+    ),
+    'Metas:',
+    list(goals.map(goalLine), 'Nenhuma Meta.'),
+  ].join('\n');
+}
+
+/** The Fitness's data (docs/adr/0036): the Fichas and their exercises. Never health data. */
+async function fitness(viewer: Viewer): Promise<string> {
+  const plans = await listWorkoutPlans(viewer);
+  const blocks = await Promise.all(
+    plans.map(async plan => {
+      const exercises = await planExercises(plan.id);
+      const days = plan.weekdays.length
+        ? `, ${plan.weekdays.map(weekday => WEEKDAYS[weekday]).join(', ')}`
+        : '';
+      const lines = exercises.map(
+        exercise =>
+          `${exercise.name}: ${exercise.sets} séries${exercise.reps ? ` de ${exercise.reps}` : ''}` +
+          (exercise.loadGrams ? `, ${exercise.loadGrams / 1000} kg` : '') +
+          (exercise.restSeconds ? `, descanso ${exercise.restSeconds}s` : '')
+      );
+      return [
+        `### ${plan.name}${plan.forName ? ` (para ${plan.forName})` : ''}${days}`,
+        list(lines, 'Sem exercícios.'),
+      ].join('\n');
+    })
+  );
+  return ['## Fichas de treino', blocks.length ? blocks.join('\n') : 'Nenhuma Ficha.'].join('\n');
+}
+
+/**
+ * What an Agente knows about the Viewer: the data of its own field, already formatted. A custom
+ * Agente reads nothing (docs/adr/0036).
+ */
 export async function botContext(viewer: Viewer, key: BotKey): Promise<string> {
   switch (key) {
     case 'FINANCE':
       return finance(viewer);
+    case 'PERSONAL':
+      return personal(viewer);
+    case 'FITNESS':
+      return fitness(viewer);
+    case 'CUSTOM':
+      return '';
   }
 }

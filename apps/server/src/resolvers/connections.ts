@@ -13,8 +13,11 @@ import { healthInbox, setHealthInbox } from '../services/fitness/health';
 import { googleTasksSync, syncGoogleTasks } from '../services/personal/googleTasks';
 import { automationInbox, setAutomationInbox } from '../services/automation';
 import { music, spotifyLinkOf, startSpotifyLink, unlinkSpotify } from '../services/spotify';
-import { telegramConfigured } from '../services/telegram/api';
-import { startTelegramLink, unlinkTelegram } from '../services/telegram/link';
+import {
+  googleCalendarEvents,
+  startGoogleCalendarLink,
+  unlinkGoogleCalendar,
+} from '../services/nango';
 import { calendarFeed, setCalendarFeed } from '../services/personal/feed';
 import {
   bankAccounts,
@@ -47,18 +50,14 @@ export const connectionResolvers: Resolvers = {
     setHealthInbox: (_, { on }, context) => setHealthInbox(requireViewer(context), on),
     setAutomationInbox: (_, { on }, context) => setAutomationInbox(requireViewer(context), on),
     syncGoogleTasks: (_, __, context) => syncGoogleTasks(requireViewer(context)),
-    startTelegramLink: (_, __, context) => {
-      const viewer = requireViewer(context);
-      if (!telegramConfigured()) badInput('O Telegram ainda não está ligado neste servidor');
-      return startTelegramLink(viewer);
-    },
-    unlinkTelegram: async (_, __, context) => {
-      await unlinkTelegram(requireViewer(context));
-      return true;
-    },
     startSpotifyLink: (_, __, context) => startSpotifyLink(requireViewer(context)),
     unlinkSpotify: async (_, __, context) => {
       await unlinkSpotify(requireViewer(context));
+      return true;
+    },
+    startGoogleCalendarLink: (_, __, context) => startGoogleCalendarLink(requireViewer(context)),
+    unlinkGoogleCalendar: async (_, __, context) => {
+      await unlinkGoogleCalendar(requireViewer(context));
       return true;
     },
     addExternalCalendar: (_, { name, url }, context) =>
@@ -101,6 +100,7 @@ export const connectionResolvers: Resolvers = {
     automationInbox: (_, __, context) => automationInbox(requireViewer(context)),
     music: (_, __, context) => music(requireViewer(context)),
     spotifyLink: (_, __, context) => spotifyLinkOf(requireViewer(context)),
+    googleCalendarEvents: (_, __, context) => googleCalendarEvents(requireViewer(context)),
     googleTasksSync: (_, __, context) => googleTasksSync(requireViewer(context)),
     externalCalendars: (_, __, context) => listExternalCalendars(requireViewer(context)),
     connections: (_, __, context) => connections(requireViewer(context)),

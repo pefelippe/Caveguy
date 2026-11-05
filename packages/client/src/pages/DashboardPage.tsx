@@ -1,11 +1,14 @@
-import { ArrowUpIcon } from 'lucide-react';
+import { ArrowUpIcon, SlidersHorizontalIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useRef, useState, type ClipboardEvent, type FormEvent } from 'react';
 
 import { Button } from '@zapbots/ui/components/button';
 import { Input } from '@zapbots/ui/components/input';
+import { cn } from '@zapbots/ui/lib/utils';
 
-import { CHAT_SUGGESTIONS, useChatPanel } from '../components/ChatPanel';
+import { Caveman } from '@zapbots/ui/blocks/caveman';
+
+import { useChatPanel } from '../components/ChatPanel';
 import { AttachMenu, Waiting } from '../components/ChatThread';
 import {
   addAttachments,
@@ -14,7 +17,9 @@ import {
   pastedFiles,
   type ChatAttachment,
 } from '../lib/attachments';
-import { rise, stagger } from '../home/cards';
+import { HOME_CARDS, rise, SIZE_CLASS, stagger } from '../home/cards';
+import { CustomizeHome, useHomeLayout } from '../home/CustomizeHome';
+import { chooseAgent, suggestionsOf, useAgents } from '../lib/agents';
 import { useI18n } from '../lib/i18n';
 
 /**
@@ -24,6 +29,11 @@ import { useI18n } from '../lib/i18n';
 function Ask({ name }: { name: string }) {
   const { language, t } = useI18n();
   const { startNew } = useChatPanel();
+  const { agents } = useAgents();
+  // The home is everyone's: one question from each fixed Agente, each opening the chat on its own.
+  const suggestions = agents
+    .filter(agent => !agent.custom)
+    .map(agent => ({ agent, suggestion: suggestionsOf(agent.key)[0]! }));
   const date = new Date().toLocaleDateString(language === 'pt' ? 'pt-BR' : 'en-US', {
     day: 'numeric',
     month: 'long',
@@ -62,9 +72,10 @@ function Ask({ name }: { name: string }) {
 
   return (
     <motion.section className="flex flex-col items-center gap-5 text-center" variants={rise}>
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col items-center gap-2 [--ink:var(--seal)]">
+        <Caveman mood="happy" outfit="PLAIN" size={128} />
         <p className="text-sm text-muted-foreground first-letter:uppercase">{date}</p>
-        <h1 className="text-4xl md:text-5xl">{t('welcome.hello', { name })}</h1>
+        <h1 className="text-4xl text-balance md:text-5xl">{t('welcome.uga', { name })}</h1>
       </div>
       <form
         className="flex h-14 w-full items-center gap-2 rounded-full border bg-card pr-2 pl-3 text-left ring-seal/40 transition-shadow focus-within:ring-2"
@@ -115,11 +126,14 @@ function Ask({ name }: { name: string }) {
         </div>
       )}
       <div className="-mt-1 flex flex-wrap justify-center gap-2">
-        {CHAT_SUGGESTIONS.map(suggestion => (
+        {suggestions.map(({ agent, suggestion }) => (
           <Button
             className="h-8 rounded-full px-3 font-normal text-muted-foreground hover:text-foreground"
             key={suggestion.text}
-            onClick={() => startNew(suggestion.text)}
+            onClick={() => {
+              chooseAgent(agent.id);
+              startNew(suggestion.text);
+            }}
             variant="ghost"
           >
             <suggestion.icon className="size-4" />
@@ -131,16 +145,66 @@ function Ask({ name }: { name: string }) {
   );
 }
 
-/** The Página inicial: only the greeting and the line to ask the Caishen, in the middle of the screen. */
+/**
+ * The Página inicial: the greeting and the line to ask the Caishen on top, then the reports the
+ * User keeps (finances, Tarefas, Agenda, Fitness…), arranged in Personalizar.
+ */
 export function DashboardPage({ user }: { user: { name: string } }) {
+  const { t } = useI18n();
+  const { change, layout } = useHomeLayout();
+  const [customizing, setCustomizing] = useState(false);
+  const shown = layout?.filter(card => !card.hidden) ?? [];
+
   return (
     <motion.div
       animate="shown"
-      className="mx-auto flex min-h-[calc(100svh-var(--header-height)-8rem)] w-full max-w-3xl flex-col justify-center"
+      className="mx-auto flex w-full max-w-5xl flex-col gap-5 pt-6 md:pt-12"
       initial="hidden"
       variants={stagger}
     >
-      <Ask name={user.name.split(' ')[0]!} />
+      <div className="mx-auto w-full max-w-3xl">
+        <Ask name={user.name.split(' ')[0]!} />
+      </div>
+
+      {layout && (
+        <>
+          <motion.div className="-mb-2 mt-6 flex justify-end" variants={rise}>
+            <Button onClick={() => setCustomizing(true)} size="sm" variant="ghost">
+              <SlidersHorizontalIcon />
+              {t('home.customize')}
+            </Button>
+          </motion.div>
+
+          {shown.length === 0 ? (
+            <p className="py-10 text-center text-sm text-muted-foreground">
+              {t('home.customize.empty')}
+            </p>
+          ) : (
+            <div className="grid gap-5 lg:grid-cols-3">
+              {shown.map(({ key }) => {
+                const { Component, area, size } = HOME_CARDS[key];
+                return (
+                  <motion.div
+                    className={cn('min-w-0', SIZE_CLASS[size])}
+                    data-area={area}
+                    key={key}
+                    variants={rise}
+                  >
+                    <Component />
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
+
+          <CustomizeHome
+            layout={layout}
+            onChange={change}
+            onOpenChange={setCustomizing}
+            open={customizing}
+          />
+        </>
+      )}
     </motion.div>
   );
 }

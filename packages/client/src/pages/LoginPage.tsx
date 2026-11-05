@@ -1,3 +1,4 @@
+import { APP_NAME } from '@zapbots/finance';
 import { LoaderCircle, MailCheck } from 'lucide-react';
 import { AnimatePresence, MotionConfig, motion, type Variants } from 'motion/react';
 import { type FormEvent, type ReactNode, useEffect, useState } from 'react';
@@ -13,6 +14,7 @@ import { Separator } from '@zapbots/ui/components/separator';
 import { FormError } from '../components/FormError';
 import { APP_BASE } from '../lib/area';
 import { authClient } from '../lib/auth';
+import './landing.css';
 
 /** How a password reset link reaches the User: by email, back to this page (local server, no
  * email set up) or only to the server console. */
@@ -232,7 +234,7 @@ export function LoginPage() {
   };
 
   return (
-    <AuthCard error={error} subtitle={SUBTITLES[step]} title="Bem-vindo ao Caishen">
+    <AuthCard error={error} subtitle={SUBTITLES[step]} title={`Bem-vindo ao ${APP_NAME}`}>
       <AnimatePresence initial={false} mode="wait">
         {step === 'sent' ? (
           <motion.div
@@ -552,7 +554,11 @@ function AuthCard({
 }) {
   return (
     <MotionConfig reducedMotion="user">
-      <div className="relative flex min-h-svh flex-col overflow-hidden bg-[var(--paper)]">
+      {/* The landing page's stone, so the way in looks like the site it comes from. */}
+      <div
+        className="landing relative flex min-h-svh flex-col overflow-hidden"
+        data-theme="landing"
+      >
         <motion.header
           animate={{ opacity: 1, y: 0 }}
           className="relative mx-auto flex w-full max-w-6xl items-center px-4 py-5 sm:px-6"
@@ -561,26 +567,26 @@ function AuthCard({
         >
           <Link className="flex items-center gap-2.5 text-header" to="/">
             <LogoBadge size={28} />
-            <span className="text-lg font-semibold tracking-tight text-foreground">Caishen</span>
+            <span className="l-wordmark">{APP_NAME}</span>
           </Link>
         </motion.header>
 
         <main className="relative grid flex-1 place-items-center px-4 pt-6 pb-16">
           <motion.div
             animate="shown"
-            className="w-full max-w-[440px] rounded-2xl border border-border/60 bg-card px-6 py-10 shadow-[0_24px_70px_-24px_rgba(15,23,42,0.28)] sm:px-10"
+            className="l-auth w-full max-w-[440px] px-6 py-10 sm:px-10"
             initial="hidden"
             variants={card}
           >
             <motion.div className="flex flex-col items-center text-center" variants={stagger}>
               <motion.div
-                className="rounded-full"
+                data-bot="FINANCE"
                 variants={pop}
                 whileHover={{ rotate: -6, scale: 1.06 }}
               >
                 <LogoBadge size={64} />
               </motion.div>
-              <motion.h1 className="mt-6 text-3xl font-bold tracking-tight" variants={rise}>
+              <motion.h1 className="l-title mt-6" variants={rise}>
                 {title}
               </motion.h1>
               <motion.p className="mt-2 text-muted-foreground" variants={rise}>

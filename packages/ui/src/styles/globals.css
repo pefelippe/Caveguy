@@ -5,6 +5,7 @@
 @import '@fontsource/stack-sans-text/600.css';
 @import '@fontsource/stack-sans-headline/300.css';
 @import '@fontsource/stack-sans-headline/400.css';
+@import '@fontsource/patrick-hand/400.css';
 
 /* The classes used in this package, wherever the app that imports it lives. */
 @source '..';
@@ -13,6 +14,10 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
+ * The Caveman look (docs/adr/0035), after the grug app: a neutral grey screen, white cards drawn by
+ * a dark line with a hard offset shadow, like a sticker, and titles in a hand-drawn face (Patrick
+ * Hand). The menu and the dark theme are plain black, never brown.
+ *
  * Two quiet colours and one loud. Quiet: Cloudy White (#FDFDFE) for the screen, the menu and
  * the cards (set apart by a border), and Sky Blue (#0099FF) for the open menu entry, links, focus
  * and a faint tint on nested panels (a deeper sky,
@@ -30,36 +35,45 @@
   --cloud: #fdfdfe;
   /* Amber Red, darkened a touch so white text on it reaches 4.5:1. */
   --seal: #dc3312;
+  /* The Caveman's placeholder art (blocks/caveman.tsx): his skin and the hide he wears. */
+  --caveman-skin: #e8bf94;
+  --caveman-hide: #9c6b3f;
+  --caveman-line: #1b1610;
+  /* The light grey of the screen, and the white of the cards. */
+  --paper-warm: #f4f4f5;
+  --paper-card: var(--cloud);
+  /* The drawn line around cards, and their sticker shadow. */
+  --stroke: var(--ink-black);
 
-  --background: var(--cloud);
+  --background: var(--paper-warm);
   --foreground: var(--ink-black);
-  --card: var(--cloud);
+  --card: var(--paper-card);
   --card-foreground: var(--ink-black);
-  --popover: var(--cloud);
+  --popover: var(--paper-card);
   --popover-foreground: var(--ink-black);
   --primary: var(--ink-black);
   --primary-foreground: var(--cloud);
-  --secondary: #e3ecf5;
+  --secondary: #ececee;
   --secondary-foreground: var(--ink-black);
-  --muted: #f3f7fb;
-  --muted-foreground: #6b6b70;
-  --accent: #e5eef7;
+  --muted: #f0f0f2;
+  --muted-foreground: #63636b;
+  --accent: #ececee;
   --accent-foreground: var(--ink-black);
   --destructive: oklch(0.5 0.19 22);
   --success: oklch(0.5 0.11 155);
   --warning: oklch(0.6 0.13 70);
-  --border: #dde6ef;
-  /* Nothing at rest casts a shadow; only what opens over the page (menus, dialogs) does. */
-  --card-shadow: none;
-  --input: #c9d6e3;
+  --border: #e2e2e6;
+  /* Cards cast a hard sticker shadow in the line's colour (docs/adr/0035). */
+  --card-shadow: 3px 4px 0 0 var(--stroke);
+  --input: #c9c9cf;
   --ring: var(--sky);
 
   /* The menu on the left is dark ink with light text, in both themes; the open entry takes the sky. */
   --sidebar: var(--ink-black);
-  --sidebar-foreground: #c9c9ce;
+  --sidebar-foreground: #d4d4d8;
   --sidebar-primary: #4db3ff;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #232326;
+  --sidebar-accent: #26262b;
   --sidebar-accent-foreground: #ffffff;
   --sidebar-border: transparent;
   --sidebar-ring: var(--sky);
@@ -95,31 +109,33 @@
   --sky: #33adff;
   --sky-ink: #5cbcff;
   --seal: #ff5a3a;
-  --background: #0b0b0c;
+  /* Plain black, text in the paper's colour. */
+  --stroke: #000000;
+  --background: #0e0e10;
   --foreground: #f4f4f5;
-  --card: #141416;
+  --card: #18181b;
   --card-foreground: #f4f4f5;
-  --popover: #1a1a1d;
+  --popover: #1f1f23;
   --popover-foreground: #f4f4f5;
   --primary: #f4f4f5;
-  --primary-foreground: #111113;
-  --secondary: #1c1c1f;
+  --primary-foreground: #0e0e10;
+  --secondary: #232327;
   --secondary-foreground: #f4f4f5;
-  --muted: #18181b;
-  --muted-foreground: #a1a1a8;
-  --accent: #232326;
+  --muted: #1f1f23;
+  --muted-foreground: #a1a1aa;
+  --accent: #27272a;
   --accent-foreground: #f4f4f5;
   --destructive: oklch(0.65 0.19 22);
   --success: oklch(0.7 0.12 155);
   --warning: oklch(0.76 0.13 75);
-  --border: #27272a;
-  --input: #3a3a40;
+  --border: #2e2e33;
+  --input: #3f3f46;
   --ring: var(--sky);
 
-  --sidebar: #070708;
-  --sidebar-foreground: #c9c9ce;
+  --sidebar: #000000;
+  --sidebar-foreground: #d4d4d8;
   --sidebar-primary: #4db3ff;
-  --sidebar-accent: #1c1c1f;
+  --sidebar-accent: #1f1f23;
   --sidebar-accent-foreground: #ffffff;
   --sidebar-border: transparent;
   --sidebar-ring: var(--sky);
@@ -134,9 +150,9 @@
 }
 
 @theme inline {
-  /* Stack Sans: its Text cut for everything, its light Headline cut for titles and big figures. */
+  /* Stack Sans for everything; titles and big figures in Patrick Hand, drawn by hand. */
   --font-sans: 'Stack Sans Text', ui-sans-serif, system-ui, sans-serif;
-  --font-display: 'Stack Sans Headline', 'Stack Sans Text', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Patrick Hand', 'Stack Sans Text', ui-sans-serif, system-ui, sans-serif;
   --font-serif: var(--font-sans);
   --radius-sm: calc(var(--radius) - 2px);
   --radius-md: var(--radius);
@@ -200,10 +216,19 @@
     @apply bg-background font-sans text-sm text-foreground antialiased;
   }
   h1 {
-    @apply font-display text-3xl leading-tight font-light tracking-[-0.022em];
+    @apply font-display text-4xl leading-tight font-normal tracking-normal;
   }
   [data-bot='FINANCE'] {
     --ink: var(--bot-finance);
+  }
+  [data-bot='PERSONAL'] {
+    --ink: var(--area-personal);
+  }
+  [data-bot='FITNESS'] {
+    --ink: var(--area-fitness);
+  }
+  [data-bot='CUSTOM'] {
+    --ink: var(--area-general);
   }
 }
 
@@ -337,5 +362,53 @@
   [data-slot='sidebar-gap'],
   [data-slot='sidebar-container'] {
     display: none !important;
+  }
+}
+
+/* The Caveman's placeholder life (blocks/caveman.tsx): a blink, a bob while thinking, a hop when happy.
+   Only transform, and still under reduced motion. */
+@keyframes caveman-blink {
+  0%,
+  92%,
+  100% {
+    transform: scaleY(1);
+  }
+  95% {
+    transform: scaleY(0.1);
+  }
+}
+@keyframes caveman-bob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0);
+  }
+  50% {
+    transform: translateY(-3%) rotate(-3deg);
+  }
+}
+@keyframes caveman-hop {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-8%);
+  }
+}
+.caveman-eye {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: caveman-blink 4.5s infinite;
+}
+[data-mood='thinking'] .caveman-body {
+  animation: caveman-bob 1.6s ease-in-out infinite;
+}
+[data-mood='happy'] .caveman-body {
+  animation: caveman-hop 0.5s ease-out 2;
+}
+@media (prefers-reduced-motion: reduce) {
+  .caveman-eye,
+  [data-mood] .caveman-body {
+    animation: none;
   }
 }

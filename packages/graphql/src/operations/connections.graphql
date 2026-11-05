@@ -181,17 +181,6 @@ mutation SyncGoogleTasks {
   }
 }
 
-mutation StartTelegramLink {
-  startTelegramLink {
-    url
-    expiresAt
-  }
-}
-
-mutation UnlinkTelegram {
-  unlinkTelegram
-}
-
 query SpotifyLink {
   spotifyLink {
     name
@@ -205,6 +194,23 @@ mutation StartSpotifyLink {
 
 mutation UnlinkSpotify {
   unlinkSpotify
+}
+
+query GoogleCalendarEvents {
+  googleCalendarEvents {
+    title
+    start
+    end
+    allDay
+  }
+}
+
+mutation StartGoogleCalendarLink {
+  startGoogleCalendarLink
+}
+
+mutation UnlinkGoogleCalendar {
+  unlinkGoogleCalendar
 }
 
 fragment AutomationInboxFields on AutomationInbox {

@@ -365,6 +365,34 @@
       "when": 1793714136720,
       "tag": "0051_cuddly_typhoid_mary",
       "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1793898399214,
+      "tag": "0052_same_vivisector",
+      "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1793898418705,
+      "tag": "0053_crazy_shocker",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1793909733044,
+      "tag": "0054_lowly_supreme_intelligence",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1793913161149,
+      "tag": "0055_thin_carmella_unuscione",
+      "breakpoints": true
     }
   ]
 }

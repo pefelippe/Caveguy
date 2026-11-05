@@ -1,39 +1,44 @@
-import type { BotKey } from '@zapbots/graphql/client';
+import type { AgentOutfit, BotKey } from '@zapbots/graphql/client';
 import { BotIcon, type LucideIcon } from 'lucide-react';
 
-import { CaishenMark } from '@zapbots/ui/blocks/logo';
+import { Caveman, type CavemanMood } from '@zapbots/ui/blocks/caveman';
 import { cn } from '@zapbots/ui/lib/utils';
 
-/** The icon of each working Bot. */
-const ICONS: Record<BotKey, LucideIcon> = {
-  FINANCE: CaishenMark,
-};
+import { outfitOf } from '../lib/agents';
 
 interface Props {
   /** `null` for a Bot still to come: neutral ink. */
   bot: BotKey | null;
   className?: string;
-  /** Overrides the icon, e.g. for Bots still to come, which have no key yet. */
+  /** Overrides the Caveman with an icon, e.g. for Bots still to come, which have no key yet. */
   icon?: LucideIcon;
+  mood?: CavemanMood;
+  /** A custom Agente's outfit. */
+  outfit?: AgentOutfit | null;
   /** Rendered size in pixels. */
   size?: number;
 }
 
-/** A Bot's avatar: a circle in the Bot's ink with its icon in paper. */
-export function BotGlyph({ bot, className, icon, size = 32 }: Props) {
-  const Icon = icon ?? (bot ? ICONS[bot] : BotIcon);
+/** An Agente's avatar: Brutus in its outfit on its ink (docs/adr/0035). */
+export function BotGlyph({ bot, className, icon: Icon, mood, outfit, size = 32 }: Props) {
+  if (bot && !Icon) {
+    return (
+      <span className={cn('inline-grid shrink-0', className)} data-bot={bot}>
+        <Caveman mood={mood} outfit={outfitOf({ key: bot, outfit: outfit ?? null })} size={size} />
+      </span>
+    );
+  }
+  const Shown = Icon ?? BotIcon;
   return (
     <span
       aria-hidden
       className={cn(
-        'grid shrink-0 place-items-center rounded-full text-paper',
-        bot ? 'bg-ink' : 'bg-muted-foreground',
+        'grid shrink-0 place-items-center rounded-full bg-muted-foreground text-paper',
         className
       )}
-      data-bot={bot ?? undefined}
       style={{ height: size, width: size }}
     >
-      <Icon strokeWidth={2} style={{ height: size * 0.55, width: size * 0.55 }} />
+      <Shown strokeWidth={2} style={{ height: size * 0.55, width: size * 0.55 }} />
     </span>
   );
 }

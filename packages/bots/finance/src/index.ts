@@ -1,3 +1,4 @@
+export * from './brand';
 export * from './bot';
 export * from './amortization';
 export * from './bills';
@@ -17,3 +18,4 @@ export * from './budget';
 export * from './rentVsBuy';
 export * from './prompt';
 export * from './tools';
+export * from './voice';

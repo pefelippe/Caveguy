@@ -1,6 +1,6 @@
 import type { Viewer } from '@zapbots/auth';
 import { closeDb, db, schema } from '@zapbots/database';
-import { prepaymentEffect, today } from '@zapbots/finance';
+import { amortizationSchedule, prepaymentEffect, today } from '@zapbots/finance';
 import { eq } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
@@ -147,6 +147,50 @@ describe('ferramentas de leitura', () => {
     const answer = toolAnswer(log);
     expect(answer).toContain(`economiza ${brl(effect.interestSavedCents)} de juros`);
     expect(answer).toContain(`e ${effect.installmentsSaved} Parcela(s)`);
+  });
+
+  it('compares Price and SAC for a loan the person describes, with the finance math', async () => {
+    const viewer = await createViewer();
+    const log = await say(viewer, 'Quanto fica 10 mil em 12x a 1% ao mês?', [
+      {
+        arguments: { amount: '10000,00', months: 12, rate: '1', ratePeriod: 'mensal' },
+        tool: 'compare_financing',
+      },
+      { text: 'Na Price, 12 parcelas iguais.' },
+    ]);
+
+    const price = amortizationSchedule({
+      firstDueDate: today(),
+      monthlyRate: '0.01',
+      principalCents: 1_000_000,
+      system: 'PRICE',
+      termMonths: 12,
+    });
+    const answer = toolAnswer(log);
+    expect(answer).toContain(`Price: 1ª parcela ${brl(price[0]!.installmentCents)}`);
+    expect(answer).toContain('SAC: 1ª parcela');
+  });
+
+  it('weighs renting against buying, naming the assumptions it took', async () => {
+    const viewer = await createViewer();
+    const log = await say(viewer, 'Alugar ou comprar?', [
+      {
+        arguments: {
+          downPayment: '100000',
+          financingRate: '11',
+          months: 360,
+          property: '500000',
+          rent: '2500',
+        },
+        tool: 'rent_vs_buy',
+      },
+      { text: 'Depende.' },
+    ]);
+
+    const answer = toolAnswer(log);
+    expect(answer).toContain('comprando (SAC)');
+    expect(answer).toContain('alugando e investindo');
+    expect(answer).toContain(`custos de compra ${brl(2_500_000)}`);
   });
 
   it('answers the Model how to fix bad arguments instead of failing', async () => {

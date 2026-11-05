@@ -329,18 +329,18 @@ export const HOME_CARDS: Record<HomeCardKey, HomeCard> = {
 };
 
 /**
- * The Página inicial of a User who never arranged it: kept clean, what the day needs (Hoje, the
- * Agenda and the finances at a glance); the rest waits in Personalizar.
+ * The Página inicial of a User who never arranged it: the reports under the ask line, finances
+ * first, then the day (Hoje, the Agenda) and Fitness; the rest waits in Personalizar.
  */
 export const DEFAULT_LAYOUT: CardSetting<HomeCardKey>[] = [
+  { hidden: false, key: 'FINANCE' },
+  { hidden: false, key: 'DUES' },
   { hidden: false, key: 'TODAY' },
   { hidden: false, key: 'AGENDA' },
-  { hidden: false, key: 'FINANCE' },
+  { hidden: false, key: 'FITNESS' },
+  { hidden: false, key: 'MEASURES' },
   { hidden: true, key: 'GOALS' },
-  { hidden: true, key: 'FITNESS' },
-  { hidden: true, key: 'MEASURES' },
   { hidden: true, key: 'MONTH' },
-  { hidden: true, key: 'DUES' },
   { hidden: true, key: 'OVERVIEW' },
   { hidden: true, key: 'MARKET' },
   { hidden: true, key: 'MUSIC' },

@@ -1,3 +1,4 @@
+import { MASCOT_NAME } from '@zapbots/finance';
 import { useQuery } from '@apollo/client/react';
 import {
   ConversationDocument,
@@ -32,7 +33,6 @@ import {
 } from 'react';
 import { useLocation } from 'react-router-dom';
 
-import { LogoBadge } from '@zapbots/ui/blocks/logo';
 import { Button } from '@zapbots/ui/components/button';
 import {
   DropdownMenu,
@@ -76,7 +76,7 @@ interface Props {
   firstMessage?: string;
   /** Files sent with `firstMessage`. */
   firstFiles?: ChatAttachment[];
-  /** The User's first name, greeted on the page while the Conversation is empty. */
+  /** What the Caveman says while the Conversation is empty (`greetingOf`). */
   greeting?: string;
   /** Lines offered while the Conversation is empty. */
   suggestions?: Suggestion[];
@@ -206,7 +206,7 @@ export function ChatThread({
       }
     } catch {
       setStarting(null);
-      setError('Não foi possível falar com o Caishen.');
+      setError(`Não foi possível falar com ${bot.name}.`);
       return;
     }
     // The reply lives above the screens from here, so it goes on when this thread closes. Written
@@ -247,7 +247,7 @@ export function ChatThread({
     fill(message.content);
     setError(
       message.attachments.length
-        ? 'Os anexos dessa mensagem não são enviados de novo. Para o Caishen lê-los, mande-os numa nova mensagem.'
+        ? 'Os anexos dessa mensagem não são enviados de novo. Para o Agente lê-los, mande-os numa nova mensagem.'
         : null
     );
   };
@@ -297,11 +297,9 @@ export function ChatThread({
             // The mark, the greeting and the suggestions as one block in the middle of the panel.
             <div className="flex flex-1 flex-col justify-center gap-6 py-6">
               <div className="flex flex-col items-center gap-3 text-center">
-                <BotGlyph bot={bot.key} size={44} />
+                <BotGlyph bot={bot.key} mood="happy" outfit={bot.outfit} size={88} />
                 <p className="text-2xl leading-tight font-semibold tracking-tight text-balance">
-                  {greeting ? `Olá, ${greeting}!` : 'Olá!'}
-                  <br />
-                  Como posso te ajudar?
+                  {greeting ?? `${MASCOT_NAME} escuta.`}
                 </p>
               </div>
               {suggestions.length > 0 && (
@@ -326,13 +324,17 @@ export function ChatThread({
         {empty && page && (
           <div className="flex flex-1 flex-col justify-center gap-8 py-6">
             <div className="flex flex-col items-center gap-2 text-center">
-              <LogoBadge className="mb-3" size={56} />
-              <p className="text-3xl font-semibold tracking-tight">
-                {greeting ? `Olá, ${greeting}` : 'Olá'}
+              <BotGlyph
+                bot={bot.key}
+                className="mb-3"
+                mood="happy"
+                outfit={bot.outfit}
+                size={112}
+              />
+              <p className="text-3xl font-semibold tracking-tight text-balance">
+                {greeting ?? `${MASCOT_NAME} escuta.`}
               </p>
-              <p className="text-base text-muted-foreground">
-                Pergunte sobre o seu dinheiro, ou anexe um extrato pelo +.
-              </p>
+              <p className="text-base text-muted-foreground">{bot.description}</p>
             </div>
             <ul className="grid gap-3 sm:grid-cols-2">
               {suggestions.map(suggestion => (
@@ -462,7 +464,9 @@ export function ChatThread({
               onChange={event => setDraft(event.target.value)}
               onKeyDown={onKeyDown}
               onPaste={onPaste}
-              placeholder="Pergunte ou conte um gasto…"
+              placeholder={
+                bot.key === 'FINANCE' ? 'Pergunte ou conte um gasto…' : `Fale com ${bot.name}…`
+              }
               ref={input}
               value={draft}
             />
@@ -514,7 +518,9 @@ export function ChatThread({
                 onChange={event => setDraft(event.target.value)}
                 onKeyDown={onKeyDown}
                 onPaste={onPaste}
-                placeholder="Pergunte ou conte um gasto…"
+                placeholder={
+                  bot.key === 'FINANCE' ? 'Pergunte ou conte um gasto…' : `Fale com ${bot.name}…`
+                }
                 ref={input}
                 rows={1}
                 value={draft}
@@ -777,7 +783,7 @@ function Bubble({ bot, message, onEdit, onRetry, saved }: BubbleProps) {
   }
   return (
     <div className="group flex gap-3">
-      <BotGlyph bot={bot.key} className="mt-0.5 shrink-0" size={24} />
+      <BotGlyph bot={bot.key} className="mt-0.5 shrink-0" outfit={bot.outfit} size={28} />
       <div className="min-w-0 flex-1">
         {message.content ? <ChatText text={message.content} /> : <Typing />}
         {(copyable || onRetry) && (

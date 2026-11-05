@@ -1,3 +1,4 @@
+import { APP_NAME } from '@zapbots/finance';
 import { APIError } from 'better-auth/api';
 
 const clientOrigin = process.env.CLIENT_ORIGIN ?? 'http://localhost:5173';
@@ -36,14 +37,13 @@ export async function sendResetPasswordEmail(email: string, url: string): Promis
     return;
   }
 
-  const intro =
-    'Recebemos um pedido para trocar a senha da sua conta no Caishen. O link abaixo vale por 1 hora e só pode ser usado uma vez.';
+  const intro = `Recebemos um pedido para trocar a senha da sua conta no ${APP_NAME}. O link abaixo vale por 1 hora e só pode ser usado uma vez.`;
   const outro = 'Se você não pediu a troca, ignore este e-mail: sua senha continua a mesma.';
   const response = await fetch('https://api.resend.com/emails', {
     body: JSON.stringify({
-      from: process.env.EMAIL_FROM ?? 'Caishen <onboarding@resend.dev>',
+      from: process.env.EMAIL_FROM ?? `${APP_NAME} <onboarding@resend.dev>`,
       html: `<p>${intro}</p><p><a href="${url}">Escolher uma nova senha</a></p><p>${outro}</p>`,
-      subject: 'Troque sua senha do Caishen',
+      subject: `Troque sua senha do ${APP_NAME}`,
       text: `${intro}\n\n${url}\n\n${outro}`,
       to: email,
     }),

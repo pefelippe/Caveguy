@@ -1,5 +1,7 @@
 # O Caishen no Telegram: um bot que só responde a conversas privadas ligadas
 
+_Substituído pelo ADR 0037: o Telegram saiu._
+
 O Telegram é mais um canal da mesma Conversa, como o WhatsApp (ADR 0019): o mesmo `replyInConversation` (com `mode: 'telegram'`), os mesmos Limites do Plano e as mesmas Propostas (ADR 0013). A Bot API do Telegram é grátis e não tem janela de 24 horas nem templates pagos, então aqui não há teto mensal. Mesmo assim o Caishen **só responde, nunca inicia**, pela mesma razão de produto: ninguém pediu Avisos proativos.
 
 Um bot só, o do Caishen, criado no @BotFather. Falamos com a Bot API por REST, sem SDK. O webhook (`POST /api/telegram/webhook`) só aceita entregas com o cabeçalho `X-Telegram-Bot-Api-Secret-Token` igual a `TELEGRAM_WEBHOOK_SECRET` (comparado em tempo constante): o Telegram não assina o corpo, e esse segredo, dado no `setWebhook` (`pnpm telegram:webhook https://<endereço>`), é o que ele oferece. Respondemos 200 na hora e tratamos depois (`waitUntil`, ADR 0012). Entregas repetidas são descartadas por um insert do `update_id` (`telegram_update`) com `on conflict do nothing`.

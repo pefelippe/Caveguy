@@ -1,3 +1,4 @@
+import { APP_NAME } from '@zapbots/finance';
 import { db, schema } from '@zapbots/database';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
@@ -87,7 +88,7 @@ export const auth = betterAuth({
     signInMethods(),
     // A code from an authenticator app after the password, once the User turns it on in Perfil
     // (docs/adr/0026). Google sign-in is left to Google's own verification.
-    twoFactor({ issuer: 'Caishen' }),
+    twoFactor({ issuer: APP_NAME }),
   ],
   // Counted in the database, so every server copy (each Vercel instance) sees the same tries at
   // passwords and two-step codes; in memory each would count alone.

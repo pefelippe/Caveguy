@@ -22,7 +22,7 @@ export const TEAM: TeamBot[] = [
     field: 'Finanças',
     icon: CaishenMark,
     key: 'FINANCE',
-    name: 'Caishen',
+    name: 'Financeiro',
     path: '/caishen',
   },
 ];

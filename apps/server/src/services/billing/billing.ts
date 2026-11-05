@@ -4,7 +4,7 @@ import { and, count, eq, gte, sum } from 'drizzle-orm';
 
 import { monthStart, monthUsage } from '../usage';
 import { PLANS, planInForce } from './plans';
-import { fetchSubscription, type StripeEvent } from './stripe';
+import { fetchSubscription, planOfSubscription, type StripeEvent } from './stripe';
 
 export class PlanLimitError extends Error {}
 
@@ -185,7 +185,7 @@ async function applyStripeEvent(
     await upsertSubscription(tx, organizationId, {
       cancelAtPeriodEnd: now.cancel_at_period_end === true,
       currentPeriodEnd: periodEnd(now),
-      plan: 'PRO',
+      plan: current ? planOfSubscription(current) : 'PRO',
       status: str(now.status) ?? 'incomplete',
       stripeCustomerId: str(now.customer),
       stripeSubscriptionId: str(now.id),

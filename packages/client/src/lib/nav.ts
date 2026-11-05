@@ -1,25 +1,18 @@
 import {
-  BedIcon,
-  BotIcon,
   CalendarIcon,
   DumbbellIcon,
   ListTodoIcon,
-  NotebookPenIcon,
-  PieChartIcon,
-  RulerIcon,
-  SaladIcon,
-  TargetIcon,
-  CalculatorIcon,
   CreditCardIcon,
-  FileTextIcon,
   FlagIcon,
   HouseIcon,
+  LandmarkIcon,
   PlugIcon,
   RepeatIcon,
   SettingsIcon,
   SheetIcon,
   UserIcon,
   WalletIcon,
+  WorkflowIcon,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -71,7 +64,9 @@ export function useNav(): Nav {
   return {
     groups: [
       {
+        // The Financeiro's own screen, then the rest of Finanças.
         items: [
+          { icon: LandmarkIcon, label: t('nav.money'), to: '/caishen' },
           { icon: SheetIcon, label: t('nav.entries'), to: '/caishen/entries' },
           { icon: WalletIcon, label: t('nav.income'), to: '/caishen/income' },
           {
@@ -81,7 +76,6 @@ export function useNav(): Nav {
             to: '/caishen/fixed',
           },
           { icon: FlagIcon, label: t('nav.payoff'), to: '/caishen/payoff' },
-          { icon: CalculatorIcon, label: t('nav.calculators'), to: '/caishen/calculators' },
         ],
         area: 'finance',
         key: 'finances',
@@ -91,21 +85,13 @@ export function useNav(): Nav {
         items: [
           { icon: CalendarIcon, label: t('nav.calendar'), to: '/personal/calendar' },
           { icon: ListTodoIcon, label: t('nav.tasks'), to: '/personal/tasks' },
-          { icon: NotebookPenIcon, label: t('nav.notes'), to: '/personal/notes' },
-          { icon: TargetIcon, label: t('nav.goals'), to: '/personal/goals' },
         ],
         area: 'personal',
         key: 'personal',
         label: t('nav.personal'),
       },
       {
-        items: [
-          { icon: DumbbellIcon, label: t('nav.workouts'), to: '/fitness/workouts' },
-          { icon: SaladIcon, label: t('nav.meals'), to: '/fitness/diet' },
-          { icon: PieChartIcon, label: t('nav.macros'), to: '/fitness/macros' },
-          { icon: BedIcon, label: t('nav.sleep'), to: '/fitness/sleep' },
-          { icon: RulerIcon, label: t('nav.measures'), to: '/fitness/measures' },
-        ],
+        items: [{ icon: DumbbellIcon, label: t('nav.workouts'), to: '/fitness/workouts' }],
         area: 'fitness',
         key: 'fitness',
         label: t('nav.fitness'),
@@ -119,13 +105,7 @@ export function useNav(): Nav {
     main: [
       { icon: HouseIcon, label: t('nav.home'), to: '/' },
       { icon: AgentIcon, label: t('nav.agent'), to: '/chat' },
-      {
-        icon: FileTextIcon,
-        label: t('nav.documents'),
-        soon: !DOCUMENTS_ENABLED,
-        to: '/documents',
-      },
-      { icon: BotIcon, label: t('nav.workflows'), to: '/workflows' },
+      { icon: WorkflowIcon, label: t('nav.workflows'), to: '/workflows' },
       { icon: PlugIcon, label: t('nav.integrations'), to: '/integrations' },
     ],
   };

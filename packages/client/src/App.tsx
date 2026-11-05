@@ -33,32 +33,25 @@ const finance = <Name extends string>(name: Name) =>
 const IncomePage = finance('IncomePage');
 const FixedPage = finance('FixedPage');
 const EntriesPage = page<'EntriesPage', object>(() => import('./pages/EntriesPage'), 'EntriesPage');
+const MoneyPage = page(() => import('./pages/MoneyPage'), 'MoneyPage');
 const PayoffPage = page(() => import('./pages/PayoffPage'), 'PayoffPage');
-const CalculatorsPage = page(() => import('./pages/CalculatorsPage'), 'CalculatorsPage');
 const DashboardPage = page(() => import('./pages/DashboardPage'), 'DashboardPage');
 const WelcomePage = page(() => import('./pages/WelcomePage'), 'WelcomePage');
 const ChatPage = page(() => import('./pages/ChatPage'), 'ChatPage');
 const JobsPage = page(() => import('./pages/JobsPage'), 'JobsPage');
 const JobPage = page(() => import('./pages/JobPage'), 'JobPage');
-const DocumentsPage = page(() => import('./pages/DocumentsPage'), 'DocumentsPage');
 const DocumentPage = page(() => import('./pages/DocumentPage'), 'DocumentPage');
 const IntegrationsPage = page(() => import('./pages/IntegrationsPage'), 'IntegrationsPage');
 const SettingsPage = page(() => import('./pages/SettingsPage'), 'SettingsPage');
 const ProfilePage = page(() => import('./pages/ProfilePage'), 'ProfilePage');
 const PlanPage = page(() => import('./pages/PlanPage'), 'PlanPage');
 const TasksPage = page(() => import('./pages/personal/TasksPage'), 'TasksPage');
-const NotesPage = page(() => import('./pages/personal/NotesPage'), 'NotesPage');
 const CalendarPage = page(() => import('./pages/personal/CalendarPage'), 'CalendarPage');
-const GoalsPage = page(() => import('./pages/personal/GoalsPage'), 'GoalsPage');
 const BookingLinksPage = page(
   () => import('./pages/personal/BookingLinksPage'),
   'BookingLinksPage'
 );
 const WorkoutsPage = page(() => import('./pages/fitness/WorkoutsPage'), 'WorkoutsPage');
-const DietPage = page(() => import('./pages/fitness/DietPage'), 'DietPage');
-const MacrosPage = page(() => import('./pages/fitness/MacrosPage'), 'MacrosPage');
-const SleepPage = page(() => import('./pages/fitness/SleepPage'), 'SleepPage');
-const MeasuresPage = page(() => import('./pages/fitness/MeasuresPage'), 'MeasuresPage');
 const WorkoutSharePage = page(() => import('./pages/WorkoutSharePage'), 'WorkoutSharePage');
 const BookingPage = page(() => import('./pages/BookingPage'), 'BookingPage');
 const CancelBookingPage = page(() => import('./pages/BookingPage'), 'CancelBookingPage');
@@ -209,24 +202,13 @@ export function App() {
           }
           path="workflows/:id"
         />
-        <Route
-          element={
-            DOCUMENTS_ENABLED ? (
-              <Scrolling>
-                <DocumentsPage />
-              </Scrolling>
-            ) : (
-              <Navigate replace to="/" />
-            )
-          }
-          path="documents"
-        />
+        <Route element={<Navigate replace to="/" />} path="documents" />
         <Route
           element={DOCUMENTS_ENABLED ? <DocumentPage /> : <Navigate replace to="/" />}
           path="documents/:id"
         />
         <Route element={<BotLayout bot="FINANCE" />} path="caishen">
-          <Route element={<Navigate replace to="entries" />} index />
+          <Route element={<MoneyPage />} index />
           <Route element={<EntriesPage />} path="entries" />
           <Route element={<IncomePage />} path="income" />
           <Route element={<FixedPage />} path="fixed" />
@@ -238,7 +220,7 @@ export function App() {
           <Route element={<Navigate replace to="/caishen/fixed#taxes" />} path="taxes" />
           <Route element={<Navigate replace to="/caishen/entries" />} path="reports" />
           <Route element={<PayoffPage />} path="payoff" />
-          <Route element={<CalculatorsPage />} path="calculators" />
+          <Route element={<Navigate replace to="/caishen/entries" />} path="calculators" />
           {/* Old addresses: the tabs of Lançamentos, Visão geral, Relatório, Mês, Financeiro, Orçamento, Score. */}
           <Route element={<Navigate replace to="/caishen/income" />} path="entries/income" />
           <Route element={<LegacyFixed />} path="entries/fixed" />
@@ -256,7 +238,7 @@ export function App() {
             />
           ))}
           <Route element={<CreditOperationPage />} path="operations/:id" />
-          <Route element={<Navigate replace to="/" />} path="jobs/*" />
+          <Route element={<Navigate replace to="/workflows" />} path="jobs/*" />
         </Route>
         <Route
           element={
@@ -282,22 +264,8 @@ export function App() {
           }
           path="personal/tasks"
         />
-        <Route
-          element={
-            <Scrolling>
-              <NotesPage />
-            </Scrolling>
-          }
-          path="personal/notes"
-        />
-        <Route
-          element={
-            <Scrolling>
-              <GoalsPage />
-            </Scrolling>
-          }
-          path="personal/goals"
-        />
+        <Route element={<Navigate replace to="/personal/tasks" />} path="personal/notes" />
+        <Route element={<Navigate replace to="/personal/tasks" />} path="personal/goals" />
         <Route element={<Navigate replace to="/personal/tasks" />} path="personal" />
         <Route
           element={
@@ -307,38 +275,10 @@ export function App() {
           }
           path="fitness/workouts"
         />
-        <Route
-          element={
-            <Scrolling>
-              <DietPage />
-            </Scrolling>
-          }
-          path="fitness/diet"
-        />
-        <Route
-          element={
-            <Scrolling>
-              <MacrosPage />
-            </Scrolling>
-          }
-          path="fitness/macros"
-        />
-        <Route
-          element={
-            <Scrolling>
-              <SleepPage />
-            </Scrolling>
-          }
-          path="fitness/sleep"
-        />
-        <Route
-          element={
-            <Scrolling>
-              <MeasuresPage />
-            </Scrolling>
-          }
-          path="fitness/measures"
-        />
+        <Route element={<Navigate replace to="/fitness/workouts" />} path="fitness/diet" />
+        <Route element={<Navigate replace to="/fitness/workouts" />} path="fitness/macros" />
+        <Route element={<Navigate replace to="/fitness/workouts" />} path="fitness/sleep" />
+        <Route element={<Navigate replace to="/fitness/workouts" />} path="fitness/measures" />
         <Route element={<Navigate replace to="/fitness/workouts" />} path="fitness" />
         <Route element={<IntegrationsPage />} path="integrations" />
         <Route element={<Navigate replace to="/integrations#ai" />} path="integrations/models" />

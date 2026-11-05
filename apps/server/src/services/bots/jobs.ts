@@ -181,7 +181,10 @@ export async function runJob(viewer: Viewer, jobId: string): Promise<void> {
       try {
         // A Job reads and simulates with tools but proposes nothing: a Proposta needs a Conversa
         // to be confirmed in (docs/adr/0021).
-        const canRead = listed.find(entry => entry.id === model)?.supportsTools ?? true;
+        // Only the Financeiro has tools (docs/adr/0036).
+        const canRead =
+          bot.key === 'FINANCE' &&
+          (listed.find(entry => entry.id === model)?.supportsTools ?? true);
         await talk(viewer.organizationId, model, {
           execute: call => runReadTool(viewer, call),
           instructions: await botPrompt(viewer, bot, { canRead, mode: 'job' }),

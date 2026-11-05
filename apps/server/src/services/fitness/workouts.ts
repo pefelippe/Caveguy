@@ -1,3 +1,4 @@
+import { APP_NAME } from '@zapbots/finance';
 import { randomBytes } from 'node:crypto';
 
 import type { Viewer } from '@zapbots/auth';
@@ -160,7 +161,7 @@ export async function publicWorkoutPlan(
     .from(schema.workoutPlan)
     .leftJoin(schema.user, eq(schema.user.id, schema.workoutPlan.createdById))
     .where(eq(schema.workoutPlan.shareToken, token));
-  return row ? { ...row.plan, ownerName: row.ownerName ?? 'Caishen' } : null;
+  return row ? { ...row.plan, ownerName: row.ownerName ?? APP_NAME } : null;
 }
 
 export function planExercises(planId: string): Promise<WorkoutExerciseRow[]> {

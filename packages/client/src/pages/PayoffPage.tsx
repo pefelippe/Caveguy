@@ -40,7 +40,7 @@ export function PayoffPage() {
   return (
     <BotPage
       bot="FINANCE"
-      description="Quanto a mais por mês você consegue pôr nas dívidas? O Caishen paga primeiro a de juros mais altos e mostra quando você fica livre."
+      description="Quanto a mais por mês você consegue pôr nas dívidas? O Financeiro paga primeiro a de juros mais altos e mostra quando você fica livre."
       title="Sair das dívidas"
     >
       {holder && operations.length === 0 ? (

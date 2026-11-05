@@ -49,6 +49,11 @@ const KINDS: Record<AlertKind, { icon: LucideIcon; title: StringKey; tone: strin
     title: 'notifications.highUtilization',
     tone: 'bg-warning/15 text-warning',
   },
+  OVER_LIMIT: {
+    icon: GaugeIcon,
+    title: 'notifications.overLimit',
+    tone: 'bg-warning/15 text-warning',
+  },
   OVERDUE: {
     icon: CircleAlertIcon,
     title: 'notifications.overdue',
@@ -70,6 +75,7 @@ const KINDS: Record<AlertKind, { icon: LucideIcon; title: StringKey; tone: strin
 const ORDER: AlertKind[] = [
   'OVERDUE',
   'DUE_SOON',
+  'OVER_LIMIT',
   'HIGH_UTILIZATION',
   'ABOVE_MARKET',
   'STALE_ASSESSMENT',
@@ -129,7 +135,7 @@ export function useAlerts() {
 }
 
 /**
- * The Avisos, in the chat panel: each with its mark and a short title over the detail. Opening one
+ * The Avisos, under the bell in the header: each with its mark and a short title over the detail. Opening one
  * marks it read and calls `onOpen`; its ⋯ menu marks it read or removes it, and the top marks all read.
  */
 export function AlertList({ onOpen }: { onOpen?: () => void }) {

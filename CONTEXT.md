@@ -1,29 +1,69 @@
 # zapbots
 
-Uma equipe de Bots de IA a quem se dá trabalho de verdade: eles entram nas
-ferramentas que o Usuário conecta, leem o que precisam e voltam com o trabalho
-pronto. O primeiro é o Caishen, o assistente financeiro: ele acompanha as
-obrigações de crédito (cartões, empréstimos, financiamentos), calcula juros e
-amortização e produz uma avaliação de risco no estilo de um rating bancário.
+O **Caveman** (nome provisório; o repositório e o código seguem zapbots e
+Caishen): um app só para pessoas, extremamente simples, com cara de jogo. O
+mascote, o **Brutus**, é um homem das cavernas que fala curto e direto; cada
+Agente é ele com outra roupa e outro fundo: o Financeiro, o Pessoal, o Fitness
+e os que a pessoa cria (ADR 0035). O Financeiro acompanha as Finanças do
+Titular (gastos, entradas, cartões, dívidas), calcula juros e amortização e
+responde sobre o mês.
 
 ## Language
 
 ### Equipe
 
-**Bot** (`Bot`):
-Um colega de IA do catálogo do zapbots, com nome, personalidade e um campo de
-trabalho fixos. O Usuário escolhe só o Modelo dele. O Caishen é o Bot de
-finanças.
-_Avoid_: Buddy, agente, assistente, teammate (só no marketing)
+**Caveman**:
+O produto, o nome que a pessoa vê (provisório). Só para pessoas: não há plano
+nem tela para empresas.
+_Avoid_: Caishen (como marca), assessor, Empresas
 
-**Caishen** (`FINANCE`, código `finance`):
-O Bot de finanças. Lê as Finanças do Titular e os arquivos que recebe, conversa
-e faz Workflows sobre elas.
-_Avoid_: Cifra (o antigo Buddy de Finanças)
+**Brutus**:
+O mascote: um homem das cavernas desenhado em rabisco à mão. Todo Agente é ele,
+com a roupa e o fundo do Agente.
+_Avoid_: Uga Buga, Pedrão, Bruto, Grug, bonequinho
+
+**Fala das cavernas**:
+A voz do Brutus, como a do Hulk: "Brutus <verbo> <assunto>", na terceira
+pessoa, verbo conjugado, sem artigos ("Brutus anota gasto. Brutus vê fatura.").
+Simples, não boba.
+Vale na landing, nas saudações e nas respostas dos
+Agentes; botões, rótulos, erros e textos legais ficam em português normal.
+Valores, datas e nomes saem sempre exatos. Com uma pessoa em crise, o Agente
+larga o personagem e responde normalmente.
+_Avoid_: voz do Hulk, língua de bebê, verbo no infinitivo
+
+**Agente** (`Bot`, no código):
+Um colega de IA que a pessoa vê como o Brutus com uma roupa (`outfit`) e um
+fundo: o Financeiro, o Pessoal, o Fitness ou um Agente personalizado. A pessoa
+escolhe com quem fala por abas, e cada um fixo tem uma tela só sua. No código e
+no banco continua `Bot`.
+_Avoid_: assistente, assessor, Buddy, teammate
+
+**Financeiro** (`FINANCE`, código `finance`):
+O Agente de finanças, antes chamado Caishen. Lê as Finanças do Titular e os
+arquivos que recebe, conversa, propõe registros e faz Workflows sobre elas. É o
+único Agente com ferramentas e Propostas (ADR 0036) e o único no WhatsApp. Sua
+tela é a Tela Financeiro.
+_Avoid_: Caishen (como nome do Agente), Cifra
+
+**Pessoal** (`PERSONAL`):
+O Agente da vida pessoal: lê a Agenda dos próximos dias, as Tarefas abertas e
+as Metas, e responde sobre elas. Não cria nada por enquanto. Sua tela é a
+Agenda com as Tarefas.
+
+**Fitness** (`FITNESS`):
+O Agente de treino: lê só as Fichas de treino. Dados de saúde (Sono, Medidas,
+Dieta, Macros, passos) nunca chegam a um Modelo. Sua tela são as Fichas.
+
+**Agente personalizado** (`CUSTOM`):
+Um Agente que a pessoa cria: um nome, uma frase do que ele faz e uma roupa. Não
+lê dado nenhum, só conversa seguindo o que a pessoa escreveu, sem passar por
+cima das regras fixas. Até 10 por Organização.
+_Avoid_: bot custom, persona
 
 **Equipe**:
-Os Bots que um Usuário tem. Hoje é o catálogo inteiro.
-_Avoid_: time, workspace
+Os Agentes que um Usuário tem: os três fixos e os personalizados.
+_Avoid_: time, workspace, tribo
 
 **Workflow** (`Job`):
 Um pedido feito a um Bot, que ele faz sozinho e em segundo plano até chegar a
@@ -45,7 +85,7 @@ _Avoid_: resposta, relatório, output
 
 **Aviso** (`Alert`):
 Algo que um Bot aponta sozinho, sem que ninguém peça: uma Parcela em atraso, o
-que vence nos próximos 7 dias, uma Fatura que usa 80% ou mais do limite, uma
+que vence nos próximos 7 dias, um Limite de categoria perto ou passado, uma Fatura que usa 80% ou mais do limite, uma
 taxa bem acima da Taxa Média de Mercado, uma Avaliação com mais de 30 dias, uma
 Rotina que falhou na última semana. É
 calculado a partir dos dados, não escrito por um Modelo.
@@ -53,11 +93,23 @@ Cada Usuário pode marcá-lo como lido ou removê-lo do sino; um Aviso que passa
 dizer outra coisa (outra data, outro valor) volta como novo.
 _Avoid_: notificação, alerta (como termo do código em pt-BR), Insight
 
+**Limite de categoria** (`CategoryLimit`):
+Quanto o Titular quer gastar no mês numa categoria de Gastos (Mercado, Lazer).
+A categoria é comparada sem diferença de maiúsculas e espaços. Aos 80% e ao
+passar, vira Aviso. Não é o Orçamento, que divide a renda em Fatias.
+_Avoid_: teto, orçamento da categoria
+
+**Tela Financeiro** (`MoneyPage`, `/caishen`):
+A única tela do Financeiro: a Sobra do mês, o que vence em 7 dias, os Limites de
+categoria e as Dívidas com o plano para sair delas, com atalhos para Fluxo de
+caixa, Entradas, Gastos, Dívidas e Cartões.
+_Avoid_: dashboard, painel
+
 **Conversa** (`Conversation`):
 Uma troca salva de Mensagens entre o Usuário e um Bot. Começa e é reaberta no
 chat: a página Chat ou o painel ao lado de qualquer tela. Cada Organização tem
-também uma Conversa "WhatsApp" e uma "Telegram", que começam na primeira
-mensagem de um número ou conversa ligada e aparecem no Agente como as outras.
+também uma Conversa "WhatsApp", que começa na primeira
+mensagem de um número ligado e aparecem no Agente como as outras.
 _Avoid_: chat (é a página e o painel), thread
 
 **Mensagem** (`Message`):
@@ -81,18 +133,13 @@ _Avoid_: IA (como sinônimo de modelo), LLM
 O vínculo, autorizado pelo Usuário, com uma ferramenta de fora em que os Bots
 entram por ele. Cada Integração é de uma categoria: Provedores de IA (de onde vêm
 os Modelos, hoje o OpenRouter), Armazenamento de arquivos (Google Drive),
-Comunicação (WhatsApp, Telegram), E-mail, Agenda ou Bancos. Os Bots só leem por uma
-Integração; o WhatsApp e o Telegram são canais da Conversa e só respondem, nunca iniciam.
+Comunicação (WhatsApp), E-mail, Agenda ou Bancos. Os Bots só leem por uma
+Integração; o WhatsApp é canal da Conversa e só responde, nunca iniciam.
 _Avoid_: conexão, plugin, Fonte (essa é financeira)
 
 **Código de conexão do WhatsApp** (`whatsapp_link_code`):
 Seis letras e números, de uso único e válidos por 15 minutos, que o Usuário
 gera em Integrações e manda do celular para ligar aquele número a ele.
-_Avoid_: token, senha, PIN
-
-**Código de conexão do Telegram** (`telegram_link_code`):
-De uso único e válido por 15 minutos, vai no link `t.me` que o Usuário abre de
-Integrações; o Iniciar do Telegram o manda de volta e liga aquela conversa a ele.
 _Avoid_: token, senha, PIN
 
 **Endereço de envio** (`automation_inbox`):

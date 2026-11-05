@@ -13,6 +13,7 @@ import { PLANS } from '../services/billing/plans';
 import {
   createCheckoutSession,
   createPortalSession,
+  priceOf,
   StripeError,
   stripeConfigured,
 } from '../services/billing/stripe';
@@ -58,12 +59,20 @@ export const billingResolvers: Resolvers = {
       }
       return state(viewer);
     },
-    startCheckout: async (_, __, context) => {
+    startCheckout: async (_, { plan: wanted }, context) => {
       const viewer = requireViewer(context);
       await requireAdmin(viewer);
       if (!stripeConfigured()) badInput('A cobrança não está configurada no servidor.');
       const current = await billingState(viewer);
-      if (current.plan.key === 'PRO') badInput('A Organização já está no Plano Pro.');
+      const plan = wanted === 'MAX' ? 'MAX' : 'PRO';
+      const price = priceOf(plan);
+      if (!price) badInput(`O Plano ${PLANS[plan].name} ainda não está à venda.`);
+      // A second subscription would charge twice: changing a paid Plan goes through Stripe's page.
+      if (current.plan.key !== 'FREE') {
+        badInput(
+          `A Organização já está no Plano ${current.plan.name}. Para trocar, use Gerenciar assinatura.`
+        );
+      }
       const [user] = await db
         .select({ email: schema.user.email })
         .from(schema.user)
@@ -75,6 +84,7 @@ export const billingResolvers: Resolvers = {
           email: user!.email,
           idempotencyKey: context.idempotencyKey,
           organizationId: viewer.organizationId,
+          price: price!,
           returnUrl: returnUrl(),
         })
       );

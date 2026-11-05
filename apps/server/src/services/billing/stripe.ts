@@ -6,6 +6,17 @@ const TOLERANCE_S = 300;
 
 export class StripeError extends Error {}
 
+/** The Stripe Price of each paid Plan, or undefined while the server has none for it. */
+export const priceOf = (plan: 'MAX' | 'PRO') =>
+  plan === 'MAX' ? process.env.STRIPE_PRICE_MAX : process.env.STRIPE_PRICE_PRO;
+
+/** The paid Plan a Stripe subscription is for, by its Price; anything not Max's is Pro. */
+export function planOfSubscription(subscription: Record<string, unknown>): 'MAX' | 'PRO' {
+  const items = (subscription.items as { data?: { price?: { id?: string } }[] } | undefined)?.data;
+  const max = process.env.STRIPE_PRICE_MAX;
+  return max && items?.some(item => item.price?.id === max) ? 'MAX' : 'PRO';
+}
+
 export const stripeConfigured = () =>
   Boolean(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_PRICE_PRO);
 
@@ -55,7 +66,7 @@ async function post<T>(
 }
 
 /**
- * A Checkout page for the Pro Plan; the Organization rides along to the webhook. The same
+ * A Checkout page for a paid Plan's Price; the Organization rides along to the webhook. The same
  * `idempotencyKey` (one per click on Assinar, kept on its retries) gets the same page back.
  */
 export async function createCheckoutSession(input: {
@@ -63,6 +74,7 @@ export async function createCheckoutSession(input: {
   email: string;
   idempotencyKey?: string;
   organizationId: string;
+  price: string;
   returnUrl: string;
 }): Promise<string> {
   const session = await post<{ url: string }>(
@@ -73,14 +85,15 @@ export async function createCheckoutSession(input: {
       client_reference_id: input.organizationId,
       customer: input.customerId ?? undefined,
       customer_email: input.customerId ? undefined : input.email,
-      line_items: [{ price: process.env.STRIPE_PRICE_PRO, quantity: 1 }],
+      line_items: [{ price: input.price, quantity: 1 }],
       metadata: { organizationId: input.organizationId },
       mode: 'subscription',
       subscription_data: { metadata: { organizationId: input.organizationId } },
       success_url: `${input.returnUrl}?checkout=ok`,
     },
     // Scoped to the Organization, so no two can ever share one.
-    input.idempotencyKey && `checkout:${input.organizationId}:${input.idempotencyKey}`
+    input.idempotencyKey &&
+      `checkout:${input.organizationId}:${input.price}:${input.idempotencyKey}`
   );
   return session.url;
 }

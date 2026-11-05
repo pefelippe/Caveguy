@@ -1,3 +1,4 @@
+import { APP_NAME } from '@zapbots/finance';
 import { useMutation, useQuery } from '@apollo/client/react';
 import {
   ConnectionsDocument,
@@ -101,7 +102,7 @@ export function HealthLinker() {
       </div>
       <p className="text-sm">
         {inbox.lastReceivedAt
-          ? `Último envio em ${when(inbox.lastReceivedAt)}${brought.length ? `: ${brought.join(', ')}.` : ', sem dados que o Caishen guarda.'}`
+          ? `Último envio em ${when(inbox.lastReceivedAt)}${brought.length ? `: ${brought.join(', ')}.` : `, sem dados que o ${APP_NAME} guarda.`}`
           : 'Nada chegou ainda.'}
       </p>
       <dl className="flex flex-col gap-3 rounded-xl bg-secondary/60 px-4 py-3 text-sm">

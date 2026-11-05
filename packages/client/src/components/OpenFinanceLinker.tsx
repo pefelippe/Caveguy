@@ -1,3 +1,4 @@
+import { APP_NAME } from '@zapbots/finance';
 import { useMutation, useQuery } from '@apollo/client/react';
 import {
   BankLinksDocument,
@@ -188,7 +189,7 @@ function UnlinkDialog({ item, onClose }: { item: BankLink; onClose: () => void }
         <DialogHeader>
           <DialogTitle>Desconectar {item.institution}?</DialogTitle>
           <DialogDescription>
-            As contas e os gastos que vieram desse banco saem do Caishen. A autorização no banco
+            As contas e os gastos que vieram desse banco saem do {APP_NAME}. A autorização no banco
             termina no Meu Pluggy, onde foi dada.
           </DialogDescription>
         </DialogHeader>

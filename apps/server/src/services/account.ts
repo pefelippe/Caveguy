@@ -3,6 +3,7 @@ import { db, schema } from '@zapbots/database';
 import { and, count, eq, inArray, isNotNull } from 'drizzle-orm';
 
 import { cancelSubscriptionNow } from './billing/stripe';
+import { nangoConfigured, unlinkGoogleCalendar } from './nango';
 
 /** A refusal said to the User, in pt-BR. */
 export class AccountError extends Error {}
@@ -13,8 +14,9 @@ const CHARGING = ['active', 'trialing', 'past_due', 'unpaid', 'incomplete'];
 /**
  * Deletes the User and everything that is only theirs (docs/adr/0027): each Organization where they
  * are the only Member goes with all its data (every domain table cascades from it), its Stripe
- * subscription ended first so nothing is charged again. In an Organization shared with others only
- * their membership goes. `confirm` is the account's e-mail, typed by the User.
+ * subscription ended first so nothing is charged again, and the Google token Nango holds for them
+ * removed there. In an Organization shared with others only their membership goes. `confirm` is
+ * the account's e-mail, typed by the User.
  */
 export async function deleteAccount(viewer: Viewer, confirm: string): Promise<void> {
   const [user] = await db
@@ -56,6 +58,8 @@ export async function deleteAccount(viewer: Viewer, confirm: string): Promise<vo
       }
     }
   }
+
+  if (nangoConfigured()) await unlinkGoogleCalendar(viewer);
 
   await db.transaction(async tx => {
     if (alone.length) {

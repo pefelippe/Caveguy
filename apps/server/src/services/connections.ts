@@ -10,9 +10,8 @@ import { healthInbox } from './fitness/health';
 import { listExternalCalendars } from './personal/calendars';
 import { googleTasksConnected, googleTasksSync } from './personal/googleTasks';
 import { automationInbox } from './automation';
+import { googleCalendarStatus, nangoConfigured } from './nango';
 import { spotifyLinkOf, spotifyUnavailable } from './spotify';
-import { telegramConfigured } from './telegram/api';
-import { telegramLinkOf } from './telegram/link';
 import { calendarFeed as calendarFeedOf } from './personal/feed';
 import { maskPhone, whatsappLinkOf } from './whatsapp/link';
 import { whatsappConfigured } from './whatsapp/meta';
@@ -188,24 +187,6 @@ const googleTasks: Provider = {
   },
 };
 
-const telegram: Provider = {
-  category: 'MESSAGING',
-  kind: 'TELEGRAM',
-  // The Caishen's bot answers a linked User's private chat (docs/adr/0031).
-  status: async viewer => {
-    if (!telegramConfigured()) {
-      return {
-        available: false,
-        connected: false,
-        detail: null,
-        unavailableReason: 'O Telegram ainda não está ligado neste servidor.',
-      };
-    }
-    const link = await telegramLinkOf(viewer);
-    return { available: true, connected: Boolean(link), detail: null, unavailableReason: null };
-  },
-};
-
 const spotify: Provider = {
   category: 'MEDIA',
   kind: 'SPOTIFY',
@@ -221,6 +202,24 @@ const spotify: Provider = {
       detail: link?.error ?? (link?.name ? `Conta: ${link.name}.` : null),
       unavailableReason: null,
     };
+  },
+};
+
+const googleCalendar: Provider = {
+  category: 'CALENDAR',
+  kind: 'GOOGLE_CALENDAR',
+  // Through Nango, which holds the OAuth (docs/adr/0034).
+  status: async viewer => {
+    if (!nangoConfigured()) {
+      return {
+        available: false,
+        connected: false,
+        detail: null,
+        unavailableReason: 'O Google Agenda ainda não está ligado neste servidor.',
+      };
+    }
+    const { connected, error } = await googleCalendarStatus(viewer);
+    return { available: true, connected, detail: error, unavailableReason: null };
   },
 };
 
@@ -249,8 +248,8 @@ const PROVIDERS: Provider[] = [
   externalCalendars,
   health,
   googleTasks,
-  telegram,
   spotify,
+  googleCalendar,
   automation,
 ];
 

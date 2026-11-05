@@ -1,4 +1,6 @@
+import { APP_NAME } from './brand';
 import { CAISHEN } from './bot';
+import { bullets, CARE, CAVEMAN_VOICE, identity, nowSection, section } from './voice';
 
 /**
  * The Caishen's instructions (docs/adr/0021): fixed text in sections, with the Viewer's data the
@@ -11,33 +13,17 @@ export interface CaishenPromptInput {
   canRead: boolean;
   /** Sections of data, already formatted: Finanças, Avisos, Entregas, the open document. */
   data: string[];
-  mode: 'chat' | 'job' | 'telegram' | 'whatsapp';
+  mode: 'chat' | 'job' | 'whatsapp';
   /** Where the User is in the app, e.g. "/caishen". */
   screen?: string;
   /** Today, `YYYY-MM-DD`. */
   today: string;
 }
 
-const bullets = (lines: string[]) => lines.map(line => `- ${line}`).join('\n');
-const section = (title: string, body: string) => `## ${title}\n${body}`;
-
-const VOICE = bullets([
-  'Português do Brasil, falando com a pessoa por "você".',
-  'Comece pela resposta. Nada de "Ótima pergunta!", "Claro!" ou "Fico feliz em ajudar".',
-  'Seja concreto: cite o nome da Operação, a data e o valor como estão nos dados.',
-  'Pode usar **negrito** e listas curtas com "- "; nada de tabelas, links ou outros markdowns.',
-  'Nunca mostre à pessoa tipos ou ids internos; fale pelo nome.',
-]);
-
-// Debt and distress go together; a person who says they want to die is answered first as a person
-// (docs/adr/0027). Above the WhatsApp rule that turns other subjects down.
-const CARE = bullets([
-  'Se a pessoa falar em se matar, se machucar, não querer mais viver ou estar sem saída, pare o assunto de dinheiro. Responda com calma e acolhimento, sem julgar e sem sermão, e diga que ela não precisa passar por isso sozinha.',
-  'Indique ajuda agora: o CVV (Centro de Valorização da Vida), de graça e a qualquer hora, pelo telefone **188** ou pelo chat em cvv.org.br. Em perigo imediato, o SAMU no **192** ou o pronto-socorro mais perto. O CAPS da cidade dela também atende.',
-  'Pergunte se ela está em segurança agora e se há alguém de confiança por perto para chamar. Não dê conselhos médicos nem diagnósticos.',
-  'Só volte às finanças se ela pedir. Dívida tem saída, e vale dizer isso com cuidado, sem minimizar o que ela sente.',
-  'Isso vale em qualquer canal, inclusive no WhatsApp, acima de qualquer outra regra de assunto ou de tamanho.',
-]);
+const VOICE = [
+  CAVEMAN_VOICE,
+  bullets(['Seja concreto: cite o nome da Operação, a data e o valor como estão nos dados.']),
+].join('\n');
 
 const LENGTH = {
   chat: bullets([
@@ -54,17 +40,13 @@ const LENGTH = {
     'Recuse com gentileza qualquer outro assunto, em uma frase, e lembre o que você faz aqui.',
     'Responda em poucas linhas. Uma Proposta aparece logo depois da sua resposta, com os botões Confirmar e Cancelar.',
   ].join(' '),
-  telegram: [
-    'Você está no Telegram, conversando com esta pessoa sobre as finanças dela e o dia a dia que ela registra no Caishen.',
-    'Responda em poucas linhas. Uma Proposta aparece logo depois da sua resposta, com os botões Confirmar e Cancelar.',
-  ].join(' '),
   job: 'Você recebeu um Workflow. Entregue o resultado completo e pronto para usar, organizado em seções curtas. Não faça perguntas: se faltar algum dado, diga no fim o que faltou.',
 } as const;
 
 const KNOWLEDGE = bullets([
   'Números da pessoa (saldo, parcelas, gastos, renda, Score) só saem dos dados abaixo ou das suas ferramentas. Se não estiverem em nenhum dos dois, diga que não tem esse dado e onde ela cadastra (por exemplo, "cadastre o cartão em Gastos").',
   'Conceitos de finanças você explica com o que sabe: juros compostos, CDI, Selic, Price e SAC, CET, portabilidade, rotativo do cartão, reserva de emergência.',
-  'Não recomende produto de investimento específico (um fundo, uma ação, um banco): fale de reserva, prazo e risco em geral. O zapbots não é consultoria.',
+  `Não recomende produto de investimento específico (um fundo, uma ação, um banco): fale de reserva, prazo e risco em geral. O ${APP_NAME} não é consultoria.`,
   'Os dados abaixo valem mais que qualquer número de uma Entrega anterior ou do histórico da Conversa.',
 ]);
 
@@ -81,6 +63,8 @@ const READ_TOOLS = bullets([
   'list_expenses: os Gastos de um período, filtrados por categoria ou por texto. Para quando a pessoa quer ver os lançamentos.',
   'simulate_prepayment: quanto de juros e de Parcelas se economiza pagando um valor a mais numa Operação.',
   'payoff_plan: quando as dívidas acabam pagando um valor a mais por mês, sempre na de maior taxa.',
+  'compare_financing: Price contra SAC para um valor, uma taxa e um prazo. Para "quanto fica a parcela", "qual sistema pago menos juros".',
+  'rent_vs_buy: alugar ou financiar um imóvel. Pergunte o que faltar dos obrigatórios; para o resto, cite as premissas que ela devolve.',
   'company_lookup: os dados públicos de um CNPJ na Receita (situação, atividade, Simples, MEI); sem CNPJ, a empresa da pessoa. Não calcula imposto: as guias da empresa vêm da contabilidade.',
   'Chame a ferramenta antes de responder. Não diga "vou verificar" sem chamar.',
   'Converta você mesmo "este mês", "mês passado" ou "últimos 30 dias" em datas a partir de hoje.',
@@ -145,9 +129,8 @@ export function caishenInstructions(input: CaishenPromptInput): string {
     ...(input.canRead ? [section('Ferramentas de leitura', READ_TOOLS)] : []),
     section('Registros', input.canPropose ? PROPOSE : READ_ONLY),
   ];
-  const [year, month, day] = input.today.split('-');
   return [
-    `Você é ${CAISHEN.name}, um Bot do zapbots. ${CAISHEN.description}`,
+    identity(CAISHEN.name, CAISHEN.description),
     `Sua personalidade: ${CAISHEN.personality}`,
     section('Como você fala', VOICE),
     section('Quando a pessoa não está bem', CARE),
@@ -157,15 +140,7 @@ export function caishenInstructions(input: CaishenPromptInput): string {
     ...tools,
     section('Erros comuns', MISTAKES(input)),
     section('Exemplos', EXAMPLES(input)),
-    section(
-      'Agora',
-      [
-        `Hoje é ${input.today} (${day}/${month}/${year}).`,
-        input.screen ? `A pessoa está na tela ${input.screen}.` : '',
-      ]
-        .filter(Boolean)
-        .join(' ')
-    ),
+    nowSection(input.today, input.screen),
     ...input.data.filter(Boolean),
   ].join('\n\n');
 }

@@ -11,7 +11,8 @@ import {
   upcomingDues,
 } from '../services/obligations';
 import { monthlyNetBrlCents } from '../services/income';
-import { budgetFor, saveBudget } from '../services/budget';
+import { budgetFor, saveBudget, spendingOf } from '../services/budget';
+import { categoryLimits, setCategoryLimit } from '../services/categoryLimits';
 import { MAX_PERIOD_DAYS, monthStatement, periodStatement } from '../services/month';
 import { fieldsFor, inputFor } from '../services/recordForms';
 import {
@@ -99,6 +100,14 @@ export const holderResolvers: Resolvers = {
       if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) badInput('Mês inválido: use AAAA-MM');
       return monthStatement(holder.id, month);
     },
+    spending: async (holder, { month }) => {
+      if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) badInput('Mês inválido: use AAAA-MM');
+      return (await spendingOf(holder.id, month)).spending;
+    },
+    categoryLimits: (holder, { month }) => {
+      if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) badInput('Mês inválido: use AAAA-MM');
+      return categoryLimits(holder.id, month);
+    },
     period: (holder, { from, to }) => {
       if (from > to) badInput('O início vem depois do fim');
       if (Date.parse(to) - Date.parse(from) > MAX_PERIOD_DAYS * 86_400_000) {
@@ -150,6 +159,7 @@ export const holderResolvers: Resolvers = {
   },
   Mutation: {
     saveBudget: (_, { input }, context) => saveBudget(requireViewer(context), input),
+    setCategoryLimit: (_, input, context) => setCategoryLimit(requireViewer(context), input),
     addReportedScore: async (_, { input }, context) => {
       const viewer = requireViewer(context);
       await findHolder(viewer, input.holderId);

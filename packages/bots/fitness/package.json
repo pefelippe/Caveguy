@@ -14,5 +14,8 @@
   "devDependencies": {
     "@zapbots/typescript-config": "workspace:*",
     "vitest": "4.1.10"
+  },
+  "dependencies": {
+    "@zapbots/finance": "workspace:*"
   }
 }

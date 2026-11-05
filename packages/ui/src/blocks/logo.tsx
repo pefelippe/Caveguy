@@ -1,6 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 import { forwardRef, type SVGProps } from 'react';
 
+import { Caveman } from '@zapbots/ui/blocks/caveman';
 import { cn } from '@zapbots/ui/lib/utils';
 
 /** The three blocks of the Caishen's "C"; `index.html` and `public/logo.svg` repeat them. */
@@ -45,14 +46,11 @@ export function Logo({ className, size = 28 }: { className?: string; size?: numb
   );
 }
 
-/** The mark in white on a red circle (the seal): the app's sign, in the menu, on sign-in and while it loads. */
+/** Brutus on the seal: the app's sign, in the menu, on sign-in and while it loads (docs/adr/0035). */
 export function LogoBadge({ className, size = 32 }: { className?: string; size?: number }) {
   return (
-    <span
-      className={cn('grid shrink-0 place-items-center rounded-full bg-seal text-white', className)}
-      style={{ height: size, width: size }}
-    >
-      <Logo size={Math.round(size * 0.55)} />
+    <span className={cn('inline-grid shrink-0 [--ink:var(--seal)]', className)}>
+      <Caveman outfit="PLAIN" size={size} />
     </span>
   );
 }

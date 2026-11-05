@@ -1,7 +1,16 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath } from 'node:url';
-import { defineConfig, loadEnv, type ProxyOptions } from 'vite';
+import { defineConfig, loadEnv, type Plugin, type ProxyOptions } from 'vite';
+
+// Relative, so the config bundles it: Node cannot load a workspace package's TypeScript.
+import { APP_NAME } from '../bots/finance/src/brand';
+
+/** Writes the app's name into index.html, where `%APP_NAME%` stands for it. */
+const appName: Plugin = {
+  name: 'app-name',
+  transformIndexHtml: html => html.replaceAll('%APP_NAME%', APP_NAME),
+};
 
 // One `.env` for the whole repo; only `VITE_`-prefixed variables reach the browser.
 const envDir = fileURLToPath(new URL('../..', import.meta.url));
@@ -21,7 +30,7 @@ export default defineConfig(({ mode }) => {
 
   return {
     envDir,
-    plugins: [react(), tailwindcss()],
+    plugins: [react(), tailwindcss(), appName],
     preview: { host: true, port, proxy },
     resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
     server: { port, proxy, strictPort: true },

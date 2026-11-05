@@ -1,3 +1,4 @@
+import { APP_NAME } from '@zapbots/finance';
 import { useMutation } from '@apollo/client/react';
 import {
   ConnectionsDocument,
@@ -27,7 +28,7 @@ export function SpotifyLinker({ connected }: { connected: boolean }) {
       <div className="flex flex-col gap-3">
         <p className="text-sm text-muted-foreground">
           Ligue o card Música em Personalizar, na Página inicial. Para tirar o acesso também do lado
-          de lá, remova o Caishen em spotify.com/account/apps.
+          de lá, remova o {APP_NAME} em spotify.com/account/apps.
         </p>
         <Button
           className="self-start"

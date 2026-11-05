@@ -24,7 +24,7 @@ export const PSEUDO_CATEGORIES = {
 } as const;
 
 /** The month's spending by category: Gastos, Gastos recorrentes and what falls due. */
-async function spendingOf(holderId: string, month: string) {
+export async function spendingOf(holderId: string, month: string) {
   const statement = await monthStatement(holderId, month);
   const recurringIds = statement.commitments
     .filter(line => line.kind === 'RECURRING' && line.id)
