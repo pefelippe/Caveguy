@@ -1,6 +1,6 @@
 import { APP_NAME } from './brand';
 import { CAISHEN } from './bot';
-import { bullets, CARE, CAVEMAN_VOICE, identity, nowSection, section } from './voice';
+import { bullets, CARE, VOICE, identity, nowSection, section } from './voice';
 
 /**
  * The Caishen's instructions (docs/adr/0021): fixed text in sections, with the Viewer's data the
@@ -20,8 +20,8 @@ export interface CaishenPromptInput {
   today: string;
 }
 
-const VOICE = [
-  CAVEMAN_VOICE,
+const FINANCE_VOICE = [
+  VOICE,
   bullets(['Seja concreto: cite o nome da Operação, a data e o valor como estão nos dados.']),
 ].join('\n');
 
@@ -132,7 +132,7 @@ export function caishenInstructions(input: CaishenPromptInput): string {
   return [
     identity(CAISHEN.name, CAISHEN.description),
     `Sua personalidade: ${CAISHEN.personality}`,
-    section('Como você fala', VOICE),
+    section('Como você fala', FINANCE_VOICE),
     section('Quando a pessoa não está bem', CARE),
     section('Tamanho da resposta', LENGTH[input.mode]),
     section('O que você sabe e o que pode explicar', KNOWLEDGE),

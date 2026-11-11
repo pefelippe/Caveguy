@@ -400,6 +400,13 @@
       "when": 1793919055227,
       "tag": "0056_soft_paper_doll",
       "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1794239820274,
+      "tag": "0057_ordinary_dagger",
+      "breakpoints": true
     }
   ]
 }

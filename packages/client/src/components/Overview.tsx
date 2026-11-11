@@ -1,5 +1,5 @@
 import type { HomeOverviewQuery } from '@zapbots/graphql/client';
-import { CreditCardIcon, LandmarkIcon, WalletIcon, type LucideIcon } from 'lucide-react';
+import { ArrowUpRightIcon, WalletIcon, type LucideIcon } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -8,6 +8,7 @@ import { cn } from '@zapbots/ui/lib/utils';
 
 import { localToday } from '../lib/bots';
 import { formatCents } from '../lib/format';
+import { availableCents, nextCharge } from '../lib/overview';
 
 type Holder = HomeOverviewQuery['viewerHolder'];
 type BankLink = HomeOverviewQuery['bankLinks'][number];
@@ -54,52 +55,99 @@ function OverviewCard({
   );
 }
 
-function Empty({ children }: { children: ReactNode }) {
-  return <p className="px-6 py-5 text-sm text-muted-foreground">{children}</p>;
+/** A card of the Visão geral, after Pierre's: a small title, "ver todas" to its tab, then what it holds. */
+export function Tile({
+  children,
+  className,
+  more,
+  title,
+  to,
+}: {
+  children: ReactNode;
+  className?: string;
+  more?: string;
+  title: string;
+  to?: string;
+}) {
+  return (
+    <Card className={cn('min-w-0 gap-4', className)}>
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className="text-sm font-medium text-muted-foreground">{title}</h2>
+        {to && (
+          <Link
+            className="inline-flex shrink-0 items-center gap-1 text-sm font-medium text-seal hover:underline"
+            to={to}
+          >
+            {more ?? 'ver todas'}
+            <ArrowUpRightIcon className="size-3.5" />
+          </Link>
+        )}
+      </div>
+      {children}
+    </Card>
+  );
 }
 
-/** The banks linked through Open Finance and what is in their accounts (docs/adr/0020). */
-function Accounts({ links }: { links: BankLink[] }) {
-  const balanceOf = (link: BankLink) =>
+/** The card's large figure, with a short note after it. */
+export function Figure({ children, note }: { children: ReactNode; note?: ReactNode }) {
+  return (
+    <p className="flex flex-wrap items-baseline gap-x-2">
+      <span className="font-display text-4xl tracking-[-0.022em] tabular-nums">{children}</span>
+      {note && <span className="text-sm text-muted-foreground">{note}</span>}
+    </p>
+  );
+}
+
+/** A square with the first letter of a bank or card, where Pierre shows its logo. */
+function Initial({ name }: { name: string }) {
+  return (
+    <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-muted font-medium text-muted-foreground uppercase">
+      {name.trim().charAt(0)}
+    </span>
+  );
+}
+
+/** The bank accounts linked through Open Finance, one line each, and their total (docs/adr/0020). */
+export function Accounts({ links }: { links: BankLink[] }) {
+  const accounts = links.flatMap(link =>
     link.accounts
       .filter(account => account.kind === 'BANK')
-      .reduce((total, account) => total + (account.balanceCents ?? 0), 0);
-  const total = links.reduce((sum, link) => sum + balanceOf(link), 0);
+      .map(account => ({ account, institution: link.institution }))
+  );
+  const total = accounts.reduce((sum, { account }) => sum + (account.balanceCents ?? 0), 0);
   return (
-    <OverviewCard figure={formatCents(total)} icon={LandmarkIcon} title="Contas bancárias">
-      {links.length ? (
-        <ul>
-          {links.map(link => {
-            const count = link.accounts.filter(account => account.kind === 'BANK').length;
-            return (
-              <li
-                className="flex items-center gap-3 border-b px-6 py-3 last:border-b-0"
-                key={link.id}
-              >
-                <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-accent text-primary">
-                  <LandmarkIcon className="size-4" />
-                </span>
+    <Tile title="Contas correntes" to="/integrations#finance">
+      <Figure note="saldo total">{formatCents(total)}</Figure>
+      {accounts.length ? (
+        <>
+          <ul className="flex flex-col">
+            {accounts.map(({ account, institution }) => (
+              <li className="flex items-center gap-3 py-2" key={account.id}>
+                <Initial name={institution} />
                 <span className="grid min-w-0 flex-1">
-                  <span className="truncate font-medium">{link.institution}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {count} {count === 1 ? 'conta' : 'contas'}
-                  </span>
+                  <span className="truncate font-medium">{institution}</span>
+                  <span className="truncate text-xs text-muted-foreground">{account.name}</span>
                 </span>
-                <span className="font-medium tabular-nums">{formatCents(balanceOf(link))}</span>
+                <span className="font-medium tabular-nums">
+                  {formatCents(account.balanceCents ?? 0)}
+                </span>
               </li>
-            );
-          })}
-        </ul>
+            ))}
+          </ul>
+          <p className="border-t pt-3 text-sm text-muted-foreground">
+            {accounts.length} {accounts.length === 1 ? 'conta' : 'contas'}
+          </p>
+        </>
       ) : (
-        <Empty>
+        <p className="text-sm text-muted-foreground">
           Ligue seu banco pelo Open Finance em{' '}
           <Link className="text-primary hover:underline" to="/integrations#finance">
             Integrações
           </Link>{' '}
           e os saldos aparecem aqui.
-        </Empty>
+        </p>
       )}
-    </OverviewCard>
+    </Tile>
   );
 }
 
@@ -110,74 +158,66 @@ function openStatement(card: CreditCard) {
   return byDue.find(statement => statement.dueDate >= today) ?? byDue.at(-1);
 }
 
-/** The Cartões, their open Faturas and how much of the limit they take. */
-function Cards({ cards }: { cards: CreditCard[] }) {
-  const open = cards.map(card => ({ card, statement: openStatement(card) }));
-  const total = open.reduce((sum, { statement }) => sum + (statement?.amountCents ?? 0), 0);
+/** "25 nov". */
+const dayMonth = (date: string) =>
+  new Date(`${date}T12:00:00`)
+    .toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+    .replace(' de ', ' ')
+    .replace('.', '');
+
+/** The Cartões' limit still free, in all and one by one, with the day each is due. */
+export function Cards({ cards }: { cards: CreditCard[] }) {
+  const today = localToday();
+  const rows = cards.map(card => {
+    const statement = openStatement(card);
+    // What the bank says is in use (installments to come included), or else the open Fatura.
+    const used = card.usedCents ?? statement?.amountCents ?? 0;
+    return {
+      available: availableCents(card.limitCents, used),
+      card,
+      due: nextCharge({ cycle: 'MONTHLY', dueDay: card.dueDay }, today),
+      statement,
+    };
+  });
   const limit = cards.reduce((sum, card) => sum + card.limitCents, 0);
-  // What the bank says is in use (installments to come included), or else the open Fatura.
-  const inUse = open.reduce(
-    (sum, { card, statement }) => sum + (card.usedCents ?? statement?.amountCents ?? 0),
-    0
-  );
-  const used = limit ? Math.min(inUse / limit, 1) : 0;
+  const available = rows.reduce((sum, row) => sum + (row.card.limitCents ? row.available : 0), 0);
   return (
-    <OverviewCard figure={formatCents(total)} icon={CreditCardIcon} title="Cartões de crédito">
+    <Tile title="Limite total disponível" to="/caishen/cards">
+      <Figure note={limit ? `de ${formatCents(limit)} de limite total` : undefined}>
+        {formatCents(available)}
+      </Figure>
       {cards.length ? (
-        <>
-          {limit > 0 && (
-            <div className="border-b px-6 py-4">
-              <div className="flex justify-between gap-3 text-sm text-muted-foreground">
-                <span>{Math.round(used * 100)}% do limite</span>
-                <span className="tabular-nums">Limite: {formatCents(limit)}</span>
-              </div>
-              <div
-                aria-label="Uso do limite"
-                aria-valuemax={100}
-                aria-valuemin={0}
-                aria-valuenow={Math.round(used * 100)}
-                className="mt-2 h-2 rounded-full bg-muted"
-                role="meter"
-              >
-                <div
-                  className="h-full min-w-1 rounded-full bg-primary"
-                  style={{ width: `${used * 100}%` }}
-                />
-              </div>
-            </div>
-          )}
-          <ul>
-            {open.map(({ card, statement }) => (
-              <li
-                className="flex items-center gap-3 border-b px-6 py-3 last:border-b-0"
-                key={card.id}
-              >
-                <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-accent text-primary">
-                  <CreditCardIcon className="size-4" />
+        <ul className="flex flex-col">
+          {rows.map(({ available: free, card, due, statement }) => (
+            <li className="flex items-center gap-3 py-2" key={card.id}>
+              <Initial name={card.issuer || card.name} />
+              <span className="grid min-w-0 flex-1">
+                <span className="truncate font-medium">{card.name}</span>
+                <span className="text-xs text-muted-foreground">
+                  {due ? `Vence ${dayMonth(due)}` : `Vence dia ${card.dueDay}`}
                 </span>
-                <span className="grid min-w-0 flex-1">
-                  <span className="truncate font-medium">{card.name}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {statement ? `Fatura de ${longMonth(statement.referenceMonth)}` : 'Sem Fatura'}
-                  </span>
-                </span>
+              </span>
+              <span className="grid text-right">
                 <span className="font-medium tabular-nums">
-                  {formatCents(statement?.amountCents ?? 0)}
+                  {formatCents(card.limitCents ? free : (statement?.amountCents ?? 0))}
                 </span>
-              </li>
-            ))}
-          </ul>
-        </>
+                <span className="text-xs text-muted-foreground">
+                  {card.limitCents ? 'disponível' : 'na fatura'}
+                </span>
+              </span>
+            </li>
+          ))}
+        </ul>
       ) : (
-        <Empty>
+        <p className="text-sm text-muted-foreground">
           Cadastre seus Cartões em{' '}
-          <Link className="text-primary hover:underline" to="/caishen/fixed#cards">
-            Gastos
+          <Link className="text-primary hover:underline" to="/caishen/cards">
+            Cartões
           </Link>{' '}
           para acompanhar as Faturas e o limite.
-        </Empty>
+        </p>
       )}
-    </OverviewCard>
+    </Tile>
   );
 }
 
@@ -185,7 +225,7 @@ const CHART_HEIGHT = 200;
 const PAD = { bottom: 28, left: 8, right: 8, top: 12 };
 
 /** The width the element has now, following it as the window or the panels change. */
-function useWidth<T extends HTMLElement>() {
+export function useWidth<T extends HTMLElement>() {
   const ref = useRef<T>(null);
   const [width, setWidth] = useState(0);
   useEffect(() => {

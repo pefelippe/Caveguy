@@ -1,4 +1,4 @@
-import { MASCOT_NAME } from '@zapbots/finance';
+import { APP_NAME } from '@zapbots/finance';
 import { closeDb, db, schema } from '@zapbots/database';
 import { eq } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
@@ -140,12 +140,12 @@ describe('Agentes', () => {
     expect((await gql(stranger, DELETE, { id })).errors).toEqual(['NOT_FOUND']);
   });
 
-  it("gives the Pessoal the Agenda and Tarefas, in the caveman's voice, and no health data", async () => {
+  it("gives the Pessoal the Agenda and Tarefas, in the app's voice, and no health data", async () => {
     const viewer = await createViewer();
     await createTask(viewer, { title: 'Comprar pão' });
     const [, personal] = await ensureBots(viewer.organizationId);
     const prompt = await botPrompt(viewer, personal!, { mode: 'chat' });
-    expect(prompt).toContain(`${MASCOT_NAME}`);
+    expect(prompt).toContain(`Você é o ${APP_NAME}`);
     expect(prompt).toContain('Comprar pão');
     expect(prompt).toContain('CVV');
     expect(prompt).not.toMatch(/Sono|Medidas|Refeições/);
@@ -174,8 +174,8 @@ describe('Agentes', () => {
       .set({ model: MODEL_WITH_TOOLS })
       .where(eq(schema.bot.id, finance!.id));
     const { handler, log } = completionHandler([
-      { text: `${MASCOT_NAME} ajudar.` },
-      { text: `${MASCOT_NAME} contar.` },
+      { text: 'Posso ajudar.' },
+      { text: 'Vou contar.' },
     ]);
     mswServer.use(modelListHandler, handler);
 

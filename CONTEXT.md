@@ -1,9 +1,9 @@
 # zapbots
 
-O **Caveman** (nome provisório; o repositório e o código seguem zapbots e
-Caishen): um app só para pessoas, extremamente simples, com cara de jogo. O
-mascote, o **Brutus**, é um homem das cavernas que fala curto e direto; cada
-Agente é ele com outra roupa e outro fundo: o Financeiro, o Pessoal, o Fitness
+O **Caveguy** (o repositório e o código seguem zapbots e Caishen): um app só
+para pessoas, extremamente simples. O app e o mascote têm o mesmo nome: um homem
+das cavernas desenhado; cada Agente é ele com outra roupa e outro fundo
+(ADR 0039): o Financeiro, o Pessoal, o Fitness
 e os que a pessoa cria (ADR 0035). O Financeiro acompanha as Finanças do
 Titular (gastos, entradas, cartões, dívidas), calcula juros e amortização e
 responde sobre o mês.
@@ -12,28 +12,22 @@ responde sobre o mês.
 
 ### Equipe
 
-**Caveman**:
-O produto, o nome que a pessoa vê (provisório). Só para pessoas: não há plano
-nem tela para empresas.
-_Avoid_: Caishen (como marca), assessor, Empresas
-
-**Brutus**:
-O mascote: um homem das cavernas desenhado em rabisco à mão. Todo Agente é ele,
-com a roupa e o fundo do Agente.
-_Avoid_: Uga Buga, Pedrão, Bruto, Grug, bonequinho
+**Caveguy** (`APP_NAME`):
+O produto, o nome que a pessoa vê, e também o do mascote: um homem das cavernas
+desenhado em rabisco à mão. Todo Agente é ele, com a roupa e o fundo do Agente.
+Só para pessoas: não há plano nem tela para empresas.
+_Avoid_: Caveman, Brutus, Caishen (como marca), assessor, Empresas, Uga Buga, Grug, bonequinho
 
 **Fala das cavernas**:
-A voz do Brutus, como a do Hulk: "Brutus <verbo> <assunto>", na terceira
-pessoa, verbo conjugado, sem artigos ("Brutus anota gasto. Brutus vê fatura.").
-Simples, não boba.
-Vale na landing, nas saudações e nas respostas dos
-Agentes; botões, rótulos, erros e textos legais ficam em português normal.
-Valores, datas e nomes saem sempre exatos. Com uma pessoa em crise, o Agente
-larga o personagem e responde normalmente.
+"Caveguy <verbo> <assunto>", na terceira pessoa, verbo conjugado, sem artigos
+("Caveguy anota."). Só nos títulos da landing e na saudação de uma Conversa em
+branco. As respostas dos Agentes, os botões, os erros, os e-mails e os textos
+legais ficam em português normal, simples e direto, na primeira pessoa
+(ADR 0039). Valores, datas e nomes saem sempre exatos.
 _Avoid_: voz do Hulk, língua de bebê, verbo no infinitivo
 
 **Agente** (`Bot`, no código):
-Um colega de IA que a pessoa vê como o Brutus com uma roupa (`outfit`) e um
+Um colega de IA que a pessoa vê como o Caveguy com uma roupa (`outfit`) e um
 fundo: o Financeiro, o Pessoal, o Fitness ou um Agente personalizado. A pessoa
 escolhe com quem fala por abas, e cada um fixo tem uma tela só sua. No código e
 no banco continua `Bot`.

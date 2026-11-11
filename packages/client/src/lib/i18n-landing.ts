@@ -1,9 +1,10 @@
-import { MASCOT_NAME } from '@zapbots/finance';
+import { APP_NAME } from '@zapbots/finance';
 import type { Language } from './i18n';
 
 /**
- * The strings of the landing page: Brutus talks like the Hulk ("Brutus anota.") in the titles and
- * balloons; buttons, answers and the fine print (docs/adr/0035). Prices stay in reais.
+ * The strings of the landing page: the caveman's short talk ("Caveguy anota.") only in the titles;
+ * the sample replies, buttons, answers and the fine print in plain words, as the app talks
+ * (docs/adr/0039). Prices stay in reais.
  */
 export const LANDING_STRINGS = {
   'landing.skip': { en: 'Skip to content', pt: 'Pular para o conteúdo' },
@@ -16,110 +17,176 @@ export const LANDING_STRINGS = {
   'landing.nav.sections': { en: 'Sections', pt: 'Seções' },
 
   'landing.hero.title1': {
-    en: `${MASCOT_NAME} writes down.`,
-    pt: `${MASCOT_NAME} anota.`,
+    en: `${APP_NAME} writes down.`,
+    pt: `${APP_NAME} anota.`,
   },
   'landing.hero.title2': {
-    en: `${MASCOT_NAME} remembers.`,
-    pt: `${MASCOT_NAME} lembra.`,
+    en: `${APP_NAME} remembers.`,
+    pt: `${APP_NAME} lembra.`,
   },
   'landing.hero.lead': {
-    en: `Send one message. ${MASCOT_NAME} takes care of your money, your schedule and your training.`,
-    pt: `Mande uma mensagem. O ${MASCOT_NAME} cuida do seu dinheiro, da sua agenda e do seu treino.`,
+    en: `Send one message. ${APP_NAME} takes care of your money, your schedule and your training.`,
+    pt: `Mande uma mensagem. O ${APP_NAME} cuida do seu dinheiro, da sua agenda e do seu treino.`,
   },
   'landing.hero.start': { en: 'Start free', pt: 'Começar grátis' },
   'landing.hero.plans': { en: 'See plans', pt: 'Ver planos' },
 
+  'landing.nav.how': { en: 'How it works', pt: 'Como funciona' },
+  'landing.nav.trust': { en: 'Security', pt: 'Segurança' },
+
   'landing.agents.title': {
-    en: `Pick ${MASCOT_NAME}.`,
-    pt: `Escolha ${MASCOT_NAME}.`,
+    en: `One ${APP_NAME}, three Agents.`,
+    pt: `Um ${APP_NAME}, três Agentes.`,
   },
-  'landing.agents.lead': {
-    en: 'One caveman, three personalities.',
-    pt: 'Um homem das cavernas, três personalidades.',
+  'landing.agents.try': { en: 'Type a spend', pt: 'Digite um gasto' },
+  'landing.agents.tryHint': {
+    en: 'An example on this page: nothing is sent or saved.',
+    pt: 'Um exemplo nesta página: nada é enviado nem salvo.',
   },
+  'landing.agents.trySample': { en: 'spent 32 at the market', pt: 'gastei 32 no mercado' },
+  'landing.agents.tryReply': {
+    en: '{amount} at {place}, today. Shall I save it?',
+    pt: '{amount} em {place}, hoje. Posso salvar?',
+  },
+  'landing.agents.tryReplyNoPlace': {
+    en: '{amount}, today. Where did it go?',
+    pt: '{amount}, hoje. Foi em quê?',
+  },
+  'landing.agents.tryMissing': {
+    en: 'I could not find the amount. Try “spent 32 at the market”.',
+    pt: 'Não achei o valor. Tente “gastei 32 no mercado”.',
+  },
+  'landing.agents.send': { en: 'Send', pt: 'Enviar' },
+  'landing.ui.ledger1': { en: 'Market', pt: 'Mercado' },
+  'landing.ui.ledger1.when': { en: 'Today · Market', pt: 'Hoje · Mercado' },
+  'landing.ui.ledger2': { en: 'Pharmacy', pt: 'Farmácia' },
+  'landing.ui.ledger2.when': { en: 'Yesterday · Pharmacy', pt: 'Ontem · Farmácia' },
+  'landing.ui.ledger3': { en: 'Bakery', pt: 'Padaria' },
+  'landing.ui.ledger3.when': { en: 'Yesterday · Bakery', pt: 'Ontem · Padaria' },
+  'landing.how.waAsk': { en: 'how much is left this month?', pt: 'quanto sobra este mês?' },
+  'landing.how.waSay': {
+    en: 'R$ 1.240,00 is left until the 30th.',
+    pt: 'Sobram R$ 1.240,00 até o dia 30.',
+  },
+  'landing.ui.transactions': { en: 'Transactions', pt: 'Transações' },
+  'landing.ui.expense': { en: 'Expense', pt: 'Gasto' },
+  'landing.ui.amount': { en: 'Amount', pt: 'Valor' },
+  'landing.ui.place': { en: 'Category', pt: 'Categoria' },
+  'landing.ui.day': { en: 'Day', pt: 'Dia' },
+  'landing.ui.today': { en: 'today', pt: 'hoje' },
+  'landing.ui.confirm': { en: 'Confirm', pt: 'Confirmar' },
+  'landing.ui.cancel': { en: 'Cancel', pt: 'Cancelar' },
+  'landing.ui.tomorrow': { en: 'Tomorrow', pt: 'Amanhã' },
+  'landing.ui.dentist': { en: 'Dentist', pt: 'Dentista' },
+  'landing.ui.tasks': { en: 'Open tasks', pt: 'Tarefas abertas' },
+  'landing.ui.condo': { en: 'Pay the condo fee', pt: 'Pagar condomínio' },
+  'landing.ui.condoDue': { en: 'due 15/11', pt: 'vence 15/11' },
+  'landing.ui.bread': { en: 'Buy bread', pt: 'Comprar pão' },
+  'landing.ui.workout': { en: 'Workout A · today', pt: 'Treino A · hoje' },
+  'landing.ui.squat': { en: 'Squat', pt: 'Agachamento' },
+  'landing.ui.bench': { en: 'Bench press', pt: 'Supino' },
+  'landing.ui.row': { en: 'Row', pt: 'Remada' },
+  'landing.ui.next': { en: 'Next: Workout B, Friday', pt: 'Próximo: Treino B, sexta' },
+
+  'landing.how.title': { en: 'One message is enough.', pt: 'Uma mensagem basta.' },
+  'landing.how.lead': {
+    en: `Write in the app or on WhatsApp, the way you talk. ${APP_NAME} shows what it understood and only saves when you confirm.`,
+    pt: `Escreva no app ou no WhatsApp, do jeito que você fala. O ${APP_NAME} mostra o que entendeu e só salva quando você confirma.`,
+  },
+  'landing.how.you': { en: 'You write', pt: 'Você escreve' },
+  'landing.how.you.1': { en: '“spent 32 at the market”', pt: '“gastei 32 no mercado”' },
+  'landing.how.it': { en: `${APP_NAME} understands`, pt: `O ${APP_NAME} entende` },
+  'landing.how.it.1': {
+    en: 'Reads the amount, the place and the day',
+    pt: 'Lê o valor, o lugar e o dia',
+  },
+  'landing.how.it.2': {
+    en: 'Shows R$ 32,00 at Market, today',
+    pt: 'Mostra R$ 32,00 em Mercado, hoje',
+  },
+  'landing.how.decide': { en: 'You decide', pt: 'Você decide' },
+  'landing.how.decide.1': {
+    en: 'Tap Confirm, or fix it first',
+    pt: 'Toca em Confirmar, ou corrige antes',
+  },
+  'landing.how.total': { en: 'Saved in Transactions', pt: 'Salvo em Transações' },
+  'landing.how.totalTime': { en: 'under a minute', pt: 'menos de 1 minuto' },
+  'landing.how.whatsapp': { en: 'The same on WhatsApp', pt: 'O mesmo no WhatsApp' },
   'landing.agents.how': {
     en: 'In the app or on WhatsApp. Nothing is saved until you tap Confirm.',
     pt: 'No app ou no WhatsApp. Nada é salvo antes de você tocar em Confirmar.',
   },
-  'landing.hero.wall': {
-    en: 'Hands painted on the rock, Cueva de las Manos, Argentina',
-    pt: 'Mãos pintadas na rocha, Cueva de las Manos, Argentina',
-  },
-  'landing.flows.picture': {
-    en: 'Horses painted in ochre and charcoal, replica of Lascaux',
-    pt: 'Cavalos pintados com ocre e carvão, réplica de Lascaux',
-  },
-  'landing.pricing.bone': {
-    en: 'The Ishango bone, Upper Paleolithic: someone was already counting in notches.',
-    pt: 'Osso de Ishango, Paleolítico Superior: alguém já contava em riscos.',
-  },
-  'landing.questions.picture': {
-    en: 'A giant deer over a row of dots, replica of Lascaux',
-    pt: 'Um cervo gigante sobre uma fileira de pontos, réplica de Lascaux',
-  },
-  'landing.footer.pictures': { en: 'Pictures', pt: 'Fotos' },
   'landing.agents.example': { en: 'Example', pt: 'Exemplo' },
-  'landing.agents.type': { en: 'Write a message…', pt: 'Escreva uma mensagem…' },
   'landing.agents.finance': { en: 'Finance', pt: 'Financeiro' },
   'landing.agents.finance.does': {
     en: 'Knows what is left until the end of the month, what falls due this week and when your debts end.',
     pt: 'Sabe quanto sobra até o fim do mês, o que vence na semana e quando suas dívidas acabam.',
-  },
-  'landing.agents.finance.ask': { en: 'spent 50 at the market', pt: 'gastei 50 no mercado' },
-  'landing.agents.finance.say': {
-    en: `${MASCOT_NAME} writes down R$ 50,00 at Market, today. Confirm?`,
-    pt: `${MASCOT_NAME} anota R$ 50,00 em Mercado, hoje. Confirma?`,
   },
   'landing.agents.personal': { en: 'Personal', pt: 'Pessoal' },
   'landing.agents.personal.does': {
     en: 'Knows what you have tomorrow, what fell behind and where you want to get.',
     pt: 'Sabe o que você tem amanhã, o que ficou para trás e aonde você quer chegar.',
   },
-  'landing.agents.personal.ask': { en: 'what do I have tomorrow?', pt: 'o que tenho amanhã?' },
-  'landing.agents.personal.say': {
-    en: `Tomorrow dentist at 14:00. ${MASCOT_NAME} sees two tasks open.`,
-    pt: `Amanhã dentista às 14:00. ${MASCOT_NAME} vê duas tarefas abertas.`,
-  },
   'landing.agents.fitness': { en: 'Fitness', pt: 'Fitness' },
   'landing.agents.fitness.does': {
     en: 'Knows which workout is today and which comes next. Your weight and sleep stay away from the AI.',
     pt: 'Sabe qual treino é hoje e qual vem depois. Seu peso e seu sono ficam longe da IA.',
   },
-  'landing.agents.fitness.ask': { en: 'which workout today?', pt: 'qual treino hoje?' },
-  'landing.agents.fitness.say': {
-    en: `Today Workout A: squat 4x10, bench 4x10. ${MASCOT_NAME} trains too.`,
-    pt: `Hoje Treino A: agachamento 4x10, supino 4x10. ${MASCOT_NAME} treina junto.`,
-  },
 
-  'landing.flows.title': {
-    en: 'AI reached the Stone Age.',
-    pt: 'A IA chegou na idade da pedra.',
+  'landing.trust.title1': { en: 'Safe', pt: 'Seguro' },
+  'landing.trust.title2': { en: 'by default.', pt: 'por padrão.' },
+  'landing.trust.what': { en: 'What', pt: 'O quê' },
+  'landing.trust.how': { en: 'How', pt: 'Como' },
+  'landing.trust.where': { en: 'Where', pt: 'Onde' },
+  'landing.trust.read.w': { en: 'Every Agent', pt: 'Todos os Agentes' },
+  'landing.trust.confirm.w': { en: 'App and WhatsApp', pt: 'App e WhatsApp' },
+  'landing.trust.keys.w': { en: 'Integrations', pt: 'Integrações' },
+  'landing.trust.twoFactor.w': { en: 'Profile', pt: 'Perfil' },
+  'landing.trust.health.w': { en: 'Fitness', pt: 'Fitness' },
+  'landing.trust.lgpd.w': { en: 'Profile', pt: 'Perfil' },
+  'landing.ui.aiKeys': { en: 'AI models', pt: 'Modelos de IA' },
+  'landing.ui.sealed': { en: 'Saved encrypted', pt: 'Guardada cifrada' },
+  'landing.trust.lead': {
+    en: 'Your money and your routine are serious. This is how we look after them.',
+    pt: 'Seu dinheiro e sua rotina são assunto sério. É assim que cuidamos deles.',
   },
-  'landing.flows.lead': {
-    en: `Ask once. Every Monday or every 1st, ${MASCOT_NAME} does the work and hands it in ready, without you remembering.`,
-    pt: `Peça uma vez. Toda segunda ou todo dia 1, o ${MASCOT_NAME} faz o trabalho e entrega pronto, sem você lembrar.`,
+  'landing.trust.read': { en: 'It never moves money', pt: 'Nunca mexe no seu dinheiro' },
+  'landing.trust.read.a': {
+    en: 'The Agents read what you give them to answer. No payments, no transfers, nothing done outside the app.',
+    pt: 'Os Agentes leem o que você dá a eles para responder. Nada de pagamentos, transferências ou ações fora do app.',
   },
-  'landing.flows.weekly.text': {
-    en: 'Every Monday: what falls due this week.',
-    pt: 'Toda segunda: o que vence na semana.',
+  'landing.trust.confirm': { en: 'You confirm everything', pt: 'Você confirma tudo' },
+  'landing.trust.confirm.a': {
+    en: 'A new expense, a correction or a deletion is only saved when you tap Confirm.',
+    pt: 'Um gasto novo, uma correção ou uma exclusão só é salvo quando você toca em Confirmar.',
   },
-  'landing.flows.monthly.text': {
-    en: 'Every 1st: last month, by category.',
-    pt: 'Todo dia 1: o mês passado, por categoria.',
+  'landing.trust.keys': { en: 'Secrets locked away', pt: 'Segredos trancados' },
+  'landing.trust.keys.a': {
+    en: 'Keys you paste in are stored encrypted with AES-256-GCM, and only their last four characters are ever shown.',
+    pt: 'As chaves que você cola ficam guardadas cifradas com AES-256-GCM, e só os quatro últimos caracteres aparecem.',
   },
-  'landing.flows.once.text': {
-    en: 'Once: a plan to get out of debt.',
-    pt: 'Uma vez: um plano para sair das dívidas.',
+  'landing.trust.twoFactor': { en: 'Two-step verification', pt: 'Verificação em duas etapas' },
+  'landing.trust.twoFactor.a': {
+    en: 'Turn it on in your Profile: after the password, a code from your authenticator app.',
+    pt: 'Ative no Perfil: depois da senha, um código do seu app autenticador.',
   },
-  'landing.nav.flows': { en: 'Workflows', pt: 'Workflows' },
+  'landing.trust.health': { en: 'Health stays out of the AI', pt: 'Saúde fica longe da IA' },
+  'landing.trust.health.a': {
+    en: 'Weight, sleep and measurements never go to an AI model.',
+    pt: 'Peso, sono e medidas nunca vão para um modelo de IA.',
+  },
+  'landing.trust.lgpd': { en: 'Your data is yours', pt: 'Seus dados são seus' },
+  'landing.trust.lgpd.a': {
+    en: "Under Brazil's LGPD: delete your account on the Profile page and everything in it goes too.",
+    pt: 'Pela LGPD: exclua a conta na página Perfil e tudo o que está nela vai junto.',
+  },
   'landing.pricing.free.flows': { en: '30 Workflows a month', pt: '30 Workflows por mês' },
   'landing.pricing.pro.flows': { en: '500 Workflows a month', pt: '500 Workflows por mês' },
   'landing.pricing.max.flows': { en: '1,500 Workflows a month', pt: '1.500 Workflows por mês' },
 
   'landing.pricing.title': {
-    en: `${MASCOT_NAME} charges little.`,
-    pt: `${MASCOT_NAME} cobra pouco.`,
+    en: `${APP_NAME} charges little.`,
+    pt: `${APP_NAME} cobra pouco.`,
   },
   'landing.pricing.free': { en: 'Free', pt: 'Gratuito' },
   'landing.pricing.pro': { en: 'Pro', pt: 'Pro' },
@@ -144,21 +211,21 @@ export const LANDING_STRINGS = {
   },
 
   'landing.questions.title': {
-    en: `${MASCOT_NAME} answers.`,
-    pt: `${MASCOT_NAME} responde.`,
+    en: `${APP_NAME} answers.`,
+    pt: `${APP_NAME} responde.`,
   },
   'landing.q.voice': {
-    en: `Why does ${MASCOT_NAME} talk like that?`,
-    pt: `Por que ${MASCOT_NAME} fala assim?`,
+    en: 'Why a caveman?',
+    pt: 'Por que um homem das cavernas?',
   },
   'landing.q.voice.a': {
-    en: 'He is a man of few words. Amounts, dates and names always come out exact. And if you are not well, he drops the act and talks plainly.',
-    pt: 'Ele é de poucas palavras. Valores, datas e nomes saem sempre exatos. E se você não estiver bem, ele larga o personagem e fala normal.',
+    en: 'Because looking after money, a schedule and training should be simple. The drawing is only the face: the answers are plain, with amounts, dates and names always exact.',
+    pt: 'Porque cuidar de dinheiro, agenda e treino deveria ser simples. O desenho é só o rosto: as respostas são diretas, com valores, datas e nomes sempre exatos.',
   },
   'landing.q.password': { en: 'Bank password needed?', pt: 'Pede senha do banco?' },
   'landing.q.password.a': {
-    en: `No. You import the statement you download from your own bank. ${MASCOT_NAME} only reads the file and never moves money.`,
-    pt: `Não. Você importa o extrato que baixa do próprio banco. O ${MASCOT_NAME} só lê o arquivo e nunca movimenta dinheiro.`,
+    en: `No. You import the statement you download from your own bank. ${APP_NAME} only reads the file and never moves money.`,
+    pt: `Não. Você importa o extrato que baixa do próprio banco. O ${APP_NAME} só lê o arquivo e nunca movimenta dinheiro.`,
   },
   'landing.q.health': {
     en: 'Does the AI see my health data?',
@@ -184,9 +251,25 @@ export const LANDING_STRINGS = {
     pt: 'Sim. Você pode excluir a conta e tudo o que está nela a qualquer momento, pela página Perfil. Os detalhes estão na Política de Privacidade.',
   },
 
+  'landing.q.phone': { en: 'Does it work on my phone?', pt: 'Funciona no celular?' },
+  'landing.q.phone.a': {
+    en: 'Yes. The app opens in the phone’s browser, and Finance also answers on WhatsApp.',
+    pt: 'Sim. O app abre no navegador do celular, e o Financeiro também responde no WhatsApp.',
+  },
+  'landing.q.banks': { en: 'Which banks?', pt: 'Quais bancos?' },
+  'landing.q.banks.a': {
+    en: 'Any of them: you import the statement as OFX, CSV, a spreadsheet or a PDF with text, and importing it again adds nothing twice.',
+    pt: 'Qualquer um: você importa o extrato em OFX, CSV, planilha ou PDF com texto, e importar de novo não duplica nada.',
+  },
+
+  'landing.cta.lead': {
+    en: 'Your e-mail and a password. Free has no credit card and no end date.',
+    pt: 'Seu e-mail e uma senha. O Gratuito não pede cartão nem tem prazo.',
+  },
+  'landing.cta.dialog': { en: 'Create account', pt: 'Criar conta' },
   'landing.cta.title': {
-    en: `${MASCOT_NAME} waits for you.`,
-    pt: `${MASCOT_NAME} espera você.`,
+    en: `${APP_NAME} waits for you.`,
+    pt: `${APP_NAME} espera você.`,
   },
   'landing.cta.email': { en: 'you@email.com', pt: 'voce@email.com' },
   'landing.cta.emailLabel': { en: 'Your e-mail', pt: 'Seu e-mail' },

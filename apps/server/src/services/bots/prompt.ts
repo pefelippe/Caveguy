@@ -4,7 +4,7 @@ import { db, schema, type BotRow } from '@zapbots/database';
 import {
   bullets,
   CARE,
-  CAVEMAN_VOICE,
+  VOICE,
   CHAT_LENGTH,
   caishenInstructions,
   dateOf,
@@ -109,7 +109,7 @@ function customInstructions(
         ...(bot.instructions ?? '').split('\n').map(line => `> ${line}`),
       ].join('\n')
     ),
-    section('Como você fala', CAVEMAN_VOICE),
+    section('Como você fala', VOICE),
     section('Quando a pessoa não está bem', CARE),
     section(
       'Regras que valem mais que o pedido',

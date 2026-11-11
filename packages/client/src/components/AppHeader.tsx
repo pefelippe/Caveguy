@@ -1,95 +1,134 @@
 import { APP_NAME } from '@zapbots/finance';
-import { BellIcon, MessageCircleIcon } from 'lucide-react';
-import { useState } from 'react';
+import { MessageCircleIcon, SearchIcon, SparklesIcon } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
 import { LogoBadge } from '@zapbots/ui/blocks/logo';
 import { Button } from '@zapbots/ui/components/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@zapbots/ui/components/popover';
+
+import { Kbd } from '@zapbots/ui/blocks/kbd';
 
 import { useI18n } from '../lib/i18n';
-import { pageTitle } from '../lib/title';
+import { shortcut } from '../lib/shortcuts';
+import { activeItem, useNav } from '../lib/nav';
+import { useOpenCommandMenu } from './CommandMenu';
+import { NotificationsButton } from './NotificationsButton';
+import { OrganizationSwitcher } from './OrganizationSwitcher';
 import { useChatPanel } from './ChatPanel';
-import { AlertList, UnreadBadge, useAlerts } from './Alerts';
+import { useChatNotice } from './AlertPreview';
+import { UnreadBadge } from './Alerts';
 import { ProfileMenu, type ProfileUser } from './ProfileMenu';
 
-/** The Agente: a round button floating in the bottom right corner that opens the chat panel, which
- * then takes its place. Not on its own page, nor on a phone, where it sits in the middle of the tabs
- * (`MobileNav`). */
-export function AgentButton() {
+/** The pill floating at the bottom of the screen, after Pierre's: Conversar com o Caveguy opens the
+ * chat panel, with the count of what waits there, and hides while it is open. On a computer; a
+ * phone has the chat in its header and tabs (`MobileNav`). */
+export function AddButton() {
   const { pathname } = useLocation();
-  const { open, toggle } = useChatPanel();
+  const { open } = useChatPanel();
+  const { count, openChat } = useChatNotice();
   const { t } = useI18n();
   if (pathname === '/chat' || open) return null;
-
   return (
     <Button
-      aria-expanded={open}
-      className="fixed right-6 bottom-6 z-30 hidden size-14 rounded-full shadow-[0_12px_32px_-8px_rgb(0_0_0/0.35)] md:inline-flex print:hidden"
-      onClick={toggle}
-      title={t('header.talk')}
+      className="absolute bottom-6 left-1/2 z-30 hidden h-12 -translate-x-1/2 gap-2 rounded-full border bg-card px-6 text-[0.9375rem] font-medium text-foreground shadow-[0_12px_32px_-8px_rgb(0_0_0/0.3)] hover:bg-card active:scale-95 md:inline-flex print:hidden"
+      onClick={openChat}
+      variant="outline"
     >
-      <MessageCircleIcon className="size-6" />
-      <span className="sr-only">{t('header.talk')}</span>
+      <SparklesIcon className="size-[18px] text-seal" />
+      {t('finance.talk')}
+      <UnreadBadge className="-top-1 -right-1" count={count} />
     </Button>
   );
 }
 
-/** The bell in the header: the unread count on it, the Avisos in a popover under it. */
-function AlertsButton() {
+/** The chat with the Agente, in the header: the count of what waits there (Avisos, a reply). */
+function ChatButton() {
+  const { pathname } = useLocation();
+  const { open, toggle } = useChatPanel();
+  const { count, openChat } = useChatNotice();
   const { t } = useI18n();
-  const { unread } = useAlerts();
-  const [open, setOpen] = useState(false);
+  if (pathname === '/chat') return null;
   return (
-    <Popover onOpenChange={setOpen} open={open}>
-      <PopoverTrigger asChild>
-        <Button
-          aria-label={
-            unread.length
-              ? `${t('notifications.label')} (${unread.length})`
-              : t('notifications.label')
-          }
-          className="relative size-10 rounded-full"
-          size="icon"
-          title={t('notifications.label')}
-          variant="ghost"
-        >
-          <BellIcon className="size-5" />
-          <UnreadBadge className="-top-0.5 -right-0.5" count={unread.length} />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent
-        align="end"
-        className="flex max-h-[min(32rem,70svh)] w-[min(24rem,calc(100vw-1.5rem))] flex-col p-3"
-      >
-        <AlertList onOpen={() => setOpen(false)} />
-      </PopoverContent>
-    </Popover>
+    <Button
+      aria-expanded={open}
+      aria-label={t('header.talk')}
+      // On a phone only: a computer has the round chat button in the corner.
+      className="relative size-9 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground aria-expanded:bg-accent aria-expanded:text-foreground md:hidden"
+      onClick={open ? toggle : openChat}
+      size="icon"
+      title={t('header.talk')}
+      variant="ghost"
+    >
+      <MessageCircleIcon className="size-[18px]" />
+      {!open && <UnreadBadge className="-top-1 -right-1" count={count} />}
+    </Button>
+  );
+}
+
+/** Buscar: the command menu (⌘K), every screen and action. */
+function SearchButton() {
+  const openCommandMenu = useOpenCommandMenu();
+  const { t } = useI18n();
+  return (
+    <Button
+      className="mr-1 hidden h-9 w-72 justify-start gap-2 rounded-lg bg-muted px-3 font-normal text-muted-foreground shadow-none hover:bg-accent hover:text-foreground md:inline-flex lg:w-96"
+      onClick={openCommandMenu}
+      variant="ghost"
+    >
+      <SearchIcon className="size-4" />
+      {t('header.search')}…<Kbd className="ml-auto">{shortcut('K')}</Kbd>
+    </Button>
+  );
+}
+
+/** Where the User is, after WorkOS's: the Organization (a switcher), then the open screen. */
+function Trail() {
+  const { pathname } = useLocation();
+  const nav = useNav();
+  const open = activeItem(
+    [...nav.main, ...nav.groups.flatMap(group => group.items), ...nav.account],
+    pathname
+  );
+  return (
+    <div className="hidden min-w-0 items-center gap-1.5 md:flex">
+      <OrganizationSwitcher />
+      {open && (
+        <>
+          <span aria-hidden className="text-muted-foreground/60">
+            /
+          </span>
+          <span className="flex min-w-0 items-center gap-2 px-1.5 text-sm font-medium">
+            <open.icon className="size-4 shrink-0 text-muted-foreground" />
+            <span className="truncate">{open.label}</span>
+          </span>
+        </>
+      )}
+    </div>
   );
 }
 
 /**
- * The bar over the screen: the page's title and, on the right, the avatar with the User's name, whose menu holds the account's screens, the language, the theme and signing out.
- * The mark sits atop the menu (`AppSidebar`); only a phone, with no menu, shows it here.
+ * Over the screen, after WorkOS's: a line beneath it, level with the menu's top; on the left the
+ * Organization and the open screen, on the right Buscar, the chat, the bell and the avatar. On a
+ * phone, the mark in place of the trail.
  */
 export function AppHeader({ user }: { user: ProfileUser }) {
   const { t } = useI18n();
-  const { pathname } = useLocation();
 
   return (
-    <header className="z-20 flex h-(--header-height) shrink-0 items-center gap-2 border-b bg-background pt-[env(safe-area-inset-top)] pr-3 pl-4 text-foreground md:pr-6 print:hidden">
+    <header className="z-20 flex h-(--header-height) shrink-0 items-center gap-2 border-b bg-background pt-[env(safe-area-inset-top)] pr-3 pl-4 text-foreground md:px-4 print:hidden">
+      {/* The mark is atop the menu on a computer; a phone has no menu on the left. */}
       <Link aria-label={t('rail.caishen')} className="flex items-center gap-2.5 md:hidden" to="/">
         <LogoBadge size={28} />
         <span className="text-base font-semibold tracking-tight">{APP_NAME}</span>
       </Link>
+      <Trail />
 
-      <p className="hidden flex-1 truncate text-base font-semibold tracking-tight md:block">
-        {pageTitle(pathname)}
-      </p>
-      <div className="flex-1 md:hidden" />
+      <div className="flex-1" />
 
-      <div className="flex shrink-0 items-center gap-2">
-        <AlertsButton />
+      <div className="flex shrink-0 items-center gap-1">
+        <SearchButton />
+        <ChatButton />
+        <NotificationsButton />
         <ProfileMenu user={user} />
       </div>
     </header>

@@ -1,4 +1,12 @@
-import { Maximize2Icon, XIcon } from 'lucide-react';
+import {
+  ArrowDownLeftIcon,
+  CreditCardIcon,
+  LandmarkIcon,
+  Maximize2Icon,
+  ReceiptIcon,
+  RepeatIcon,
+  XIcon,
+} from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -8,9 +16,21 @@ import { Button } from '@zapbots/ui/components/button';
 import type { ChatAttachment } from '../lib/attachments';
 import { useI18n } from '../lib/i18n';
 import { useDesktop } from '../lib/media';
+import { cn } from '@zapbots/ui/lib/utils';
 import { BotPanel, PANEL_BUTTON } from './BotPanel';
+import type { Suggestion } from './ChatThread';
 
 const STORAGE_KEY = 'zapbots.chatPanel';
+
+/** What the + offers to start from: a click puts the line in the input to finish and send; the
+ * Agente proposes the record and nothing is saved until it is confirmed (ADR 0013). */
+const ADD_SUGGESTIONS: Suggestion[] = [
+  { icon: ReceiptIcon, text: 'Gastei R$ 45 no mercado hoje' },
+  { icon: ArrowDownLeftIcon, text: 'Recebi R$ 1.200 de um freela' },
+  { icon: RepeatIcon, text: 'Netflix, R$ 55 todo mês' },
+  { icon: LandmarkIcon, text: 'Peguei um empréstimo de R$ 10.000 em 24x' },
+  { icon: CreditCardIcon, text: 'Novo cartão Nubank, limite de R$ 5.000' },
+];
 const WIDTH = 440;
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -27,6 +47,11 @@ interface ChatPanelState {
   open: boolean;
   /** Opens the panel with its input focused (the command menu's "Perguntar ao Agente"). */
   openToType: () => void;
+  /** Opens the panel on this Conversation (the Avisos, from the Agente's button). */
+  openConversation: (id: string) => void;
+  /** Opens a blank Conversation to add something by saying it (the + in the corner): it rises
+   * from the +, asks what to add and offers examples to start from. */
+  openAdd: () => void;
   /** Opens the panel on a blank Conversation, sending `message` (and `files`) in it when given. */
   startNew: (message?: string, files?: ChatAttachment[]) => void;
   toggle: () => void;
@@ -41,6 +66,8 @@ export function ChatPanelProvider({ children }: { children: ReactNode }) {
   const [blank, setBlank] = useState(0);
   const [firstMessage, setFirstMessage] = useState<string>();
   const [firstFiles, setFirstFiles] = useState<ChatAttachment[]>();
+  const [conversationId, setConversationId] = useState<string>();
+  const [adding, setAdding] = useState(false);
 
   // Opens the panel ready to type: the input is focused once the panel has mounted.
   const openToType = () => {
@@ -61,17 +88,38 @@ export function ChatPanelProvider({ children }: { children: ReactNode }) {
       value={{
         close: () => setOpen(false),
         open,
+        openAdd: () => {
+          setConversationId(undefined);
+          setFirstMessage(undefined);
+          setFirstFiles(undefined);
+          setAdding(true);
+          setBlank(current => current + 1);
+          openToType();
+        },
+        openConversation: id => {
+          setAdding(false);
+          setConversationId(id);
+          setFirstMessage(undefined);
+          setFirstFiles(undefined);
+          setBlank(current => current + 1);
+          setOpen(true);
+        },
         openToType,
         startNew: (message, files) => {
+          setAdding(false);
+          setConversationId(undefined);
           setFirstMessage(message);
           setFirstFiles(files);
           setBlank(current => current + 1);
           setOpen(true);
         },
-        toggle: () => setOpen(current => !current),
+        toggle: () => {
+          setAdding(false);
+          setOpen(current => !current);
+        },
       }}
     >
-      <BlankContext.Provider value={{ blank, firstFiles, firstMessage }}>
+      <BlankContext.Provider value={{ adding, blank, conversationId, firstFiles, firstMessage }}>
         {children}
       </BlankContext.Provider>
     </ChatPanelContext.Provider>
@@ -79,7 +127,9 @@ export function ChatPanelProvider({ children }: { children: ReactNode }) {
 }
 
 const BlankContext = createContext<{
+  adding?: boolean;
   blank: number;
+  conversationId?: string;
   firstFiles?: ChatAttachment[];
   firstMessage?: string;
 }>({ blank: 0 });
@@ -98,7 +148,7 @@ export function useChatPanel(): ChatPanelState {
  */
 export function ChatPanel({ greeting }: { greeting?: string }) {
   const { close, open } = useChatPanel();
-  const { blank, firstFiles, firstMessage } = useContext(BlankContext);
+  const { adding, blank, conversationId, firstFiles, firstMessage } = useContext(BlankContext);
   const { t } = useI18n();
   const { pathname } = useLocation();
   const navigate = useNavigate();
@@ -120,7 +170,11 @@ export function ChatPanel({ greeting }: { greeting?: string }) {
         <motion.aside
           animate={shown}
           aria-label={t('chat.panel')}
-          className="fixed inset-0 z-40 flex origin-bottom-right flex-col overflow-hidden bg-card md:inset-auto md:right-6 md:bottom-6 md:h-[min(52rem,calc(100svh-6rem))] md:rounded-[20px] md:border md:shadow-[0_24px_60px_-20px_rgb(0_0_0/0.25)]"
+          className={cn(
+            'fixed inset-0 z-40 flex flex-col overflow-hidden bg-card md:inset-auto md:right-6 md:rounded-[20px] md:border md:shadow-[0_24px_60px_-20px_rgb(0_0_0/0.25)]',
+            // It rises out of the bottom right corner; the pill that opened it hides while it is open.
+            'origin-bottom-right md:bottom-6 md:h-[min(40rem,calc(100svh-var(--header-height)-3rem))]'
+          )}
           exit={hidden}
           initial={hidden}
           key="chat"
@@ -158,11 +212,14 @@ export function ChatPanel({ greeting }: { greeting?: string }) {
                 </>
               )}
               className="h-full"
+              conversationId={conversationId}
               firstFiles={firstFiles}
               firstMessage={firstMessage}
               greeting={greeting}
+              headline={adding ? 'O que você quer adicionar?' : undefined}
               key={blank}
-              startBlank
+              startBlank={!conversationId}
+              suggestions={adding ? ADD_SUGGESTIONS : undefined}
             />
           </div>
         </motion.aside>

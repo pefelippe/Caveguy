@@ -1,31 +1,33 @@
 import { APP_NAME } from '@zapbots/finance';
 import { ArrowRight } from 'lucide-react';
-import { useEffect, useState, type FormEvent, type HTMLAttributes, type ReactNode } from 'react';
+import {
+  useEffect,
+  useState,
+  type CSSProperties,
+  type FormEvent,
+  type HTMLAttributes,
+} from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { Caveman, type CavemanOutfit } from '@zapbots/ui/blocks/caveman';
 import { LogoBadge } from '@zapbots/ui/blocks/logo';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@zapbots/ui/components/accordion';
 import { Button } from '@zapbots/ui/components/button';
 import { Input } from '@zapbots/ui/components/input';
 import { Label } from '@zapbots/ui/components/label';
 import { cn } from '@zapbots/ui/lib/utils';
 
 import { useI18n, type StringKey } from '../lib/i18n';
+import { formatCents } from '../lib/format';
+import { readSpend } from '../lib/landingSpend';
 import { COMPANY } from '../lib/legal';
 import './landing.css';
 
 /*
- * The Caveman's page (docs/adr/0035): the cave. Brutus before a wall of painted hands, a character
- * select where each Agente is him in other clothes, the Workflows as balloons beside Lascaux, the
- * Plans counted in notches beside the Ishango bone, the questions and the close. Tokens in
- * `landing.css`. Only what the app does today. The pictures are credited in the footer
- * (`public/site/credits.json`).
+ * The Caveguy's page (docs/adr/0035, 0039), built as the papers the app hands you: the hero, the
+ * Agentes as an index beside their own screens (the Financeiro's live), how it works as the receipt
+ * of one spend, Seguro por padrão as a table, the Plans as tiles that step up, the answers as
+ * reading text, the sign-up already open and the name cropped at the foot. No photographs: the
+ * pictures are the app's own screens, built in HTML (`data-ui`). Only what the app does today.
  */
 
 const SIGN_UP = '/sign-in?step=sign-up';
@@ -33,6 +35,7 @@ const SIGN_UP = '/sign-in?step=sign-up';
 /** The page for visitors, signed in or not. "Entrar" leads to /sign-in. */
 export function LandingPage() {
   const { t } = useI18n();
+  useReveal();
   return (
     <div className="landing min-h-svh" data-theme="landing">
       <a className="l-skip sr-only focus:not-sr-only" href="#content">
@@ -42,7 +45,8 @@ export function LandingPage() {
       <main id="content">
         <Hero />
         <Agents />
-        <Flows />
+        <How />
+        <Trust />
         <Pricing />
         <Questions />
         <Close />
@@ -61,28 +65,11 @@ function Container({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
 const NAV: { href: string; label: StringKey }[] = [
   // From the root, so they work on the Termos and the Política too.
   { href: '/#agents', label: 'landing.nav.agents' },
-  { href: '/#workflows', label: 'landing.nav.flows' },
+  { href: '/#how', label: 'landing.nav.how' },
+  { href: '/#trust', label: 'landing.nav.trust' },
   { href: '/#pricing', label: 'landing.nav.pricing' },
   { href: '/#faq', label: 'landing.nav.questions' },
 ];
-
-/** A speech balloon, its tail pointing down-left at whoever says it. */
-function Balloon({ children, className }: { children: ReactNode; className?: string }) {
-  return <p className={cn('l-balloon', className)}>{children}</p>;
-}
-
-/** A picture of the cave's world, self-hosted in `public/site` and credited in the footer. */
-function Picture({ alt, className, src }: { alt: string; className?: string; src: string }) {
-  return (
-    <img
-      alt={alt}
-      className={cn('l-photo', className)}
-      decoding="async"
-      loading="lazy"
-      src={`/site/${src}.jpg`}
-    />
-  );
-}
 
 // ---------------------------------------------------------------- header
 
@@ -108,7 +95,7 @@ function Header() {
           <LogoBadge size={40} />
           <span className="l-wordmark max-[400px]:sr-only">{APP_NAME}</span>
         </Link>
-        <nav aria-label={t('landing.nav.sections')} className="ml-6 hidden gap-6 md:flex">
+        <nav aria-label={t('landing.nav.sections')} className="ml-6 hidden gap-6 whitespace-nowrap lg:flex">
           {NAV.map(item => (
             <a className="l-link" href={item.href} key={item.href}>
               {t(item.label)}
@@ -155,8 +142,7 @@ function Hero() {
             </div>
           </div>
           <div className="l-wall" data-bot="FINANCE">
-            <Picture alt={t('landing.hero.wall')} className="l-wall__photo" src="cueva-manos" />
-            <Caveman className="l-wall__uga" mood="happy" outfit="PLAIN" size={360} />
+            <Caveman mood="happy" outfit="PLAIN" size={360} />
           </div>
         </div>
       </Container>
@@ -164,118 +150,91 @@ function Hero() {
   );
 }
 
-// ---------------------------------------------------------------- character select
+// ---------------------------------------------------------------- agents
 
-interface Agent {
-  ask: StringKey;
-  does: StringKey;
-  ink: 'FINANCE' | 'FITNESS' | 'PERSONAL';
-  name: StringKey;
-  outfit: CavemanOutfit;
-  say: StringKey;
-}
+type Ink = 'FINANCE' | 'FITNESS' | 'PERSONAL';
 
-const AGENTS: Agent[] = [
+const AGENTS: { does: StringKey; ink: Ink; name: StringKey; outfit: CavemanOutfit }[] = [
   {
-    ask: 'landing.agents.finance.ask',
     does: 'landing.agents.finance.does',
     ink: 'FINANCE',
     name: 'landing.agents.finance',
     outfit: 'FINANCE',
-    say: 'landing.agents.finance.say',
   },
   {
-    ask: 'landing.agents.personal.ask',
     does: 'landing.agents.personal.does',
     ink: 'PERSONAL',
     name: 'landing.agents.personal',
     outfit: 'PERSONAL',
-    say: 'landing.agents.personal.say',
   },
   {
-    ask: 'landing.agents.fitness.ask',
     does: 'landing.agents.fitness.does',
     ink: 'FITNESS',
     name: 'landing.agents.fitness',
     outfit: 'FITNESS',
-    say: 'landing.agents.fitness.say',
   },
 ];
 
-const ROTATE_MS = 4000;
-
-/** The character select: picking an Agente dresses Brutus and plays a sample exchange. */
+/**
+ * The three Agentes as an index: pointing at or picking a name shows that Agente's screen on the
+ * plate beside it. The Financeiro's is the page's one live thing: type a spend, read the reply.
+ */
 function Agents() {
   const { t } = useI18n();
   const [chosen, setChosen] = useState(0);
-  // Walks the Agentes alone until the visitor picks one; held while the pointer or focus is in.
-  const [auto, setAuto] = useState(true);
-  const [held, setHeld] = useState(false);
-  useEffect(() => {
-    if (!auto || held || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    const timer = setInterval(() => setChosen(index => (index + 1) % AGENTS.length), ROTATE_MS);
-    return () => clearInterval(timer);
-  }, [auto, held]);
   const agent = AGENTS[chosen]!;
-  const pick = (index: number) => {
-    setAuto(false);
-    if (index === chosen) return;
-    setChosen(index);
-  };
   return (
     <section aria-labelledby="agents-title" className="l-section l-section--field" id="agents">
-      <Container
-        onBlur={() => setHeld(false)}
-        onFocus={() => setHeld(true)}
-        onMouseEnter={() => setHeld(true)}
-        onMouseLeave={() => setHeld(false)}
-      >
-        <h2 className="l-heading" id="agents-title">
-          {t('landing.agents.title')}
-        </h2>
-        <p className="l-lead mt-3 max-w-[48ch]">{t('landing.agents.lead')}</p>
-        <div aria-label={t('landing.nav.agents')} className="l-select" role="toolbar">
-          {AGENTS.map((option, index) => (
-            <Button
-              aria-pressed={index === chosen}
-              className="l-tile"
-              data-bot={option.ink}
-              key={option.name}
-              onClick={() => pick(index)}
-              variant="ghost"
-            >
-              <Caveman
-                mood={index === chosen ? 'happy' : 'idle'}
-                outfit={option.outfit}
-                size={88}
-              />
-              <span>{t(option.name)}</span>
-            </Button>
-          ))}
-        </div>
-        <div className="l-scene" data-bot={agent.ink} key={agent.name}>
-          <Caveman className="l-scene__uga" mood="happy" outfit={agent.outfit} size={220} />
-          <div className="l-scene__text">
-            <h3 className="l-title">{t(agent.name)}</h3>
-            <p>{t(agent.does)}</p>
-            <p className="l-small">{t('landing.agents.how')}</p>
+      <Container className="l-split">
+        <div className="l-plate" data-bot={agent.ink} data-reveal>
+          {/* All three stay mounted, so what the visitor typed survives a look at the others. */}
+          <div className="l-plate__in" hidden={agent.ink !== 'FINANCE'}>
+            <FinanceUi />
           </div>
-          <div aria-label={t('landing.agents.example')} className="l-chat" role="group">
-            <div className="l-chat__head">
-              <Caveman mood="happy" outfit={agent.outfit} size={36} />
-              <span className="l-chat__name">{t(agent.name)}</span>
-              <span className="l-chat__label">{t('landing.agents.example')}</span>
-            </div>
-            <div className="l-chat__body">
-              <p className="l-msg l-msg--mine">{t(agent.ask)}</p>
-              <div className="l-chat__row">
-                <Caveman outfit={agent.outfit} size={28} />
-                <p className="l-msg">{t(agent.say)}</p>
-              </div>
-            </div>
-            <div aria-hidden className="l-chat__input">
-              <span>{t('landing.agents.type')}</span>
-            </div>
+          <div className="l-plate__in" hidden={agent.ink !== 'PERSONAL'}>
+            <PersonalUi />
+          </div>
+          <div className="l-plate__in" hidden={agent.ink !== 'FITNESS'}>
+            <FitnessUi />
+          </div>
+        </div>
+        <div className="l-split__text">
+          <h2 className="l-heading" data-reveal id="agents-title">
+            {t('landing.agents.title')}
+          </h2>
+          <div aria-label={t('landing.nav.agents')} className="l-index" data-reveal role="tablist">
+            {AGENTS.map((option, index) => (
+              <Button
+                aria-selected={index === chosen}
+                className="l-index__item"
+                key={option.ink}
+                onClick={() => setChosen(index)}
+                onFocus={() => setChosen(index)}
+                onMouseEnter={() => setChosen(index)}
+                role="tab"
+                variant="ghost"
+              >
+                <Caveman
+                  mood={index === chosen ? 'happy' : 'idle'}
+                  outfit={option.outfit}
+                  size={44}
+                />
+                {t(option.name)}
+              </Button>
+            ))}
+          </div>
+          <p className="l-lead max-w-[36ch]" key={agent.does}>
+            {t(agent.does)}
+          </p>
+          <p className="max-w-[44ch]" data-reveal>
+            {t('landing.agents.how')}
+          </p>
+          <div data-reveal>
+            <Button asChild className="l-btn">
+              <Link to={SIGN_UP}>
+                {t('landing.hero.start')} <ArrowRight aria-hidden />
+              </Link>
+            </Button>
           </div>
         </div>
       </Container>
@@ -283,40 +242,286 @@ function Agents() {
   );
 }
 
-// ---------------------------------------------------------------- workflows
-
-const FLOWS: StringKey[] = [
-  'landing.flows.weekly.text',
-  'landing.flows.monthly.text',
-  'landing.flows.once.text',
-];
-
-/** Workflows: Jobs once, or Routines each week or month (docs/adr/0010), on the cave's dark. */
-function Flows() {
+/** The chat's head, as in the app's panel. */
+function UiHead({ outfit, title }: { outfit: CavemanOutfit; title: string }) {
   const { t } = useI18n();
   return (
-    <section aria-labelledby="flows-title" className="l-section l-section--soot" id="workflows">
-      <Container className="grid items-start gap-12 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
-        <div className="flex flex-col gap-6">
-          <h2 className="l-heading" id="flows-title">
-            {t('landing.flows.title')}
-          </h2>
-          <p className="l-lead max-w-[40ch]">{t('landing.flows.lead')}</p>
-          <figure className="l-figure">
-            <Picture alt="" className="aspect-[4/3]" src="lascaux-replica" />
-            <figcaption>{t('landing.flows.picture')}</figcaption>
-          </figure>
+    <div className="l-ui__head">
+      <Caveman mood="happy" outfit={outfit} size={32} />
+      <span className="font-semibold">{title}</span>
+      <span className="l-ui__note">{t('landing.agents.example')}</span>
+    </div>
+  );
+}
+
+/** The Financeiro's chat, live: what the visitor types is read in the browser by `readSpend`. */
+function FinanceUi() {
+  const { t } = useI18n();
+  const sample = t('landing.agents.trySample');
+  const [draft, setDraft] = useState('');
+  const [sent, setSent] = useState<string | null>(null);
+  const said = sent ?? sample;
+  const guess = readSpend(said);
+  const amount = guess ? formatCents(guess.cents) : '';
+  const reply = !guess
+    ? t('landing.agents.tryMissing')
+    : guess.place
+      ? t('landing.agents.tryReply', { amount, place: guess.place })
+      : t('landing.agents.tryReplyNoPlace', { amount });
+  const send = (event: FormEvent) => {
+    event.preventDefault();
+    if (draft.trim()) setSent(draft.trim());
+    setDraft('');
+  };
+  return (
+    <div className="l-ui" data-ui>
+      <UiHead outfit="FINANCE" title={t('landing.agents.finance')} />
+      <div aria-live="polite" className="l-ui__body">
+        <p className="l-msg l-msg--mine" key={`ask-${said}`}>
+          {said}
+        </p>
+        <div className="l-ui__reply" key={`say-${said}`}>
+          <p className="l-msg">{reply}</p>
+          {guess?.place ? (
+            <div className="l-proposal">
+              <p className="font-semibold">{t('landing.ui.expense')}</p>
+              <dl>
+                <dt>{t('landing.ui.amount')}</dt>
+                <dd className="tabular-nums">{amount}</dd>
+                <dt>{t('landing.ui.place')}</dt>
+                <dd>{guess.place}</dd>
+                <dt>{t('landing.ui.day')}</dt>
+                <dd>{t('landing.ui.today')}</dd>
+              </dl>
+              <div aria-hidden className="flex gap-2">
+                <span className="l-proposal__go">{t('landing.ui.confirm')}</span>
+                <span className="l-proposal__no">{t('landing.ui.cancel')}</span>
+              </div>
+            </div>
+          ) : null}
         </div>
+      </div>
+      <form className="l-ui__input" onSubmit={send}>
+        <Label className="sr-only" htmlFor="try-spend">
+          {t('landing.agents.try')}
+        </Label>
+        <Input
+          autoComplete="off"
+          id="try-spend"
+          maxLength={80}
+          onChange={event => setDraft(event.target.value)}
+          placeholder={sample}
+          value={draft}
+        />
+        <Button className="l-ui__send" type="submit">
+          {t('landing.agents.send')}
+        </Button>
+      </form>
+      <p className="l-ui__hint">{t('landing.agents.tryHint')}</p>
+    </div>
+  );
+}
+
+/** The Pessoal's day ahead: an Evento and the open Tarefas. */
+function PersonalUi() {
+  const { t } = useI18n();
+  return (
+    <div className="l-ui" data-ui>
+      <UiHead outfit="PERSONAL" title={t('landing.agents.personal')} />
+      <div className="l-ui__body">
+        <p className="font-semibold">{t('landing.ui.tomorrow')}</p>
+        <p className="l-ui__line">
+          <span className="tabular-nums">09:00</span>
+          <span>{t('landing.ui.dentist')}</span>
+        </p>
+        <p className="mt-3 font-semibold">{t('landing.ui.tasks')}</p>
+        <p className="l-ui__line">
+          <span aria-hidden className="l-ui__box" />
+          <span>{t('landing.ui.condo')}</span>
+          <span className="l-ui__soft">{t('landing.ui.condoDue')}</span>
+        </p>
+        <p className="l-ui__line">
+          <span aria-hidden className="l-ui__box" />
+          <span>{t('landing.ui.bread')}</span>
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/** The Fitness's Ficha for today. */
+function FitnessUi() {
+  const { t } = useI18n();
+  const rows: [StringKey, string][] = [
+    ['landing.ui.squat', '4 × 10'],
+    ['landing.ui.bench', '4 × 10'],
+    ['landing.ui.row', '3 × 12'],
+  ];
+  return (
+    <div className="l-ui" data-ui>
+      <UiHead outfit="FITNESS" title={t('landing.agents.fitness')} />
+      <div className="l-ui__body">
+        <p className="font-semibold">{t('landing.ui.workout')}</p>
+        {rows.map(([name, sets]) => (
+          <p className="l-ui__line" key={name}>
+            <span>{t(name)}</span>
+            <span className="l-ui__soft tabular-nums">{sets}</span>
+          </p>
+        ))}
+        <p className="l-ui__soft mt-3">{t('landing.ui.next')}</p>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------- how it works
+
+const STEPS: { group: StringKey; rows: StringKey[]; time: string }[] = [
+  { group: 'landing.how.you', rows: ['landing.how.you.1'], time: '14:02' },
+  { group: 'landing.how.it', rows: ['landing.how.it.1', 'landing.how.it.2'], time: '14:02' },
+  { group: 'landing.how.decide', rows: ['landing.how.decide.1'], time: '14:03' },
+];
+
+/** Transações after the Confirmar: the new line on top of the ones before it (sample figures). */
+const LEDGER = [
+  { amount: '−R$ 32,00', fresh: true, name: 'landing.ui.ledger1' },
+  { amount: '−R$ 46,80', name: 'landing.ui.ledger2' },
+  { amount: '−R$ 9,90', name: 'landing.ui.ledger3' },
+] as const;
+
+/** How it works, printed as the receipt of one spend; the same exchange on WhatsApp beside it. */
+function How() {
+  const { t } = useI18n();
+  return (
+    <section aria-labelledby="how-title" className="l-section l-section--soot" id="how">
+      <Container className="l-how">
         <div className="flex flex-col gap-8">
-          <Caveman mood="thinking" outfit="BUILDER" size={180} />
-          <ul className="flex flex-col gap-8">
-            {FLOWS.map(flow => (
-              <li key={flow}>
-                <Balloon>{t(flow)}</Balloon>
-              </li>
-            ))}
-          </ul>
+          <h2 className="l-heading" data-reveal id="how-title">
+            {t('landing.how.title')}
+          </h2>
+          <p className="l-lead max-w-[34ch]" data-reveal>
+            {t('landing.how.lead')}
+          </p>
+          <div className="l-wa" data-reveal data-ui>
+            <p className="l-wa__head">{t('landing.how.whatsapp')}</p>
+            <p className="l-wa__mine">{t('landing.how.waAsk')}</p>
+            <p className="l-wa__theirs">{t('landing.how.waSay')}</p>
+            <p className="l-wa__mine">{t('landing.agents.trySample')}</p>
+            <div className="l-wa__theirs">
+              <p>
+                {t('landing.agents.tryReply', {
+                  amount: 'R$ 32,00',
+                  place: t('landing.ui.ledger1'),
+                })}
+              </p>
+              <div aria-hidden className="l-wa__buttons">
+                <span>{t('landing.ui.confirm')}</span>
+                <span>{t('landing.ui.cancel')}</span>
+              </div>
+            </div>
+          </div>
         </div>
+        <div className="l-how__result">
+          <div className="l-slip" data-reveal>
+            {STEPS.map(step => (
+              <div key={step.group}>
+                <p className="l-slip__group">{t(step.group)}</p>
+                {step.rows.map(row => (
+                  <p className="l-slip__row" key={row}>
+                    <span>{t(row)}</span>
+                    <span aria-hidden className="l-slip__dots" />
+                    <span className="tabular-nums">{step.time}</span>
+                  </p>
+                ))}
+              </div>
+            ))}
+            <p className="l-slip__total">
+              <span>{t('landing.how.total')}</span>
+              <span>{t('landing.how.totalTime')}</span>
+            </p>
+          </div>
+          <div className="l-ledger" data-reveal data-ui>
+            <p className="font-semibold">{t('landing.ui.transactions')}</p>
+            {LEDGER.map(line => (
+              <p className="l-ledger__row" data-new={'fresh' in line || undefined} key={line.name}>
+                <span aria-hidden className="l-ledger__mark">
+                  {t(line.name)[0]}
+                </span>
+                <span>
+                  {t(line.name)}
+                  <span className="l-ui__soft block">{t(`${line.name}.when`)}</span>
+                </span>
+                <span className="font-semibold tabular-nums">{line.amount}</span>
+              </p>
+            ))}
+          </div>
+        </div>
+      </Container>
+    </section>
+  );
+}
+
+// ---------------------------------------------------------------- trust
+
+const TRUST = [
+  'landing.trust.read',
+  'landing.trust.confirm',
+  'landing.trust.keys',
+  'landing.trust.twoFactor',
+  'landing.trust.health',
+  'landing.trust.lgpd',
+] as const;
+
+/** Seguro por padrão as a plain table: only what the code does (ADR 0009, 0013, 0022, 0026, 0027). */
+function Trust() {
+  const { t } = useI18n();
+  return (
+    <section aria-labelledby="trust-title" className="l-section" id="trust">
+      <Container className="flex flex-col gap-12">
+        <div className="l-trust__top">
+          <div className="flex flex-col gap-6">
+            <h2 className="l-heading" data-reveal id="trust-title">
+              {t('landing.trust.title1')}
+              <br />
+              <span className="l-trust__step">{t('landing.trust.title2')}</span>
+            </h2>
+            <p className="l-lead max-w-[40ch]" data-reveal>
+              {t('landing.trust.lead')}
+            </p>
+          </div>
+          <div className="l-key" data-reveal data-ui>
+            <p className="font-semibold">{t('landing.ui.aiKeys')}</p>
+            {[
+              ['OpenRouter', 'a1f9'],
+              ['Anthropic', '7c2e'],
+              ['Google', 'k04q'],
+            ].map(([provider, last4]) => (
+              <p className="l-key__row" key={provider}>
+                <span>{provider}</span>
+                <span className="tabular-nums">•••• {last4}</span>
+              </p>
+            ))}
+            <p className="l-ui__soft">{t('landing.ui.sealed')} · AES-256-GCM</p>
+          </div>
+        </div>
+        <table className="l-table" data-reveal>
+          <thead>
+            <tr>
+              <th scope="col">{t('landing.trust.what')}</th>
+              <th scope="col">{t('landing.trust.how')}</th>
+              <th scope="col">{t('landing.trust.where')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {TRUST.map(item => (
+              <tr key={item}>
+                <th scope="row">{t(item)}</th>
+                <td>{t(`${item}.a`)}</td>
+                <td>{t(`${item}.w`)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </Container>
     </section>
   );
@@ -324,16 +529,14 @@ function Flows() {
 
 // ---------------------------------------------------------------- pricing
 
-/** The Limits are those of `PLANS` in `services/billing/plans.ts`. */
+/** The Limits are those of `PLANS` in `services/billing/plans.ts`. The bigger Plan stands taller. */
 const PLANS: {
   cta: StringKey;
   features: StringKey[];
   name: StringKey;
   note: StringKey;
   price: string;
-  primary?: boolean;
-  /** Notches on the bone: more for the bigger Plan. */
-  tally: number;
+  tone: 'paper' | 'soot' | 'accent';
 }[] = [
   {
     cta: 'landing.hero.start',
@@ -347,8 +550,7 @@ const PLANS: {
     name: 'landing.pricing.free',
     note: 'landing.pricing.forever',
     price: 'R$ 0',
-    primary: true,
-    tally: 1,
+    tone: 'paper',
   },
   {
     cta: 'landing.pricing.subscribe',
@@ -363,7 +565,7 @@ const PLANS: {
     name: 'landing.pricing.pro',
     note: 'landing.pricing.month',
     price: 'R$ 39,90',
-    tally: 3,
+    tone: 'soot',
   },
   {
     cta: 'landing.pricing.subscribeMax',
@@ -379,7 +581,7 @@ const PLANS: {
     name: 'landing.pricing.max',
     note: 'landing.pricing.month',
     price: 'R$ 99,90',
-    tally: 5,
+    tone: 'accent',
   },
 ];
 
@@ -387,44 +589,36 @@ function Pricing() {
   const { t } = useI18n();
   return (
     <section aria-labelledby="pricing-title" className="l-section l-section--field" id="pricing">
-      <Container className="grid gap-x-12 gap-y-10 lg:grid-cols-[minmax(0,0.55fr)_minmax(0,2fr)]">
-        <h2 className="l-heading lg:col-span-2" id="pricing-title">
+      <Container className="l-steps">
+        <h2 className="l-heading l-steps__title" data-reveal id="pricing-title">
           {t('landing.pricing.title')}
         </h2>
-        <div>
-          <figure className="l-figure max-lg:hidden">
-            <Picture alt="" className="l-bone" src="ishango-bone" />
-            <figcaption>{t('landing.pricing.bone')}</figcaption>
-          </figure>
-        </div>
-        <ul className="flex flex-col gap-4">
-          {PLANS.map(plan => (
-            <li className="l-plan" data-primary={plan.primary || undefined} key={plan.name}>
-              <div className="flex flex-col gap-3">
-                <span aria-hidden className="l-tally">
-                  {Array.from({ length: plan.tally }, (_, index) => (
-                    <i key={index} />
-                  ))}
-                </span>
-                <h3 className="l-title">{t(plan.name)}</h3>
-                <p className="flex flex-wrap items-baseline gap-x-3">
-                  <span className="l-price">{plan.price}</span>
-                  <span>{t(plan.note)}</span>
-                </p>
-              </div>
-              <ul className="flex flex-col gap-2">
-                {plan.features.map(feature => (
-                  <li className="l-check" key={feature}>
-                    {t(feature)}
-                  </li>
-                ))}
-              </ul>
-              <Button asChild className={cn('l-btn', !plan.primary && 'l-btn--quiet')}>
-                <Link to={SIGN_UP}>{t(plan.cta)}</Link>
-              </Button>
-            </li>
-          ))}
-        </ul>
+        {PLANS.map((plan, index) => (
+          <article
+            aria-labelledby={`plan-${index}`}
+            className="l-step"
+            data-reveal
+            data-tone={plan.tone}
+            key={plan.name}
+            style={{ '--d': index } as CSSProperties}
+          >
+            <h3 className="l-step__name" id={`plan-${index}`}>
+              {t(plan.name)}
+            </h3>
+            <p className="flex flex-wrap items-baseline gap-x-3">
+              <span className="l-price">{plan.price}</span>
+              <span>{t(plan.note)}</span>
+            </p>
+            <ul className="flex flex-col gap-1.5">
+              {plan.features.map(feature => (
+                <li key={feature}>{t(feature)}</li>
+              ))}
+            </ul>
+            <Button asChild className="l-btn mt-auto self-start">
+              <Link to={SIGN_UP}>{t(plan.cta)}</Link>
+            </Button>
+          </article>
+        ))}
       </Container>
     </section>
   );
@@ -432,37 +626,33 @@ function Pricing() {
 
 // ---------------------------------------------------------------- questions
 
-const QUESTIONS: { answer: StringKey; question: StringKey }[] = [
-  { answer: 'landing.q.voice.a', question: 'landing.q.voice' },
-  { answer: 'landing.q.password.a', question: 'landing.q.password' },
-  { answer: 'landing.q.health.a', question: 'landing.q.health' },
-  { answer: 'landing.q.chat.a', question: 'landing.q.chat' },
-  { answer: 'landing.q.cancel.a', question: 'landing.q.cancel' },
-  { answer: 'landing.q.data.a', question: 'landing.q.data' },
-];
+const QUESTIONS = [
+  'landing.q.password',
+  'landing.q.banks',
+  'landing.q.health',
+  'landing.q.chat',
+  'landing.q.phone',
+  'landing.q.cancel',
+  'landing.q.data',
+  'landing.q.voice',
+] as const;
 
+/** Every answer at a glance, as reading text: no toggles. */
 function Questions() {
   const { t } = useI18n();
   return (
     <section aria-labelledby="faq-title" className="l-section" id="faq">
-      <Container className="grid gap-10 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
-        <div className="flex flex-col gap-8">
-          <h2 className="l-heading" id="faq-title">
-            {t('landing.questions.title')}
-          </h2>
-          <figure className="l-figure max-md:hidden">
-            <Picture alt="" className="aspect-square" src="lascaux-deer" />
-            <figcaption>{t('landing.questions.picture')}</figcaption>
-          </figure>
-        </div>
-        <Accordion className="l-faq" collapsible type="single">
-          {QUESTIONS.map(item => (
-            <AccordionItem key={item.question} value={item.question}>
-              <AccordionTrigger className="l-faq__q">{t(item.question)}</AccordionTrigger>
-              <AccordionContent className="l-faq__a">{t(item.answer)}</AccordionContent>
-            </AccordionItem>
+      <Container className="l-faq">
+        <h2 className="l-heading" data-reveal id="faq-title">
+          {t('landing.questions.title')}
+        </h2>
+        <div className="l-faq__text" data-reveal>
+          {QUESTIONS.map(question => (
+            <p key={question}>
+              <strong>{t(question)}</strong> {t(`${question}.a`)}
+            </p>
           ))}
-        </Accordion>
+        </div>
       </Container>
     </section>
   );
@@ -470,7 +660,7 @@ function Questions() {
 
 // ---------------------------------------------------------------- close
 
-/** The close starts the product: the e-mail goes on to the sign-up form (in state, never the URL). */
+/** The close opens the sign-up: the e-mail goes on to its form (in state, never the URL). */
 function Close() {
   const { t } = useI18n();
   const navigate = useNavigate();
@@ -480,32 +670,35 @@ function Close() {
     navigate(SIGN_UP, { state: { email: email.trim() } });
   };
   return (
-    <section aria-labelledby="start-title" className="l-close" data-bot="FINANCE">
-      <Container className="grid items-center gap-8 md:grid-cols-[auto_minmax(0,1fr)]">
-        <Caveman mood="happy" outfit="PLAIN" size={160} />
-        <div className="flex flex-col gap-5">
-          <h2 className="l-heading" id="start-title">
+    <section aria-labelledby="start-title" className="l-close">
+      <Container className="l-close__grid">
+        <div className="l-close__text">
+          <div data-reveal>
+            <Caveman mood="happy" outfit="PLAIN" size={120} />
+          </div>
+          <h2 className="l-heading" data-reveal id="start-title">
             {t('landing.cta.title')}
           </h2>
-          <form className="flex flex-col gap-3 sm:flex-row" onSubmit={submit}>
-            <Label className="sr-only" htmlFor="cta-email">
-              {t('landing.cta.emailLabel')}
-            </Label>
-            <Input
-              autoComplete="email"
-              className="l-field"
-              id="cta-email"
-              onChange={event => setEmail(event.target.value)}
-              placeholder={t('landing.cta.email')}
-              type="email"
-              value={email}
-            />
-            <Button className="l-btn" type="submit">
-              {t('landing.cta.go')} <ArrowRight aria-hidden />
-            </Button>
-          </form>
-          <p>{t('landing.cta.free')}</p>
+          <p className="max-w-[36ch]" data-reveal>
+            {t('landing.cta.lead')}
+          </p>
         </div>
+        <form className="l-dialog" data-reveal data-ui onSubmit={submit}>
+          <p className="l-dialog__title">{t('landing.cta.dialog')}</p>
+          <Label htmlFor="cta-email">{t('landing.cta.emailLabel')}</Label>
+          <Input
+            autoComplete="email"
+            id="cta-email"
+            onChange={event => setEmail(event.target.value)}
+            placeholder={t('landing.cta.email')}
+            type="email"
+            value={email}
+          />
+          <Button className="l-btn w-full" type="submit">
+            {t('landing.cta.go')} <ArrowRight aria-hidden />
+          </Button>
+          <p className="l-ui__soft">{t('landing.cta.free')}</p>
+        </form>
       </Container>
     </section>
   );
@@ -519,74 +712,62 @@ const FOOTER_LINKS: { href: string; label: StringKey }[] = [
   { href: `mailto:${COMPANY.email}`, label: 'landing.footer.contact' },
 ];
 
-/** The pictures on the page, as `public/site/credits.json` records them. */
-const PICTURES = [
-  {
-    by: 'Mariano',
-    license: 'Public domain',
-    page: 'https://commons.wikimedia.org/wiki/File:SantaCruz-CuevaManos-P2210651b.jpg',
-    title: 'SantaCruz-CuevaManos-P2210651b',
-  },
-  {
-    by: 'HTO',
-    license: 'Public domain',
-    page: 'https://commons.wikimedia.org/wiki/File:Lascaux,_replica_03.JPG',
-    title: 'Lascaux, replica 03',
-  },
-  {
-    by: 'JhowieNitnek',
-    license: 'CC BY-SA 4.0, cropped',
-    page: 'https://commons.wikimedia.org/wiki/File:Ishango_bone.jpg',
-    title: 'Ishango bone',
-  },
-  {
-    by: 'HTO',
-    license: 'Public domain',
-    page: 'https://commons.wikimedia.org/wiki/File:Lascaux,_Megaloceros.jpg',
-    title: 'Giant Deer',
-  },
-];
-
-/** The close of the site: the name across the whole width, the legal links and the credits. */
+/** The back of the page: the legal row over the name, cropped by the bottom edge. */
 function Footer() {
   const { t } = useI18n();
   return (
     <footer className="l-footer">
-      <Container>
-        <Link className="l-mast" to="/">
-          {APP_NAME}
-        </Link>
-        <div className="mt-10 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-          <nav aria-label={t('landing.nav.sections')} className="flex flex-wrap gap-x-8 gap-y-2">
-            {FOOTER_LINKS.map(({ href, label }) =>
-              href.startsWith('/') ? (
-                <Link className="l-link whitespace-nowrap" key={href} to={href}>
-                  {t(label)}
-                </Link>
-              ) : (
-                <a className="l-link whitespace-nowrap" href={href} key={href}>
-                  {t(label)}
-                </a>
-              )
-            )}
-          </nav>
-          <p>
-            © {new Date().getFullYear()} {APP_NAME}. {t('landing.footer.rights')}
-          </p>
-        </div>
-        <p className="l-credits">
-          {t('landing.footer.pictures')}, via Wikimedia Commons:{' '}
-          {PICTURES.map((picture, index) => (
-            <span key={picture.page}>
-              <a className="l-link underline" href={picture.page} rel="noreferrer" target="_blank">
-                “{picture.title}”
+      <Container className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+        <nav aria-label={t('landing.nav.sections')} className="flex flex-wrap gap-x-8 gap-y-2">
+          {FOOTER_LINKS.map(({ href, label }) =>
+            href.startsWith('/') ? (
+              <Link className="l-link whitespace-nowrap" key={href} to={href}>
+                {t(label)}
+              </Link>
+            ) : (
+              <a className="l-link whitespace-nowrap" href={href} key={href}>
+                {t(label)}
               </a>
-              , {picture.by}, {picture.license}
-              {index < PICTURES.length - 1 ? '; ' : '.'}
-            </span>
-          ))}
+            )
+          )}
+        </nav>
+        <p>
+          © {new Date().getFullYear()} {APP_NAME}. {t('landing.footer.rights')}
         </p>
       </Container>
+      <Link aria-label={APP_NAME} className="l-mast" to="/">
+        {APP_NAME}
+      </Link>
     </footer>
   );
+}
+
+// ---------------------------------------------------------------- motion
+
+/**
+ * Each `[data-reveal]` rises in once as it enters. The hidden start is set only once this runs
+ * (`data-motion` on the page), so without script, or with reduced motion, everything just shows.
+ */
+function useReveal() {
+  useEffect(() => {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const page = document.querySelector<HTMLElement>('.landing');
+    if (!page) return;
+    page.dataset.motion = '';
+    const seen = new IntersectionObserver(
+      entries => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          (entry.target as HTMLElement).dataset.in = '';
+          seen.unobserve(entry.target);
+        }
+      },
+      { rootMargin: '0px 0px -8% 0px' }
+    );
+    for (const item of page.querySelectorAll('[data-reveal]')) seen.observe(item);
+    return () => {
+      seen.disconnect();
+      delete page.dataset.motion;
+    };
+  }, []);
 }

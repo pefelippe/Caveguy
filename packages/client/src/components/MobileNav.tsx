@@ -1,25 +1,31 @@
-import { CalendarIcon, HouseIcon, LayoutGridIcon, SheetIcon, type LucideIcon } from 'lucide-react';
+import {
+  LayoutGridIcon,
+  PlugIcon,
+  PlusIcon,
+  SheetIcon,
+  UserIcon,
+  type LucideIcon,
+} from 'lucide-react';
 import { useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 
-import { AgentIcon } from '@zapbots/ui/blocks/agent-icon';
 import { BottomSheet } from '@zapbots/ui/blocks/bottom-sheet';
 import { Button } from '@zapbots/ui/components/button';
 import { cn } from '@zapbots/ui/lib/utils';
 
 import { useI18n } from '../lib/i18n';
 import { activeItem, useNav, type NavItem } from '../lib/nav';
-import { useChatPanel } from './ChatPanel';
+import { AddMenu } from './AddMenu';
 
 /** The four screens a thumb reaches without opening anything; the Agente sits in the middle. */
 const TABS: {
   icon: LucideIcon;
-  label: 'tabs.calendar' | 'tabs.home' | 'tabs.money';
+  label: 'nav.integrations' | 'nav.profile' | 'tabs.money';
   to: string;
 }[] = [
-  { icon: HouseIcon, label: 'tabs.home', to: '/' },
   { icon: SheetIcon, label: 'tabs.money', to: '/caishen' },
-  { icon: CalendarIcon, label: 'tabs.calendar', to: '/personal/calendar' },
+  { icon: PlugIcon, label: 'nav.integrations', to: '/integrations' },
+  { icon: UserIcon, label: 'nav.profile', to: '/profile' },
 ];
 
 const TAB =
@@ -34,7 +40,6 @@ export function MobileNav() {
   const { pathname } = useLocation();
   const nav = useNav();
   const { t } = useI18n();
-  const { open: chatOpen, toggle } = useChatPanel();
   const [more, setMore] = useState(false);
 
   const all = [...nav.main, ...nav.groups.flatMap(group => group.items), ...nav.account];
@@ -65,16 +70,15 @@ export function MobileNav() {
           {tab(TABS[0]!)}
           {tab(TABS[1]!)}
           <div className="flex flex-1 items-center justify-center">
-            <Button
-              aria-label={t('chat.toggle')}
-              aria-pressed={chatOpen || onChat}
-              className="relative size-12 rounded-full transition-transform active:scale-95 [&_svg]:size-[22px]"
-              disabled={onChat}
-              onClick={toggle}
-              size="icon"
-            >
-              <AgentIcon />
-            </Button>
+            <AddMenu align="center">
+              <Button
+                aria-label="Adicionar"
+                className="group size-12 rounded-full transition-transform active:scale-95 [&_svg]:size-[22px]"
+                size="icon"
+              >
+                <PlusIcon className="transition-transform duration-300 group-data-[state=open]:rotate-45" />
+              </Button>
+            </AddMenu>
           </div>
           {tab(TABS[2]!)}
           <Button

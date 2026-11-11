@@ -1,3 +1,4 @@
+import { APP_NAME } from '@zapbots/finance';
 import { useMutation, useQuery } from '@apollo/client/react';
 import {
   AddIncomeSourceDocument,
@@ -45,7 +46,10 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 
+import { CountUp, RankBars, SplitBar } from '../components/FinanceCharts';
+
 import { PageSkeleton } from '@zapbots/ui/blocks/page-skeleton';
+import { Card } from '@zapbots/ui/components/card';
 import { Section, SectionRow } from '@zapbots/ui/blocks/section';
 import { Button } from '@zapbots/ui/components/button';
 import {
@@ -201,14 +205,20 @@ export function IncomePage() {
     >
       {holder => (
         <>
-          <Figures
-            figures={[
-              {
-                label: 'Renda fixa por mês (hoje)',
-                value: holder.monthlyIncomeCents,
-              },
-            ]}
-          />
+          <Summary title="Entra por mês" total={holder.monthlyIncomeCents}>
+            {/* shortcut: bars only when every Fonte de Renda is in reais; a dollar one would need its
+                converted amount from the server. */}
+            {holder.incomeSources.length > 1 &&
+              holder.incomeSources.every(source => source.currency !== 'USD') && (
+                <RankBars
+                  items={holder.incomeSources.map(source => ({
+                    cents: source.monthlyNetCents,
+                    id: source.id,
+                    label: source.description,
+                  }))}
+                />
+              )}
+          </Summary>
           <IncomeSection holder={holder} />
           <MonthIncomes go={go} holderId={holder.id} month={month} />
         </>
@@ -420,7 +430,7 @@ export function CreditPage() {
 }
 
 /** Brings the part in the URL's hash into view once the page has it. */
-function useHashScroll(ready: boolean) {
+export function useHashScroll(ready: boolean) {
   const { hash } = useLocation();
   useEffect(() => {
     if (ready && hash) document.getElementById(hash.slice(1))?.scrollIntoView();
@@ -428,10 +438,9 @@ function useHashScroll(ready: boolean) {
 }
 
 /**
- * Gastos: what goes out by itself, each kind in its part: the Gastos recorrentes (gym, insurance),
- * the Assinaturas (Gastos recorrentes filed under that category), the Titular's own Impostos (IPVA,
- * IPTU), the Empréstimos, the Financiamentos and the Cartões with their Faturas. Each Operation
- * opens on its own page.
+ * Contas fixas: what goes out by itself, the Gastos recorrentes (gym, insurance) and the Titular's
+ * own Impostos (IPVA, IPTU). The Assinaturas and the Parcelamentos have tabs of their own; the
+ * figure counts them too, as all of it leaves every month.
  */
 export function FixedPage() {
   const holder = useHolder();
@@ -439,61 +448,168 @@ export function FixedPage() {
   return (
     <HolderSection
       actions={<AddEntryButton direction="OUT" />}
-      description={() => (
-        <>
-          O que sai todo mês sem você digitar: recorrentes, assinaturas, impostos, parcelas e as
-          faturas dos cartões. Entra sozinho em cada mês.
-        </>
-      )}
-      title="Gastos"
+      description={() => 'O que sai sozinho todo mês ou todo ano: gastos fixos e impostos.'}
+      title="Contas fixas"
+    >
+      {holder => {
+        const items = holder.recurringExpenses.filter(item => !isSubscription(item));
+        const recurring = perMonth(items);
+        const subscribed = perMonth(holder.recurringExpenses.filter(isSubscription));
+        const taxes = Math.round(taxesPerYear(holder) / 12);
+        const installments = installmentsOf(holder);
+        return (
+          <>
+            <Summary title="Sai por mês" total={recurring + subscribed + taxes + installments}>
+              <SplitBar
+                parts={[
+                  { cents: recurring, label: 'Gastos fixos', swatch: 'bg-foreground' },
+                  { cents: subscribed, label: 'Assinaturas', swatch: 'bg-seal' },
+                  { cents: taxes, label: 'Impostos (÷12)', swatch: 'bg-seal/40' },
+                  { cents: installments, label: 'Parcelas', swatch: 'bg-foreground/30' },
+                ]}
+              />
+            </Summary>
+            <RecurringSection
+              holder={holder}
+              id="recurring"
+              intro="Academia, seguros, mensalidades: o que sai sozinho todo mês ou todo ano."
+              items={items}
+              title="Gastos fixos"
+            />
+            <TaxesSection holder={holder} />
+          </>
+        );
+      }}
+    </HolderSection>
+  );
+}
+
+/** Assinaturas: the Gastos recorrentes filed under Assinatura(s), what they take a month. */
+export function SubscriptionsPage() {
+  return (
+    <HolderSection
+      actions={<AddEntryButton direction="OUT" />}
+      description={() => 'Streaming, apps, clubes: os gastos recorrentes na categoria Assinaturas.'}
+      title="Assinaturas"
     >
       {holder => {
         const subscriptions = holder.recurringExpenses.filter(isSubscription);
         return (
           <>
-            <Figures
-              figures={[
-                {
-                  label: 'Recorrentes por mês',
-                  value: recurringPerMonth(holder),
-                },
-                { label: 'Parcelas por mês', value: installmentsOf(holder) },
-                { label: 'Saldo devedor', value: outstandingOf(holder) },
-                { label: 'Impostos no ano', value: taxesPerYear(holder) },
-              ]}
-            />
-            <RecurringSection
-              holder={holder}
-              intro="O que sai sozinho todo mês ou todo ano: academia, seguros, mensalidades."
-              items={holder.recurringExpenses.filter(item => !isSubscription(item))}
-            />
+            <Summary title="Por mês" total={perMonth(subscriptions)}>
+              <RankBars
+                items={subscriptions.map(item => ({
+                  cents: perMonth([item]),
+                  id: item.id,
+                  label: item.description,
+                }))}
+              />
+            </Summary>
             <RecurringSection
               empty="Nenhuma assinatura ainda. Cadastre um gasto recorrente com a categoria Assinaturas."
               holder={holder}
               id="subscriptions"
-              intro="Streaming, apps, clubes: os gastos recorrentes na categoria Assinaturas."
+              intro={`Cancele o que não usa: o ${APP_NAME} avisa antes de cada cobrança.`}
               items={subscriptions}
-              title="Assinaturas"
+              title="Suas assinaturas"
             />
-            <TaxesSection holder={holder} />
+          </>
+        );
+      }}
+    </HolderSection>
+  );
+}
+
+/** Parcelamentos: the Empréstimos and the Financiamentos, what is left and the way out. */
+export function InstallmentsPage() {
+  const holder = useHolder();
+  useHashScroll(Boolean(holder));
+  return (
+    <HolderSection
+      actions={<AddEntryButton direction="OUT" />}
+      description={() => 'Empréstimos e financiamentos: as parcelas, quantas faltam e o saldo.'}
+      title="Parcelamentos"
+    >
+      {holder => {
+        const loans = holder.creditOperations.filter(item => !isFinancing(item.modality));
+        const financing = holder.creditOperations.filter(item => isFinancing(item.modality));
+        const owed = holder.creditOperations.reduce(
+          (total, item) => total + item.outstandingBalanceCents,
+          0
+        );
+        return (
+          <>
+            <Summary title="Falta pagar" total={owed}>
+              {holder.creditOperations.length > 0 && (
+                <p className="text-sm text-muted-foreground">
+                  {holder.creditOperations.length}{' '}
+                  {holder.creditOperations.length === 1 ? 'dívida' : 'dívidas'}, com parcelas de{' '}
+                  <strong className="font-medium text-foreground">
+                    {formatCents(installmentsOf(holder))}
+                  </strong>{' '}
+                  por mês.{' '}
+                  <Link
+                    className="font-medium underline underline-offset-4 hover:no-underline"
+                    to="/caishen/payoff"
+                  >
+                    Montar plano para sair das dívidas
+                  </Link>
+                </p>
+              )}
+            </Summary>
             <ObligationsSection
               empty="Nenhum empréstimo. Crédito pessoal, consignado: adicione pelo botão Adicionar saída."
               id="loans"
-              intro="Crédito pessoal, consignado e outros, com o que falta pagar."
-              items={holder.creditOperations.filter(item => !isFinancing(item.modality))}
+              intro="Crédito pessoal, consignado e outros: taxa, parcela, quantas foram pagas e o saldo."
+              items={loans}
               title="Empréstimos"
             />
             <ObligationsSection
               empty="Nenhum financiamento. Carro, imóvel: adicione pelo botão Adicionar saída."
               id="financing"
-              intro="Carro, imóvel e outros bens, com o que falta pagar."
-              items={holder.creditOperations.filter(item => isFinancing(item.modality))}
+              intro="Carro, imóvel e outros bens: taxa, parcela, quantas foram pagas e o saldo."
+              items={financing}
               title="Financiamentos"
             />
-            <CardsSection holder={holder} />
           </>
         );
       }}
+    </HolderSection>
+  );
+}
+
+/** Cartões: each one's latest Fatura against the others, then each card with its Faturas. */
+export function CardsPage() {
+  const holder = useHolder();
+  useHashScroll(Boolean(holder));
+  return (
+    <HolderSection
+      actions={<AddEntryButton direction="OUT" />}
+      description={() => 'Seus cartões, as faturas e o que é cobrado neles todo mês.'}
+      title="Cartões"
+    >
+      {holder => (
+        <>
+          <Summary
+            title="Limite total"
+            total={holder.creditCards.reduce((total, card) => total + card.limitCents, 0)}
+          >
+            <RankBars
+              items={holder.creditCards.map(card => {
+                const latest = [...card.statements].sort((a, b) =>
+                  b.referenceMonth.localeCompare(a.referenceMonth)
+                )[0];
+                return {
+                  cents: latest?.amountCents ?? 0,
+                  id: card.id,
+                  label: `${card.name} · última fatura`,
+                };
+              })}
+            />
+          </Summary>
+          <CardsSection holder={holder} />
+        </>
+      )}
     </HolderSection>
   );
 }
@@ -516,28 +632,24 @@ const taxesPerYear = (holder: Holder) =>
     0
   );
 
-const outstandingOf = (holder: Holder) =>
-  holder.creditOperations.reduce((total, item) => total + item.outstandingBalanceCents, 0);
-
-/** A page's totals, large, side by side. */
-function Figures({ figures }: { figures: { label: string; value: number }[] }) {
+/** A page's headline: what comes in or goes out a month, large, with its chart under it. */
+function Summary({
+  children,
+  title,
+  total,
+}: {
+  children?: ReactNode;
+  title: string;
+  total: number;
+}) {
   return (
-    <div className="grid gap-4 sm:grid-flow-col sm:auto-cols-fr">
-      {figures.map((figure, index) => (
-        <motion.div
-          animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col gap-1 rounded-2xl bg-card p-6 shadow-[0_1px_3px_rgb(15_23_42/0.06)]"
-          initial={{ opacity: 0, y: 12 }}
-          key={figure.label}
-          transition={{ delay: index * 0.06, duration: 0.5, ease: EASE }}
-        >
-          <span className="text-sm text-muted-foreground">{figure.label}</span>
-          <strong className="text-3xl font-semibold tracking-[-0.03em] tabular-nums">
-            {formatCents(figure.value)}
-          </strong>
-        </motion.div>
-      ))}
-    </div>
+    <section className="flex flex-col gap-4">
+      <h2 className="text-lg font-medium">{title}</h2>
+      <p className="font-display text-[clamp(3rem,7vw,6rem)] leading-[0.9] tracking-[-0.03em] tabular-nums">
+        <CountUp cents={total} />
+      </p>
+      <div className="flex max-w-3xl flex-col gap-3">{children}</div>
+    </section>
   );
 }
 
@@ -885,10 +997,6 @@ type Recurring = Holder['recurringExpenses'][number];
 const running = (item: Recurring) => !item.endsOn || item.endsOn > localToday();
 
 /** What the running Gastos recorrentes cost a month, a yearly one spread over twelve. */
-function recurringPerMonth(holder: Holder): number {
-  return perMonth(holder.recurringExpenses);
-}
-
 /** What these Gastos recorrentes cost a month, yearly ones spread over twelve, cancelled ones out. */
 function perMonth(items: Recurring[]): number {
   return items
@@ -1331,13 +1439,19 @@ function OneOffForm({
  */
 export function AddEntryDialog({
   direction,
+  kind,
   month,
   onClose,
 }: {
-  direction: 'IN' | 'OUT';
+  /** Without a side, every kind: what goes out first, then what comes in. */
+  direction?: 'IN' | 'OUT';
+  /** One kind's form alone, picked already (the + in the corner, `AddMenu`). */
+  kind?: EntryKind;
   month?: string;
   onClose: () => void;
 }) {
+  const picked =
+    kind && [...ENTRY_KINDS.IN, ...ENTRY_KINDS.OUT].find(option => option.value === kind);
   return (
     <Dialog onOpenChange={open => !open && onClose()} open>
       <DialogContent
@@ -1345,15 +1459,33 @@ export function AddEntryDialog({
         onOpenAutoFocus={event => event.preventDefault()}
       >
         <DialogHeader>
-          <DialogTitle>{direction === 'IN' ? 'Adicionar entrada' : 'Adicionar saída'}</DialogTitle>
+          <DialogTitle>
+            {picked
+              ? picked.label
+              : direction === 'IN'
+                ? 'Adicionar entrada'
+                : direction === 'OUT'
+                  ? 'Adicionar saída'
+                  : 'Adicionar'}
+          </DialogTitle>
           <DialogDescription>
-            {direction === 'IN'
-              ? 'O que entra: uma vez ou todo mês.'
-              : 'O que sai: uma vez, todo mês, um empréstimo, um cartão.'}
+            {picked
+              ? picked.hint
+              : direction === 'IN'
+                ? 'O que entra: uma vez ou todo mês.'
+                : direction === 'OUT'
+                  ? 'O que sai: uma vez, todo mês, um empréstimo, um cartão.'
+                  : 'Um gasto, uma despesa fixa, uma entrada, uma dívida ou um cartão.'}
           </DialogDescription>
         </DialogHeader>
         <EntryForms
-          kinds={ENTRY_KINDS[direction].map(option => option.value)}
+          kinds={
+            kind
+              ? [kind]
+              : (direction ? ENTRY_KINDS[direction] : [...ENTRY_KINDS.OUT, ...ENTRY_KINDS.IN]).map(
+                  option => option.value
+                )
+          }
           month={month}
           onDone={onClose}
         />
@@ -1373,9 +1505,8 @@ export function EntryForms({
   onDone: () => void;
 }) {
   const holder = useHolder();
-  const options = [...ENTRY_KINDS.IN, ...ENTRY_KINDS.OUT].filter(option =>
-    kinds.includes(option.value)
-  );
+  const all = [...ENTRY_KINDS.IN, ...ENTRY_KINDS.OUT];
+  const options = kinds.map(kind => all.find(option => option.value === kind)!);
   const [kind, setKind] = useState<EntryKind>(options[0]!.value);
   const direction = ENTRY_KINDS.IN.some(option => option.value === kind) ? 'IN' : 'OUT';
 

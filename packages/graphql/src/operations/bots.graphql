@@ -14,6 +14,7 @@ fragment AlertFields on Alert {
   id
   kind
   read
+  sent
   message
   href
 }
@@ -77,6 +78,9 @@ query Bots {
     alerts {
       ...AlertFields
     }
+    alertsConversation {
+      id
+    }
   }
 }
 
@@ -101,6 +105,8 @@ query Conversations($botId: ID) {
   conversations(botId: $botId) {
     id
     title
+    alerts
+    channel
     updatedAt
     bot {
       id
@@ -222,4 +228,16 @@ mutation UpdateBot($id: ID!, $input: AgentInput!) {
 
 mutation DeleteBot($id: ID!) {
   deleteBot(id: $id)
+}
+
+mutation DeliverAlerts($bot: BotKey!) {
+  deliverAlerts(bot: $bot) {
+    id
+    alertsConversation {
+      id
+    }
+    alerts {
+      ...AlertFields
+    }
+  }
 }

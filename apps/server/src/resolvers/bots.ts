@@ -1,12 +1,13 @@
 import type { Viewer } from '@zapbots/auth';
 import { db, schema, type RoutineRow } from '@zapbots/database';
 import type { Resolvers } from '@zapbots/graphql/server';
-import { and, asc, desc, eq, inArray, isNotNull, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNotNull, or, sql } from 'drizzle-orm';
 import { GraphQLError } from 'graphql';
 
 import { PlanLimitError, requireWithinLimit, subscriptionOf } from '../services/billing/billing';
 import { PLANS, planInForce } from '../services/billing/plans';
 import { markAlerts, viewerAlerts } from '../services/bots/alerts';
+import { alertsConversation, deliverAlerts } from '../services/bots/alertsInbox';
 import {
   botDescription,
   botName,
@@ -143,6 +144,10 @@ async function findCustomBot(viewer: Viewer, id: string) {
   return bot;
 }
 
+/** Each Member's Avisos Conversation is theirs alone; the rest of the Organization's are shared. */
+const ownAlertsOnly = (viewer: Viewer) =>
+  or(eq(schema.conversation.alerts, false), eq(schema.conversation.userId, viewer.userId));
+
 export const botResolvers: Resolvers = {
   Bot: {
     alerts: async (bot, _, context) =>
@@ -150,6 +155,7 @@ export const botResolvers: Resolvers = {
         ...alert,
         id: alert.key,
       })),
+    alertsConversation: (bot, _, context) => alertsConversation(requireViewer(context), bot),
     custom: bot => bot.key === 'CUSTOM',
     description: bot => botDescription(bot),
     instructions: bot => (bot.key === 'CUSTOM' ? bot.instructions : null),
@@ -271,6 +277,12 @@ export const botResolvers: Resolvers = {
       const viewer = requireViewer(context);
       const bot = await viewerBot(viewer, key);
       await markAlerts(viewer, bot, [id], 'DISMISSED');
+      return bot;
+    },
+    deliverAlerts: async (_, { bot: key }, context) => {
+      const viewer = requireViewer(context);
+      const bot = await viewerBot(viewer, key);
+      await deliverAlerts(viewer, bot);
       return bot;
     },
     markAlertsRead: async (_, { bot: key, ids }, context) => {
@@ -445,10 +457,11 @@ export const botResolvers: Resolvers = {
     },
     bots: (_, __, context) => ensureBots(requireViewer(context).organizationId),
     conversation: async (_, { id }, context) => {
+      const viewer = requireViewer(context);
       const [row] = await db
         .select()
         .from(schema.conversation)
-        .where(owned(schema.conversation, requireViewer(context), id));
+        .where(and(owned(schema.conversation, viewer, id), ownAlertsOnly(viewer)));
       return row ?? null;
     },
     conversations: async (_, { botId }, context) => {
@@ -457,7 +470,12 @@ export const botResolvers: Resolvers = {
       return db
         .select()
         .from(schema.conversation)
-        .where(botId ? eq(schema.conversation.botId, botId) : owned(schema.conversation, viewer))
+        .where(
+          and(
+            botId ? eq(schema.conversation.botId, botId) : owned(schema.conversation, viewer),
+            ownAlertsOnly(viewer)
+          )
+        )
         .orderBy(desc(schema.conversation.updatedAt))
         .limit(50);
     },

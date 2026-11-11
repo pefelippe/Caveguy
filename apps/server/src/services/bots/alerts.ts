@@ -180,6 +180,8 @@ export async function botAlerts(viewer: Viewer, bot: BotRow): Promise<BotAlert[]
 /** An Alert as its User sees it in the bell: `read` once opened or marked. */
 export interface SeenAlert extends BotAlert {
   read: boolean;
+  /** Posted in the Member's Avisos Conversation (`deliverAlerts`). */
+  sent: boolean;
 }
 
 /** A Bot's Alerts for the Viewer, as `botAlerts`, less the ones they removed, each read or not. */
@@ -201,7 +203,11 @@ export async function viewerAlerts(viewer: Viewer, bot: BotRow): Promise<SeenAle
   const byKey = new Map(marks.map(mark => [mark.alertKey, mark]));
   return alerts
     .filter(alert => !byKey.get(alert.key)?.dismissedAt)
-    .map(alert => ({ ...alert, read: Boolean(byKey.get(alert.key)?.readAt) }));
+    .map(alert => ({
+      ...alert,
+      read: Boolean(byKey.get(alert.key)?.readAt),
+      sent: Boolean(byKey.get(alert.key)?.sentAt),
+    }));
 }
 
 /**

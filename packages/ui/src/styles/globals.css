@@ -5,7 +5,7 @@
 @import '@fontsource/stack-sans-text/600.css';
 @import '@fontsource/stack-sans-headline/300.css';
 @import '@fontsource/stack-sans-headline/400.css';
-@import '@fontsource/patrick-hand/400.css';
+@import '@fontsource/anton/400.css';
 
 /* The classes used in this package, wherever the app that imports it lives. */
 @source '..';
@@ -14,21 +14,16 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * The Caveman look (docs/adr/0035), after the grug app: a neutral grey screen, white cards drawn by
- * a dark line with a hard offset shadow, like a sticker, and titles in a hand-drawn face (Patrick
- * Hand). The menu is white in the light theme and black in the dark one, never brown.
- *
- * Two quiet colours and one loud. Quiet: Cloudy White (#FDFDFE) for the screen, the menu and
- * the cards (set apart by a border), and Sky Blue (#0099FF) for the open menu entry, links, focus
- * and a faint tint on nested panels (a deeper sky,
- * #0077CC, where it is text: #0099FF on white is only 3:1). Loud: Amber Red, the seal, used
- * sparingly: the brand, the Caishen's ink, Finanças and the landing page's calls to act. Text and
- * ordinary buttons are a neutral black ink, so the red stays rare. No shadow at rest.
- * Pessoal takes the sky; Fitness and the rest keep jade and gold.
+ * The Caveguy look (docs/adr/0035, 0039), one with the landing page: a white screen, cards a step of
+ * neutral grey with no line and no shadow, page titles in Anton, upper case, and Stack Sans for the
+ * rest. Neutral greys only, never cream, beige or brown.
+ * The loud colour is the seal's red ochre (#DC3312): the brand, the main action, Finanças. Text
+ * and lines are soot (#141311). Sky Blue (#0099FF, #0077CC as text) is for focus and Pessoal;
+ * Fitness and the rest keep jade and gold.
  */
 :root {
   --radius: 0.5rem;
-  --ink-black: #111113;
+  --ink-black: #141311;
   --ink-soft: #2e2e33;
   --sky: #0099ff;
   --sky-ink: #0077cc;
@@ -39,44 +34,45 @@
   --caveman-skin: #e8bf94;
   --caveman-hide: #9c6b3f;
   --caveman-line: #1b1610;
-  /* The light grey of the screen, and the white of the cards. */
-  --paper-warm: #f4f4f5;
-  --paper-card: var(--cloud);
-  /* The drawn line around cards, and their sticker shadow. */
-  --stroke: var(--ink-black);
+  /* A white screen, like the landing page. */
+  --paper-warm: #ffffff;
+  --paper-card: #ffffff;
+  /* Cards stand apart from the white by a step of grey: no line, no shadow. */
+  --stroke: transparent;
 
   --background: var(--paper-warm);
   --foreground: var(--ink-black);
-  --card: var(--paper-card);
+  --card: #f5f5f4;
   --card-foreground: var(--ink-black);
   --popover: var(--paper-card);
   --popover-foreground: var(--ink-black);
-  --primary: var(--ink-black);
-  --primary-foreground: var(--cloud);
-  --secondary: #ececee;
+  /* The main action is the seal's red ochre, as on the landing page. */
+  --primary: var(--seal);
+  --primary-foreground: #ffffff;
+  --secondary: #ececea;
   --secondary-foreground: var(--ink-black);
-  --muted: #f0f0f2;
-  --muted-foreground: #63636b;
-  --accent: #ececee;
+  --muted: #ececea;
+  --muted-foreground: #71717a;
+  --accent: #ececea;
   --accent-foreground: var(--ink-black);
   --destructive: oklch(0.5 0.19 22);
   --success: oklch(0.5 0.11 155);
   --warning: oklch(0.6 0.13 70);
-  --border: #e2e2e6;
-  /* Cards cast a hard sticker shadow in the line's colour (docs/adr/0035). */
-  --card-shadow: 3px 4px 0 0 var(--stroke);
-  --input: #c9c9cf;
+  --border: #e5e5e5;
+  /* Nothing casts a shadow at rest; only menus and dialogs float. */
+  --card-shadow: none;
+  --input: #d4d4d8;
   --ring: var(--sky);
 
-  /* The menu on the left is white over the grey screen, set apart by the step in tone; the open
-     entry is a grey step with a red mark. Black in the dark theme. */
-  --sidebar: #ffffff;
+  /* The menu on the left is white like the screen, set apart by a line; the open entry a grey
+     step. Black in the dark theme. */
+  --sidebar: var(--paper-warm);
   --sidebar-foreground: #3f3f46;
   --sidebar-primary: var(--ink-black);
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #ececee;
+  --sidebar-accent: #f4f4f5;
   --sidebar-accent-foreground: var(--ink-black);
-  --sidebar-border: transparent;
+  --sidebar-border: var(--border);
   --sidebar-ring: var(--sky);
 
   /* The dark bar of the sign-in and the send buttons: plain ink. */
@@ -111,7 +107,7 @@
   --sky-ink: #5cbcff;
   --seal: #ff5a3a;
   /* Plain black, text in the paper's colour. */
-  --stroke: #000000;
+  --stroke: transparent;
   --background: #0e0e10;
   --foreground: #f4f4f5;
   --card: #18181b;
@@ -138,7 +134,7 @@
   --sidebar-primary: #f4f4f5;
   --sidebar-accent: #1f1f23;
   --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: transparent;
+  --sidebar-border: var(--border);
   --sidebar-ring: var(--sky);
 
   --ink-neutral: #f4f4f5;
@@ -151,9 +147,10 @@
 }
 
 @theme inline {
-  /* Stack Sans for everything; titles and big figures in Patrick Hand, drawn by hand. */
+  /* Stack Sans for everything and the big figures; page titles in Anton, upper case, as on the landing page. */
   --font-sans: 'Stack Sans Text', ui-sans-serif, system-ui, sans-serif;
-  --font-display: 'Patrick Hand', 'Stack Sans Text', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Stack Sans Headline', 'Stack Sans Text', ui-sans-serif, system-ui, sans-serif;
+  --font-title: 'Anton', 'Stack Sans Text', ui-sans-serif, system-ui, sans-serif;
   --font-serif: var(--font-sans);
   --radius-sm: calc(var(--radius) - 2px);
   --radius-md: var(--radius);
@@ -217,7 +214,7 @@
     @apply bg-background font-sans text-sm text-foreground antialiased;
   }
   h1 {
-    @apply font-display text-4xl leading-tight font-normal tracking-normal;
+    @apply font-title text-4xl leading-tight font-normal tracking-normal uppercase;
   }
   [data-bot='FINANCE'] {
     --ink: var(--bot-finance);

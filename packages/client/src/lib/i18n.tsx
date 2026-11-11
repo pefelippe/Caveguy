@@ -1,4 +1,4 @@
-import { APP_NAME, MASCOT_NAME } from '@zapbots/finance';
+import { APP_NAME } from '@zapbots/finance';
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 
 import { FITNESS_STRINGS } from './i18n-fitness';
@@ -76,7 +76,7 @@ const STRINGS = {
     pt: 'Até {count} Agentes personalizados',
   },
   'chat.close': { en: 'Close chat', pt: 'Fechar conversa' },
-  'chat.panel': { en: `Chat with the ${APP_NAME}`, pt: `Conversa com o ${APP_NAME}` },
+  'chat.panel': { en: `Chat with ${APP_NAME}`, pt: `Conversa com o ${APP_NAME}` },
   'chat.expand': { en: 'Open on the Agent page', pt: 'Abrir na página do Agente' },
   'chat.toggle': { en: 'Open or close the chat', pt: 'Abrir ou fechar a conversa' },
   'proposal.back': { en: 'Back', pt: 'Voltar' },
@@ -106,6 +106,21 @@ const STRINGS = {
   'menu.plan': { en: 'Plan', pt: 'Plano' },
   'menu.profile': { en: 'Profile', pt: 'Perfil' },
   'nav.agent': { en: 'Agent', pt: 'Agente' },
+  'nav.agents': { en: 'Agents', pt: 'Agentes' },
+  'nav.talk': { en: `Talk to ${APP_NAME}`, pt: `Fale com o ${APP_NAME}` },
+  'nav.recent': { en: 'Recent', pt: 'Recentes' },
+  'nav.whatsappEmpty': {
+    en: `No conversation yet. Talk to ${APP_NAME} on WhatsApp and your messages show up here.`,
+    pt: `Nenhuma conversa ainda. Converse com o ${APP_NAME} pelo WhatsApp e suas mensagens aparecem aqui.`,
+  },
+  'finance.overview': { en: 'Overview', pt: 'Visão geral' },
+  'finance.transactions': { en: 'Transactions', pt: 'Transações' },
+  'finance.installments': { en: 'Installments', pt: 'Parcelamentos' },
+  'finance.subscriptions': { en: 'Subscriptions', pt: 'Assinaturas' },
+  'finance.categories': { en: 'Categories', pt: 'Categorias' },
+  'finance.cards': { en: 'Cards', pt: 'Cartões' },
+  'finance.fixed': { en: 'Fixed bills', pt: 'Contas fixas' },
+  'finance.talk': { en: `Talk to ${APP_NAME}`, pt: `Conversar com o ${APP_NAME}` },
   'nav.calculators': { en: 'Calculators', pt: 'Calculadoras' },
   'nav.documents': { en: 'Documents', pt: 'Documentos' },
   'nav.entries': { en: 'Cash flow', pt: 'Fluxo de caixa' },
@@ -187,7 +202,8 @@ const STRINGS = {
   },
   'org.title': { en: 'Organization', pt: 'Organização' },
   'profile.label': { en: 'Profile', pt: 'Perfil' },
-  'profile.signOut': { en: 'Sign out', pt: 'Sair' },
+  'profile.signOut': { en: 'Sign out', pt: 'Encerrar sessão' },
+  'header.alerts': { en: 'Alerts', pt: 'Avisos' },
   'rail.caishen': { en: APP_NAME, pt: APP_NAME },
   'rail.chat': { en: 'Chat', pt: 'Chat' },
   'rail.finance': { en: 'Finance', pt: 'Financeiro' },
@@ -225,11 +241,11 @@ const STRINGS = {
   },
   'users.title': { en: 'Users', pt: 'Usuários' },
   'welcome.giveJob': { en: 'New workflow', pt: 'Novo Workflow' },
-  'welcome.uga': { en: `{name}! ${MASCOT_NAME} listens.`, pt: `{name}! ${MASCOT_NAME} escuta.` },
+  'welcome.uga': { en: `{name}! ${APP_NAME} listens.`, pt: `{name}! ${APP_NAME} escuta.` },
   'welcome.ask': { en: `Ask the ${APP_NAME}`, pt: `Pergunte ao ${APP_NAME}` },
   'welcome.askAi': {
-    en: `Ask ${MASCOT_NAME} anything…`,
-    pt: `Pergunte ao ${MASCOT_NAME}…`,
+    en: `Ask ${APP_NAME} anything…`,
+    pt: `Pergunte ao ${APP_NAME}…`,
   },
   'welcome.hello': { en: 'Hello, {name}', pt: 'Olá, {name}' },
   'summary.commitments': { en: 'Commitments', pt: 'Compromissos' },
@@ -532,6 +548,9 @@ const STRINGS = {
   ...PERSONAL_STRINGS,
   ...FITNESS_STRINGS,
   'orgs.label': { en: 'Organization', pt: 'Organização' },
+  'orgs.search': { en: 'Search organizations', pt: 'Buscar organizações' },
+  'orgs.none': { en: 'No organization found', pt: 'Nenhuma organização encontrada' },
+  'header.search': { en: 'Search', pt: 'Buscar' },
   'orgs.new': { en: 'New organization', pt: 'Nova organização' },
   'orgs.newTitle': { en: 'New organization', pt: 'Nova organização' },
   'orgs.newText': {

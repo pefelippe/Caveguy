@@ -451,7 +451,7 @@ export const bot = pgTable(
     /** A custom Agente's name; `null` on the fixed ones, which is what keeps them one each. */
     name: text('name'),
     organizationId: organizationId(),
-    /** Brutus's outfit a custom Agente wears (`OUTFITS` in the client); `null` on the fixed ones. */
+    /** The caveman's outfit a custom Agente wears (`OUTFITS` in the client); `null` on the fixed ones. */
     outfit: text('outfit'),
     ...timestamps,
   },
@@ -473,6 +473,8 @@ export const conversation = pgTable(
     botId: uuid('bot_id')
       .notNull()
       .references(() => bot.id, { onDelete: 'cascade' }),
+    /** The Member's Avisos: the Bot posts its Alerts here as Messages, once a day (one per Member). */
+    alerts: boolean('alerts').notNull().default(false),
     channel: conversationChannel('channel').notNull().default('APP'),
     id: uuid('id').primaryKey().defaultRandom(),
     organizationId: organizationId(),
@@ -494,6 +496,9 @@ export const conversation = pgTable(
     uniqueIndex('conversation_whatsapp_member_once')
       .on(table.organizationId, table.userId)
       .where(sql`${table.channel} = 'WHATSAPP'`),
+    uniqueIndex('conversation_alerts_member_once')
+      .on(table.organizationId, table.userId)
+      .where(sql`${table.alerts}`),
   ]
 );
 
@@ -855,6 +860,8 @@ export const alertState = pgTable(
     id: uuid('id').primaryKey().defaultRandom(),
     organizationId: organizationId(),
     readAt: timestamp('read_at', { withTimezone: true }),
+    /** When the Alert went to the Member's Avisos Conversation; it is never posted twice. */
+    sentAt: timestamp('sent_at', { withTimezone: true }),
     userId: text('user_id')
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),

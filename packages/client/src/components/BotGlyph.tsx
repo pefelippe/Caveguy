@@ -19,7 +19,7 @@ interface Props {
   size?: number;
 }
 
-/** An Agente's avatar: Brutus in its outfit on its ink (docs/adr/0035). */
+/** An Agente's avatar: the caveman in its outfit on its ink (docs/adr/0035). */
 export function BotGlyph({ bot, className, icon: Icon, mood, outfit, size = 32 }: Props) {
   if (bot && !Icon) {
     return (

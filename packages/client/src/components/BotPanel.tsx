@@ -1,3 +1,4 @@
+import { APP_NAME } from '@zapbots/finance';
 import { useMutation, useQuery } from '@apollo/client/react';
 import {
   AgentPanelDocument,
@@ -5,7 +6,7 @@ import {
   DeleteConversationDocument,
   StartConversationDocument,
 } from '@zapbots/graphql/client';
-import { HistoryIcon, PlusIcon } from 'lucide-react';
+import { ChevronLeftIcon, PlusIcon } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -16,11 +17,11 @@ import { cn } from '@zapbots/ui/lib/utils';
 
 import { greetingOf, suggestionsOf, useAgents } from '../lib/agents';
 import type { ChatAttachment } from '../lib/attachments';
-import { AgentTabs } from './AgentTabs';
 import { BotGlyph } from './BotGlyph';
 import { ChatThread, type Suggestion } from './ChatThread';
 import { ConversationList, type Conversation } from './ConversationList';
 import { useUndoableDelete } from './Toaster';
+import { useSeenAlerts } from './Alerts';
 
 /** The panel header's plain icons: no ground until the pointer is over one, or while its view is open. */
 export const PANEL_BUTTON =
@@ -35,7 +36,11 @@ interface Props {
   actions?: (conversationId: string | null) => ReactNode;
   /** The User's first name, greeted while the Conversation is empty. */
   greeting?: string;
+  /** Said in place of the greeting while the Conversation is empty ("O que você quer adicionar?"). */
+  headline?: string;
   className?: string;
+  /** Opens on this Conversation instead of the latest one. */
+  conversationId?: string;
   /** Sent as soon as the blank Conversation opens. */
   firstMessage?: string;
   /** Files sent with it. */
@@ -62,9 +67,11 @@ function AgentPanel({
   actions,
   botId,
   className,
+  conversationId: initial,
   firstFiles,
   firstMessage,
   greeting,
+  headline,
   startBlank,
   suggestions,
 }: Props & { botId: string }) {
@@ -82,16 +89,19 @@ function AgentPanel({
   });
   const { hidden, remove: removeLater } = useUndoableDelete();
   // `undefined` follows the latest Conversation; `null` is a blank one not yet saved.
-  const [chosen, setChosen] = useState<string | null | undefined>(startBlank ? null : undefined);
+  const [chosen, setChosen] = useState<string | null | undefined>(
+    initial ?? (startBlank ? null : undefined)
+  );
   // Remounts the thread only when the User asks for another Conversation. Saving the first Message
   // also changes `conversationId`, and a remount there would drop the reply being streamed.
   const [thread, setThread] = useState(0);
   const [view, setView] = useState<View>('chat');
 
-  if (!bot) return <Skeleton className={cn('h-64 w-full', className)} />;
-
   const conversations = list?.conversations.filter(conversation => !hidden.has(conversation.id));
   const conversationId = chosen === undefined ? (conversations?.[0]?.id ?? null) : chosen;
+  useSeenAlerts(view === 'chat' ? conversationId : null);
+
+  if (!bot) return <Skeleton className={cn('h-64 w-full', className)} />;
 
   const ensureConversation = async () => {
     if (conversationId) return conversationId;
@@ -120,10 +130,26 @@ function AgentPanel({
 
   return (
     <section className={cn('flex min-h-0 flex-col gap-3', className)} data-bot={bot.key}>
-      <header className="flex items-center gap-1">
-        <div className="flex min-w-0 flex-1 items-center gap-2.5 pl-1">
-          <BotGlyph bot={bot.key} outfit={bot.outfit} size={28} />
-          <span className="truncate text-base font-semibold">{bot.name}</span>
+      <header className="-mx-4 -mt-1 flex items-center gap-1 border-b px-2 pb-3 md:-mx-5 md:px-3">
+        <Button
+          aria-label="Conversas anteriores"
+          aria-pressed={view === 'history'}
+          className={PANEL_BUTTON}
+          onClick={() => toggle('history')}
+          size="icon"
+          title="Conversas anteriores"
+          variant="ghost"
+        >
+          <ChevronLeftIcon />
+        </Button>
+        <div className="flex min-w-0 flex-1 items-center gap-2.5">
+          <BotGlyph bot={bot.key} outfit={bot.outfit} size={32} />
+          <div className="flex min-w-0 flex-col leading-tight">
+            <span className="truncate font-semibold">{APP_NAME}</span>
+            <span className="truncate text-xs text-muted-foreground">
+              Agente de IA · responde na hora
+            </span>
+          </div>
         </div>
         <Button
           aria-label="Nova conversa"
@@ -135,20 +161,8 @@ function AgentPanel({
         >
           <PlusIcon />
         </Button>
-        <Button
-          aria-label="Conversas anteriores"
-          aria-pressed={view === 'history'}
-          className={PANEL_BUTTON}
-          onClick={() => toggle('history')}
-          size="icon"
-          title="Conversas anteriores"
-          variant="ghost"
-        >
-          <HistoryIcon />
-        </Button>
         {actions?.(conversationId)}
       </header>
-      <AgentTabs />
       {view === 'history' && (
         <ConversationList
           chosen={conversationId}
@@ -179,7 +193,7 @@ function AgentPanel({
           ensureConversation={ensureConversation}
           firstFiles={thread === 0 ? firstFiles : undefined}
           firstMessage={thread === 0 ? firstMessage : undefined}
-          greeting={greetingOf(bot.key, greeting)}
+          greeting={headline ?? greetingOf(bot.key, greeting)}
           key={thread}
           suggestions={suggestions ?? suggestionsOf(bot.key)}
         />

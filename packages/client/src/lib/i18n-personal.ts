@@ -228,6 +228,8 @@ export const PERSONAL_STRINGS = {
   'personal.today': { en: 'Today', pt: 'Hoje' },
   'personal.tomorrow': { en: 'Tomorrow', pt: 'Amanhã' },
   'personal.yesterday': { en: 'Yesterday', pt: 'Ontem' },
+  'profile.themeHint': { en: 'Applies to this browser.', pt: 'Vale para este navegador.' },
+  'profile.preferences': { en: 'Preferences', pt: 'Preferências' },
   'profile.timezone': { en: 'Time zone', pt: 'Fuso horário' },
   'profile.timezoneHint': {
     en: 'Where "today" is for your tasks, calendar and goals.',

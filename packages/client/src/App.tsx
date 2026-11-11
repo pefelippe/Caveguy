@@ -33,10 +33,13 @@ const finance = <Name extends string>(name: Name) =>
   page(() => import('./pages/FinancePage') as Promise<Record<Name, ComponentType>>, name);
 const IncomePage = finance('IncomePage');
 const FixedPage = finance('FixedPage');
+const CardsPage = finance('CardsPage');
+const InstallmentsPage = finance('InstallmentsPage');
+const SubscriptionsPage = finance('SubscriptionsPage');
+const CategoriesPage = page(() => import('./pages/CategoriesPage'), 'CategoriesPage');
 const EntriesPage = page<'EntriesPage', object>(() => import('./pages/EntriesPage'), 'EntriesPage');
 const MoneyPage = page(() => import('./pages/MoneyPage'), 'MoneyPage');
 const PayoffPage = page(() => import('./pages/PayoffPage'), 'PayoffPage');
-const DashboardPage = page(() => import('./pages/DashboardPage'), 'DashboardPage');
 const WelcomePage = page(() => import('./pages/WelcomePage'), 'WelcomePage');
 const InvitePage = page(() => import('./pages/InvitePage'), 'InvitePage');
 const ChatPage = page(() => import('./pages/ChatPage'), 'ChatPage');
@@ -47,13 +50,11 @@ const IntegrationsPage = page(() => import('./pages/IntegrationsPage'), 'Integra
 const SettingsPage = page(() => import('./pages/SettingsPage'), 'SettingsPage');
 const ProfilePage = page(() => import('./pages/ProfilePage'), 'ProfilePage');
 const PlanPage = page(() => import('./pages/PlanPage'), 'PlanPage');
-const TasksPage = page(() => import('./pages/personal/TasksPage'), 'TasksPage');
 const CalendarPage = page(() => import('./pages/personal/CalendarPage'), 'CalendarPage');
 const BookingLinksPage = page(
   () => import('./pages/personal/BookingLinksPage'),
   'BookingLinksPage'
 );
-const WorkoutsPage = page(() => import('./pages/fitness/WorkoutsPage'), 'WorkoutsPage');
 const WorkoutSharePage = page(() => import('./pages/WorkoutSharePage'), 'WorkoutSharePage');
 const BookingPage = page(() => import('./pages/BookingPage'), 'BookingPage');
 const CancelBookingPage = page(() => import('./pages/BookingPage'), 'CancelBookingPage');
@@ -66,7 +67,7 @@ function LegacyFinances() {
       replace
       to={
         hash === '#obligations'
-          ? '/caishen/fixed#loans'
+          ? '/caishen/installments#loans'
           : hash === '#income'
             ? '/caishen/income'
             : `/caishen/fixed${hash}`
@@ -75,21 +76,48 @@ function LegacyFinances() {
   );
 }
 
-/** Saídas fixas held the debts too; their old anchor now opens the Empréstimos in Gastos. */
+/** Saídas fixas held the debts and the cards too; their old anchors open Dívidas and Cartões. */
+/** Tarefas is off the app for now; its old address goes home keeping the query. */
+function HomeWithSearch() {
+  const { search } = useLocation();
+  return <Navigate replace to={`/${search}`} />;
+}
+
 function LegacyFixed() {
   const { hash, search } = useLocation();
   return (
     <Navigate
       replace
-      to={hash === '#obligations' ? '/caishen/fixed#loans' : `/caishen/fixed${search}${hash}`}
+      to={
+        hash === '#obligations' || hash === '#loans' || hash === '#financing'
+          ? `/caishen/installments${hash === '#financing' ? hash : '#loans'}`
+          : hash === '#cards' || hash.startsWith('#card-')
+            ? `/caishen/cards${hash}`
+            : hash === '#subscriptions'
+              ? '/caishen/subscriptions'
+              : `/caishen/fixed${search}${hash}`
+      }
     />
   );
 }
 
-/** Cartões had a page; each card's anchor (`#card-<id>`) now lives in Gastos. */
-function LegacyCards() {
+/** Contas fixas lost its debts, Assinaturas and cards to tabs: their old anchors go there. */
+function FixedPath() {
   const { hash } = useLocation();
-  return <Navigate replace to={`/caishen/fixed${hash || '#cards'}`} />;
+  return ['#obligations', '#loans', '#financing', '#subscriptions', '#cards'].includes(hash) ||
+    hash.startsWith('#card-') ? (
+    <LegacyFixed />
+  ) : (
+    <FixedPage />
+  );
+}
+
+/** Dívidas are the Parcelamentos now: its address lands there, keeping the Financiamentos'. */
+function DebtsPath() {
+  const { hash } = useLocation();
+  return (
+    <Navigate replace to={`/caishen/installments${hash === '#financing' ? hash : '#loans'}`} />
+  );
 }
 
 /** Plano was a tab of Configurações; its old address keeps Stripe's `?checkout=`. */
@@ -199,14 +227,8 @@ export function App() {
         path="invite/:id"
       />
       <Route element={<Layout user={session.user} />}>
-        <Route
-          element={
-            <Scrolling>
-              <DashboardPage user={session.user} />
-            </Scrolling>
-          }
-          index
-        />
+        {/* No Página inicial: the Financeiro is the home. */}
+        <Route element={<Navigate replace to="/caishen" />} index />
         <Route element={<ChatPage user={session.user} />} path="chat" />
         <Route
           element={
@@ -232,29 +254,34 @@ export function App() {
         <Route element={<BotLayout bot="FINANCE" />} path="caishen">
           <Route element={<MoneyPage />} index />
           <Route element={<EntriesPage />} path="entries" />
+          <Route element={<DebtsPath />} path="debts" />
           <Route element={<IncomePage />} path="income" />
-          <Route element={<FixedPage />} path="fixed" />
-          <Route element={<LegacyCards />} path="cards" />
-          <Route
-            element={<Navigate replace to="/caishen/fixed#subscriptions" />}
-            path="subscriptions"
-          />
+          <Route element={<FixedPath />} path="fixed" />
+          <Route element={<CardsPage />} path="cards" />
+          <Route element={<InstallmentsPage />} path="installments" />
+          <Route element={<SubscriptionsPage />} path="subscriptions" />
+          <Route element={<CategoriesPage />} path="categories" />
           <Route element={<Navigate replace to="/caishen/fixed#taxes" />} path="taxes" />
-          <Route element={<Navigate replace to="/caishen/entries" />} path="reports" />
+          <Route element={<Navigate replace to="/caishen" />} path="reports" />
           <Route element={<PayoffPage />} path="payoff" />
-          <Route element={<Navigate replace to="/caishen/entries" />} path="calculators" />
+          <Route element={<Navigate replace to="/caishen" />} path="calculators" />
           {/* Old addresses: the tabs of Lançamentos, Visão geral, Relatório, Mês, Financeiro, Orçamento, Score. */}
           <Route element={<Navigate replace to="/caishen/income" />} path="entries/income" />
           <Route element={<LegacyFixed />} path="entries/fixed" />
           <Route element={<Navigate replace to="/caishen/fixed#taxes" />} path="entries/taxes" />
-          <Route element={<Navigate replace to="/caishen/entries" />} path="report" />
+          <Route element={<Navigate replace to="/caishen" />} path="report" />
           {['overview', 'month', 'budget', 'credit'].map(path => (
-            <Route element={<Navigate replace to="/caishen/entries" />} key={path} path={path} />
+            <Route element={<Navigate replace to="/caishen" />} key={path} path={path} />
           ))}
           <Route element={<LegacyFinances />} path="finances" />
-          {['debts', 'obligations', 'loans', 'financing'].map(path => (
+          {['obligations', 'loans', 'financing'].map(path => (
             <Route
-              element={<Navigate replace to="/caishen/fixed#loans" />}
+              element={
+                <Navigate
+                  replace
+                  to={`/caishen/installments#${path === 'financing' ? 'financing' : 'loans'}`}
+                />
+              }
               key={path}
               path={path}
             />
@@ -262,6 +289,7 @@ export function App() {
           <Route element={<CreditOperationPage />} path="operations/:id" />
           <Route element={<Navigate replace to="/workflows" />} path="jobs/*" />
         </Route>
+        {/* Tarefas is off the app for now; its address goes home. */}
         <Route
           element={
             <Scrolling>
@@ -278,30 +306,16 @@ export function App() {
           }
           path="personal/calendar/booking"
         />
-        <Route
-          element={
-            <Scrolling>
-              <TasksPage />
-            </Scrolling>
-          }
-          path="personal/tasks"
-        />
-        <Route element={<Navigate replace to="/personal/tasks" />} path="personal/notes" />
-        <Route element={<Navigate replace to="/personal/tasks" />} path="personal/goals" />
-        <Route element={<Navigate replace to="/personal/tasks" />} path="personal" />
-        <Route
-          element={
-            <Scrolling>
-              <WorkoutsPage />
-            </Scrolling>
-          }
-          path="fitness/workouts"
-        />
-        <Route element={<Navigate replace to="/fitness/workouts" />} path="fitness/diet" />
-        <Route element={<Navigate replace to="/fitness/workouts" />} path="fitness/macros" />
-        <Route element={<Navigate replace to="/fitness/workouts" />} path="fitness/sleep" />
-        <Route element={<Navigate replace to="/fitness/workouts" />} path="fitness/measures" />
-        <Route element={<Navigate replace to="/fitness/workouts" />} path="fitness" />
+        <Route element={<HomeWithSearch />} path="personal/tasks" />
+        <Route element={<Navigate replace to="/" />} path="personal/notes" />
+        <Route element={<Navigate replace to="/" />} path="personal/goals" />
+        <Route element={<Navigate replace to="/" />} path="personal" />
+        <Route element={<Navigate replace to="/" />} path="fitness/workouts" />
+        <Route element={<Navigate replace to="/" />} path="fitness/diet" />
+        <Route element={<Navigate replace to="/" />} path="fitness/macros" />
+        <Route element={<Navigate replace to="/" />} path="fitness/sleep" />
+        <Route element={<Navigate replace to="/" />} path="fitness/measures" />
+        <Route element={<Navigate replace to="/" />} path="fitness" />
         <Route element={<IntegrationsPage />} path="integrations" />
         <Route element={<Navigate replace to="/integrations#ai" />} path="integrations/models" />
         <Route element={<LegacyIntegration />} path="integrations/:group" />

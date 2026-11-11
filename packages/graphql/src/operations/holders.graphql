@@ -443,7 +443,7 @@ mutation SaveBudget($input: BudgetInput!) {
   }
 }
 
-query MoneyHome($month: String!, $monthlyExtraCents: Cents!) {
+query MoneyHome($month: String!, $previous: String!, $monthlyExtraCents: Cents!) {
   viewerHolder {
     id
     month(month: $month) {
@@ -452,6 +452,16 @@ query MoneyHome($month: String!, $monthlyExtraCents: Cents!) {
       commitmentsCents
       expensesCents
       balanceCents
+      expenses {
+        ...StatementExpenseFields
+      }
+    }
+    previous: month(month: $previous) {
+      month
+      expensesCents
+      expenses {
+        ...StatementExpenseFields
+      }
     }
     upcomingDues {
       label
@@ -460,8 +470,12 @@ query MoneyHome($month: String!, $monthlyExtraCents: Cents!) {
     }
     creditOperations {
       id
+      name
+      modality
       outstandingBalanceCents
       installmentCents
+      termMonths
+      paidInstallments
     }
     payoffPlan(monthlyExtraCents: $monthlyExtraCents) {
       debtFreeOn
@@ -477,6 +491,44 @@ query MoneyHome($month: String!, $monthlyExtraCents: Cents!) {
     spending(month: $month) {
       category
       amountCents
+    }
+    previousSpending: spending(month: $previous) {
+      category
+      amountCents
+    }
+    recurringExpenses {
+      id
+      description
+      amountCents
+      cycle
+      dueDay
+      dueMonth
+      category
+      endsOn
+    }
+    creditCards {
+      id
+      name
+      issuer
+      limitCents
+      usedCents
+      dueDay
+      statements {
+        id
+        referenceMonth
+        amountCents
+        dueDate
+      }
+    }
+  }
+  bankLinks {
+    id
+    institution
+    accounts {
+      id
+      kind
+      name
+      balanceCents
     }
   }
 }

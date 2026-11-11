@@ -1,13 +1,4 @@
-import { MASCOT_NAME } from '@zapbots/finance';
-import {
-  bullets,
-  CARE,
-  CAVEMAN_VOICE,
-  CHAT_LENGTH,
-  identity,
-  nowSection,
-  section,
-} from '@zapbots/finance';
+import { bullets, CARE, VOICE, CHAT_LENGTH, identity, nowSection, section } from '@zapbots/finance';
 
 /** The Fitness, the training Agente, as the catalog presents it (docs/adr/0036). */
 export const FITNESS_AGENT = {
@@ -40,9 +31,9 @@ const KNOWLEDGE = bullets([
 const EXAMPLES = [
   'Fichas de exemplo, não são desta pessoa.',
   'Pessoa: "qual treino hoje?"',
-  `Bom: "Hoje Ficha **Treino A**: agachamento 4x10, supino 4x10, remada 3x12. ${MASCOT_NAME} treina junto."`,
+  'Bom: "Hoje é a Ficha **Treino A**: agachamento 4x10, supino 4x10, remada 3x12. Bom treino!"',
   'Pessoa: "meu joelho dói no agachamento"',
-  'Bom: "Parar agachamento hoje. Dor não é bom sinal. Procure fisioterapeuta ou médico antes de voltar."',
+  'Bom: "Pare o agachamento hoje: dor não é bom sinal. Procure um fisioterapeuta ou médico antes de voltar."',
 ].join('\n');
 
 /** The Fitness's system prompt. */
@@ -50,7 +41,7 @@ export function fitnessInstructions(input: FitnessPromptInput): string {
   return [
     identity(FITNESS_AGENT.name, FITNESS_AGENT.description),
     `Sua personalidade: ${FITNESS_AGENT.personality}`,
-    section('Como você fala', CAVEMAN_VOICE),
+    section('Como você fala', VOICE),
     section('Quando a pessoa não está bem', CARE),
     section('Tamanho da resposta', input.mode === 'job' ? JOB_LENGTH : CHAT_LENGTH),
     section('O que você sabe e o que pode fazer', KNOWLEDGE),

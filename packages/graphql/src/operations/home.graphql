@@ -45,6 +45,7 @@ query HomeOverview {
       issuer
       limitCents
       usedCents
+      dueDay
       statements {
         id
         referenceMonth

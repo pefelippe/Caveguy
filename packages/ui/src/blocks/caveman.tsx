@@ -209,7 +209,7 @@ interface Props {
 }
 
 /**
- * Brutus, the Caveman, in an Agente's outfit on a stone slab of its ink (`data-bot` sets `--ink`).
+ * The caveman, the Caveguy, in an Agente's outfit on a stone slab of its ink (`data-bot` sets `--ink`).
  * A placeholder drawing until the final art: the files that replace it keep this component's props.
  */
 export function Caveman({ className, mood = 'idle', outfit, size = 48 }: Props) {

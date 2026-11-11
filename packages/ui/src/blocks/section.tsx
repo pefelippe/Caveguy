@@ -28,7 +28,10 @@ export function Section({
   return (
     <motion.section
       aria-labelledby={`${id}-title`}
-      className={cn('flex scroll-mt-6 flex-col gap-6 rounded-2xl bg-card p-6 md:p-8', className)}
+      className={cn(
+        'flex scroll-mt-6 flex-col gap-6 rounded-[20px] border-2 border-(--stroke) bg-card p-6 shadow-card md:p-8',
+        className
+      )}
       id={id}
       initial={{ opacity: 0, y: 20 }}
       transition={{ duration: 0.55, ease: EASE }}
@@ -37,7 +40,10 @@ export function Section({
     >
       <header className="flex flex-wrap items-start justify-between gap-x-8 gap-y-3">
         <div className="flex min-w-0 flex-col gap-1">
-          <h2 className="text-2xl font-semibold tracking-tight" id={`${id}-title`}>
+          <h2
+            className="flex items-center gap-2.5 text-xl font-semibold tracking-tight"
+            id={`${id}-title`}
+          >
             {title}
           </h2>
           <p className="max-w-prose">{intro}</p>

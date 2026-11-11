@@ -27,7 +27,6 @@ import {
 } from '@zapbots/ui/components/dialog';
 import { Input } from '@zapbots/ui/components/input';
 import { Label } from '@zapbots/ui/components/label';
-import { Tabs, TabsList, TabsTrigger } from '@zapbots/ui/components/tabs';
 import { Textarea } from '@zapbots/ui/components/textarea';
 import { cn } from '@zapbots/ui/lib/utils';
 
@@ -49,9 +48,6 @@ import {
 } from './shared';
 
 type Item = AgendaQuery['agenda'][number];
-
-/** How many days the list view shows from today. */
-const LIST_DAYS = 30;
 
 /** The 6 weeks of the month view, Sunday first. */
 function monthGrid(month: string): string[] {
@@ -257,12 +253,11 @@ export function CalendarPage() {
   const [params, setParams] = useSearchParams();
   const today = localToday();
   const month = params.get('m') ?? today.slice(0, 7);
-  const view = params.get('v') === 'list' ? 'list' : 'month';
   const [picked, setPicked] = useState(today);
   const [creating, setCreating] = useState<null | string>(null);
   const grid = monthGrid(month);
-  const from = view === 'list' ? today : grid[0]!;
-  const to = view === 'list' ? addDays(today, LIST_DAYS) : grid[grid.length - 1]!;
+  const from = grid[0]!;
+  const to = grid[grid.length - 1]!;
   const { data, error, loading } = useQuery(AgendaDocument, {
     fetchPolicy: 'cache-and-network',
     variables: { from, to },
@@ -306,168 +301,138 @@ export function CalendarPage() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <PageHeading subtitle={t('personal.calendar.subtitle')}>{t('nav.calendar')}</PageHeading>
         <div className="flex items-center gap-2">
-          <Tabs onValueChange={value => set({ v: value === 'list' ? 'list' : null })} value={view}>
-            <TabsList>
-              <TabsTrigger value="month">{t('personal.calendar.month')}</TabsTrigger>
-              <TabsTrigger value="list">{t('personal.calendar.list')}</TabsTrigger>
-            </TabsList>
-          </Tabs>
           <Button asChild variant="outline">
             <Link to="/personal/calendar/booking">
               <LinkIcon />
               {t('personal.booking.manage')}
             </Link>
           </Button>
-          <Button onClick={() => setCreating(view === 'month' ? picked : today)}>
+          <Button onClick={() => setCreating(picked)}>
             <PlusIcon />
             {t('personal.events.new')}
           </Button>
         </div>
       </div>
 
-      {view === 'month' ? (
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-          <Card className="gap-4 p-4 md:p-6">
-            <div className="flex items-center justify-between gap-2">
-              <h2 className="font-semibold capitalize">{monthTitle(month, language)}</h2>
-              <div className="flex items-center gap-1">
-                <Button
-                  onClick={() => {
-                    set({ m: null });
-                    setPicked(today);
-                  }}
-                  size="sm"
-                  variant="ghost"
-                >
-                  {t('personal.today')}
-                </Button>
-                <Button
-                  aria-label={t('personal.calendar.previous')}
-                  onClick={() => set({ m: nextMonth(month, -1) })}
-                  size="icon"
-                  variant="ghost"
-                >
-                  <ChevronLeftIcon />
-                </Button>
-                <Button
-                  aria-label={t('personal.calendar.next')}
-                  onClick={() => set({ m: nextMonth(month, 1) })}
-                  size="icon"
-                  variant="ghost"
-                >
-                  <ChevronRightIcon />
-                </Button>
-              </div>
-            </div>
-            <div className="grid grid-cols-7 text-center text-xs text-muted-foreground">
-              {weekdayNames(language).map(name => (
-                <span className="py-1 capitalize" key={name}>
-                  {name.replace('.', '')}
-                </span>
-              ))}
-            </div>
-            <div className="grid grid-cols-7 gap-px overflow-hidden rounded-xl border bg-border">
-              {grid.map(date => {
-                const dayItems = byDay.get(date) ?? [];
-                const outside = date.slice(0, 7) !== month;
-                return (
-                  <button
-                    aria-label={dayLabel(date, today)}
-                    aria-pressed={date === picked}
-                    className={cn(
-                      'flex min-h-14 flex-col gap-1 bg-card p-1.5 text-left hover:bg-muted/60 md:min-h-24',
-                      outside && 'bg-muted/40 text-muted-foreground',
-                      date === picked && 'ring-2 ring-primary ring-inset'
-                    )}
-                    key={date}
-                    onClick={() => setPicked(date)}
-                    onDoubleClick={() => setCreating(date)}
-                    type="button"
-                  >
-                    <span
-                      className={cn(
-                        'grid size-6 place-items-center rounded-full text-xs tabular-nums',
-                        date === today && 'bg-primary font-semibold text-primary-foreground'
-                      )}
-                    >
-                      {Number(date.slice(8))}
-                    </span>
-                    <span className="flex flex-wrap gap-1 md:hidden">
-                      {dayItems.slice(0, 4).map(item => (
-                        <span
-                          className={cn('size-1.5 rounded-full', KIND_DOT[item.kind])}
-                          key={`${item.kind}${item.id}`}
-                        />
-                      ))}
-                    </span>
-                    <span className="hidden flex-col gap-0.5 md:flex">
-                      {dayItems.slice(0, 3).map(item => (
-                        <span
-                          className="flex items-center gap-1 truncate text-[11px] leading-tight"
-                          key={`${item.kind}${item.id}`}
-                        >
-                          <span
-                            className={cn('size-1.5 shrink-0 rounded-full', KIND_DOT[item.kind])}
-                          />
-                          <span className={cn('truncate', item.done && 'line-through')}>
-                            {item.title}
-                          </span>
-                        </span>
-                      ))}
-                      {dayItems.length > 3 && (
-                        <span className="text-[11px] text-muted-foreground">
-                          {t('home.more', { count: String(dayItems.length - 3) })}
-                        </span>
-                      )}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </Card>
-          <Card className="gap-3">
-            <div className="flex items-center justify-between gap-2">
-              <h2 className="font-semibold first-letter:uppercase">{dayLabel(picked, today)}</h2>
-              <Button onClick={() => setCreating(picked)} size="sm" variant="ghost">
-                <PlusIcon />
-                {t('personal.events.short')}
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <Card className="gap-4 p-4 md:p-6">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="font-semibold capitalize">{monthTitle(month, language)}</h2>
+            <div className="flex items-center gap-1">
+              <Button
+                onClick={() => {
+                  set({ m: null });
+                  setPicked(today);
+                }}
+                size="sm"
+                variant="ghost"
+              >
+                {t('personal.today')}
+              </Button>
+              <Button
+                aria-label={t('personal.calendar.previous')}
+                onClick={() => set({ m: nextMonth(month, -1) })}
+                size="icon"
+                variant="ghost"
+              >
+                <ChevronLeftIcon />
+              </Button>
+              <Button
+                aria-label={t('personal.calendar.next')}
+                onClick={() => set({ m: nextMonth(month, 1) })}
+                size="icon"
+                variant="ghost"
+              >
+                <ChevronRightIcon />
               </Button>
             </div>
-            {pickedItems.length ? (
-              <ul className="flex flex-col">
-                {pickedItems.map(item => (
-                  <AgendaLine item={item} key={`${item.kind}${item.id}`} onOpen={openItem} />
-                ))}
-              </ul>
-            ) : (
-              <p className="text-sm text-muted-foreground">{t('personal.calendar.free')}</p>
-            )}
-            <Legend />
-          </Card>
-        </div>
-      ) : (
-        <Card className="gap-5">
-          {byDay.size === 0 ? (
-            <p className="py-6 text-center text-sm text-muted-foreground">
-              {t('personal.calendar.nothing')}
-            </p>
+          </div>
+          <div className="grid grid-cols-7 text-center text-xs text-muted-foreground">
+            {weekdayNames(language).map(name => (
+              <span className="py-1 capitalize" key={name}>
+                {name.replace('.', '')}
+              </span>
+            ))}
+          </div>
+          <div className="grid grid-cols-7 gap-px overflow-hidden rounded-xl border bg-border">
+            {grid.map(date => {
+              const dayItems = byDay.get(date) ?? [];
+              const outside = date.slice(0, 7) !== month;
+              return (
+                <button
+                  aria-label={dayLabel(date, today)}
+                  aria-pressed={date === picked}
+                  className={cn(
+                    'flex min-h-14 flex-col gap-1 bg-card p-1.5 text-left hover:bg-muted/60 md:min-h-24',
+                    outside && 'bg-muted/40 text-muted-foreground',
+                    date === picked && 'ring-2 ring-primary ring-inset'
+                  )}
+                  key={date}
+                  onClick={() => setPicked(date)}
+                  onDoubleClick={() => setCreating(date)}
+                  type="button"
+                >
+                  <span
+                    className={cn(
+                      'grid size-6 place-items-center rounded-full text-xs tabular-nums',
+                      date === today && 'bg-primary font-semibold text-primary-foreground'
+                    )}
+                  >
+                    {Number(date.slice(8))}
+                  </span>
+                  <span className="flex flex-wrap gap-1 md:hidden">
+                    {dayItems.slice(0, 4).map(item => (
+                      <span
+                        className={cn('size-1.5 rounded-full', KIND_DOT[item.kind])}
+                        key={`${item.kind}${item.id}`}
+                      />
+                    ))}
+                  </span>
+                  <span className="hidden flex-col gap-0.5 md:flex">
+                    {dayItems.slice(0, 3).map(item => (
+                      <span
+                        className="flex items-center gap-1 truncate text-[11px] leading-tight"
+                        key={`${item.kind}${item.id}`}
+                      >
+                        <span
+                          className={cn('size-1.5 shrink-0 rounded-full', KIND_DOT[item.kind])}
+                        />
+                        <span className={cn('truncate', item.done && 'line-through')}>
+                          {item.title}
+                        </span>
+                      </span>
+                    ))}
+                    {dayItems.length > 3 && (
+                      <span className="text-[11px] text-muted-foreground">
+                        {t('home.more', { count: String(dayItems.length - 3) })}
+                      </span>
+                    )}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </Card>
+        <Card className="gap-3">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="font-semibold first-letter:uppercase">{dayLabel(picked, today)}</h2>
+            <Button onClick={() => setCreating(picked)} size="sm" variant="ghost">
+              <PlusIcon />
+              {t('personal.events.short')}
+            </Button>
+          </div>
+          {pickedItems.length ? (
+            <ul className="flex flex-col">
+              {pickedItems.map(item => (
+                <AgendaLine item={item} key={`${item.kind}${item.id}`} onOpen={openItem} />
+              ))}
+            </ul>
           ) : (
-            [...byDay].map(([date, dayItems]) => (
-              <section className="flex flex-col gap-1" key={date}>
-                <h2 className="px-2 text-sm font-medium text-muted-foreground first-letter:uppercase">
-                  {dayLabel(date, today)}
-                </h2>
-                <ul className="flex flex-col">
-                  {dayItems.map(item => (
-                    <AgendaLine item={item} key={`${item.kind}${item.id}`} onOpen={openItem} />
-                  ))}
-                </ul>
-              </section>
-            ))
+            <p className="text-sm text-muted-foreground">{t('personal.calendar.free')}</p>
           )}
           <Legend />
         </Card>
-      )}
+      </div>
 
       {creating && (
         <EventDialog day={creating} onClose={() => setCreating(null)} onDelete={deleteEvent} />
@@ -495,9 +460,6 @@ function Legend() {
           {t(`personal.calendar.kind.${kind}`)}
         </span>
       ))}
-      <Link className="ml-auto text-primary hover:underline" to="/personal/tasks">
-        {t('nav.tasks')}
-      </Link>
     </div>
   );
 }

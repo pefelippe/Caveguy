@@ -13,14 +13,14 @@ interface CatalogEntry {
 }
 
 /**
- * Every Agente the Caveman offers (docs/adr/0035). The fixed ones have their name and personality
+ * Every Agente the Caveguy offers (docs/adr/0035, 0039). The fixed ones have their name and personality
  * here; a `CUSTOM` one takes its name and what it does from its row (`botName`, `botDescription`).
  */
 export const CATALOG: Record<BotKey, CatalogEntry> = {
   CUSTOM: {
     description: 'Um Agente criado pela pessoa, que faz o que ela escreveu.',
     name: 'Agente',
-    personality: 'Do jeito que a pessoa pediu, sempre na fala das cavernas.',
+    personality: 'Do jeito que a pessoa pediu, sempre simples e direto.',
   },
   FINANCE: CAISHEN,
   FITNESS: FITNESS_AGENT,

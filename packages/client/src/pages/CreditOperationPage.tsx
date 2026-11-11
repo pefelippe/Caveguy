@@ -56,7 +56,7 @@ export function CreditOperationPage() {
   const vsMarket = market ? operation.monthlyRate / market.monthlyRate - 1 : null;
 
   // Back to the section the Operation is listed in.
-  const section = `/caishen/fixed#${isFinancing(operation.modality) ? 'financing' : 'loans'}`;
+  const section = `/caishen/installments#${isFinancing(operation.modality) ? 'financing' : 'loans'}`;
   const sectionLabel = 'Gastos';
 
   const onDelete = async () => {
@@ -69,7 +69,9 @@ export function CreditOperationPage() {
       <div>
         <BackLink to={section}>{sectionLabel}</BackLink>
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h1>{operation.name}</h1>
+          <h1 className="font-sans text-2xl font-semibold tracking-tight normal-case">
+            {operation.name}
+          </h1>
           <Button onClick={() => setEditing(true)} variant="outline">
             <PencilIcon />
             Editar

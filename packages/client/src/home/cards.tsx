@@ -190,7 +190,7 @@ function MonthCard() {
           </h2>
           <Link
             className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
-            to="/caishen/entries"
+            to="/caishen"
           >
             {t('home.month.open')}
             <ArrowRightIcon className="size-3.5" />
@@ -236,7 +236,7 @@ function DuesCard() {
 
 /**
  * Finanças at a glance: what is left (or missing) this month in large type, what came in and went
- * out under it, and the next three dues. The whole picture is on Lançamentos.
+ * out under it (the dues are their own card beside it). The whole picture is on Financeiro.
  */
 function FinanceCard() {
   const { language, t } = useI18n();
@@ -245,15 +245,13 @@ function FinanceCard() {
     fetchPolicy: 'cache-and-network',
     variables: { month },
   });
-  const { data: dues } = useQuery(HomeDuesDocument, { fetchPolicy: 'cache-and-network' });
   const figures = data?.viewerHolder.month;
-  const next = dues?.viewerHolder.upcomingDues.slice(0, 3) ?? [];
   const name = new Date(`${month}-15T12:00:00`).toLocaleDateString(
     language === 'pt' ? 'pt-BR' : 'en-US',
     { month: 'long' }
   );
   return (
-    <Panel link={{ label: t('home.month.open'), to: '/caishen/entries' }} title={t('home.finance')}>
+    <Panel link={{ label: t('home.month.open'), to: '/caishen' }} title={t('home.finance')}>
       {!figures ? (
         <Lines count={3} />
       ) : (
@@ -277,19 +275,6 @@ function FinanceCard() {
             {formatCents(figures.commitmentsCents + figures.expensesCents)}
           </span>
         </div>
-      )}
-      {next.length > 0 && (
-        <ul className="flex flex-col gap-2 border-t pt-4">
-          {next.map(due => (
-            <li className="flex items-center gap-3 text-sm" key={`${due.label}-${due.dueDate}`}>
-              <span className="w-11 shrink-0 text-muted-foreground tabular-nums">
-                {formatDate(due.dueDate).slice(0, 5)}
-              </span>
-              <span className="min-w-0 flex-1 truncate">{due.label}</span>
-              <span className="tabular-nums">{formatCents(due.amountCents)}</span>
-            </li>
-          ))}
-        </ul>
       )}
     </Panel>
   );

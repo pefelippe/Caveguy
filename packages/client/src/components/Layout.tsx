@@ -7,9 +7,10 @@ import { TooltipProvider } from '@zapbots/ui/components/tooltip';
 import { cn } from '@zapbots/ui/lib/utils';
 
 import { refreshOnReturn } from '../lib/apollo';
-import { isRailPath } from '../lib/nav';
 import { useOrganizationReload } from '../lib/organizations';
-import { AgentButton, AppHeader } from './AppHeader';
+import { useDeliverAlerts } from './Alerts';
+import { AlertPreview } from './AlertPreview';
+import { AddButton, AppHeader } from './AppHeader';
 import { AppSidebar } from './AppSidebar';
 import { ChatPanel, ChatPanelProvider } from './ChatPanel';
 import { ChatRepliesProvider } from './ChatReplies';
@@ -25,7 +26,8 @@ interface Props {
 const MENU_KEY = 'zapbots.menu.open';
 
 /** A page's margins, as in Mercado Pago's: centered, at most 1420px wide, under the header. */
-const PAGE = 'mx-auto w-full max-w-[1420px] px-4 pt-4 pb-24 sm:px-6 md:px-10 md:pt-6 xl:px-16';
+export const PAGE =
+  'mx-auto w-full max-w-[1420px] px-4 pt-4 pb-24 sm:px-6 md:px-10 md:pt-6 xl:px-16';
 
 function storedMenuOpen(): boolean {
   try {
@@ -39,19 +41,14 @@ function storedMenuOpen(): boolean {
  * The app, after Mercado Pago's: all white, the menu down the left the full height (the mark and
  * the button that collapses it on top), and beside it the header and the open screen, with the chat
  * floating over its bottom right corner when open. On a phone the menu is a bar of tabs along the
- * bottom (`MobileNav`). This browser remembers whether the menu was collapsed; a screen with a
- * column of its own (`isRailPath`) collapses it while open.
+ * bottom (`MobileNav`). This browser remembers whether the menu was collapsed;
+ * the Conversations live in the menu, so it stays as the User left it on every screen.
  */
 export function Layout({ user }: Props) {
-  const { pathname } = useLocation();
-  const rail = isRailPath(pathname);
-  const [open, setOpen] = useState(() => !rail && storedMenuOpen());
-
-  useEffect(() => {
-    setOpen(!rail && storedMenuOpen());
-  }, [rail]);
+  const [open, setOpen] = useState(storedMenuOpen);
 
   useEffect(refreshOnReturn, []);
+  useDeliverAlerts();
   // Another tab switched Organization: this one follows (docs/adr/0038).
   useOrganizationReload();
 
@@ -84,7 +81,10 @@ export function Layout({ user }: Props) {
               }
             >
               <CommandMenu>
-                <AppSidebar />
+                {/* The menu down the left, the full height; on a phone the tabs along the bottom. */}
+                <div className="contents print:hidden">
+                  <AppSidebar user={user} />
+                </div>
                 {/* The header over the screen only; the menu runs the full height beside them. */}
                 <div className="flex min-w-0 flex-1 flex-col overflow-hidden print:overflow-visible">
                   <AppHeader user={user} />
@@ -100,11 +100,13 @@ export function Layout({ user }: Props) {
                     >
                       <Outlet />
                     </Suspense>
+                    {/* Centred over the screen, not the window: the menu takes the left. */}
+                    <AddButton />
                   </main>
                   <MobileNav />
                 </div>
                 <div className="contents print:hidden">
-                  <AgentButton />
+                  <AlertPreview />
                   <ChatPanel greeting={user.name.split(' ')[0]} />
                 </div>
               </CommandMenu>

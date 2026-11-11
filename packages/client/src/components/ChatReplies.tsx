@@ -45,8 +45,17 @@ interface SendOptions {
   screen: string;
 }
 
+/** The last reply that ended, until someone sees it: the chat button's preview and count. */
+export interface FinishedReply {
+  conversationId: string;
+  text: string;
+}
+
 interface ChatReplies {
+  /** Forgets the finished reply (it was seen, or the chat was open). */
+  clearFinished: () => void;
   error: (conversationId: string | null) => string | null;
+  finished: FinishedReply | null;
   pending: (conversationId: string | null) => PendingReply | null;
   queued: (conversationId: string | null) => QueuedMessage[];
   /** Sends a Message, or queues it while a reply is still being written. */
@@ -79,6 +88,7 @@ export function ChatRepliesProvider({ children }: { children: ReactNode }) {
   const [pending, setPending] = useState<Record<string, PendingReply>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [queues, setQueues] = useState<Record<string, QueuedMessage[]>>({});
+  const [finished, setFinished] = useState<FinishedReply | null>(null);
   // The same, read outside of rendering, so two sends at once cannot both start a reply.
   const busy = useRef(new Set<string>());
   const waiting = useRef<Record<string, QueuedMessage[]>>({});
@@ -130,6 +140,7 @@ export function ChatRepliesProvider({ children }: { children: ReactNode }) {
       busy.current.add(id);
       setError(id, null);
       setPending(current => ({ ...current, [id]: pendingFor(options) }));
+      let written = '';
       try {
         await streamChat({
           attachments,
@@ -137,6 +148,7 @@ export function ChatRepliesProvider({ children }: { children: ReactNode }) {
           conversationId: id,
           onEvent: event => {
             if (event.type === 'delta') {
+              written += event.text;
               setPending(current =>
                 current[id]
                   ? { ...current, [id]: { ...current[id], text: current[id].text + event.text } }
@@ -155,6 +167,7 @@ export function ChatRepliesProvider({ children }: { children: ReactNode }) {
         });
         // The list of Conversations shows the latest Message; bring it up to date.
         await apollo.refetchQueries({ include: [ConversationsDocument] });
+        if (written.trim()) setFinished({ conversationId: id, text: written });
       } catch {
         setError(id, 'Não foi possível falar com o Agente.');
       }
@@ -201,7 +214,9 @@ export function ChatRepliesProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<ChatReplies>(
     () => ({
+      clearFinished: () => setFinished(null),
       error: id => (id && errors[id]) || null,
+      finished,
       pending: id => (id && pending[id]) || null,
       queued: id => (id && queues[id]) || NO_QUEUE,
       send,
@@ -210,7 +225,7 @@ export function ChatRepliesProvider({ children }: { children: ReactNode }) {
       stop,
       unqueue,
     }),
-    [errors, pending, queues, send, sendQueued, setError, stop, unqueue]
+    [errors, finished, pending, queues, send, sendQueued, setError, stop, unqueue]
   );
 
   return <ChatRepliesContext.Provider value={value}>{children}</ChatRepliesContext.Provider>;

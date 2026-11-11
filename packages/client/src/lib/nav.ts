@@ -1,18 +1,18 @@
 import {
-  CalendarIcon,
-  DumbbellIcon,
-  ListTodoIcon,
+  ArrowDownLeftIcon,
+  ArrowLeftRightIcon,
+  BarChart3Icon,
+  CalendarSyncIcon,
   CreditCardIcon,
-  FlagIcon,
-  HouseIcon,
-  LandmarkIcon,
+  LayersIcon,
+  LayoutDashboardIcon,
+  MessageSquarePlusIcon,
   PlugIcon,
-  RepeatIcon,
+  ReceiptIcon,
   SettingsIcon,
-  SheetIcon,
+  TagsIcon,
   UserIcon,
   WalletIcon,
-  WorkflowIcon,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -27,6 +27,8 @@ import { useI18n } from './i18n';
 export const DOCUMENTS_ENABLED = import.meta.env.DEV;
 
 export interface NavItem {
+  /** Paints its icon in another area's colour than its group's. */
+  area?: NavGroup['area'];
   icon: LucideIcon;
   label: string;
   /** Other paths that belong to this item, e.g. an Operation's page to Dívidas. */
@@ -48,65 +50,55 @@ export interface NavGroup {
 export interface Nav {
   /** The account's screens: in the avatar's menu, not on the left; the phone's Mais lists them. */
   account: NavItem[];
-  /** The screens used most, always at the top of the menu. */
+  /** The menu on the left: Fale com o Caveguy, Agentes and Finanças. */
   main: NavItem[];
+  /** Finanças' tabs (`FinanceTabs`), also in the command menu and the phone's Mais. */
   groups: NavGroup[];
 }
 
 /**
- * Every screen of the app as the menu on the left lists them: the main ones on top (Página inicial,
- * Agente, Documentos, Workflows, Integrações), then Finanças, Pessoal and
- * Fitness. The account's (Perfil, Plano,
- * Configurações) are in the avatar's menu instead.
+ * Every screen of the app. The menu on the left lists only `main`, the Conversations under it;
+ * Finanças' screens are the tabs atop it (`groups`), and the account's are in the avatar's menu.
  */
 export function useNav(): Nav {
   const { t } = useI18n();
   return {
     groups: [
       {
-        // The Financeiro's own screen, then the rest of Finanças.
-        items: [
-          { icon: LandmarkIcon, label: t('nav.money'), to: '/caishen' },
-          { icon: SheetIcon, label: t('nav.entries'), to: '/caishen/entries' },
-          { icon: WalletIcon, label: t('nav.income'), to: '/caishen/income' },
-          {
-            icon: RepeatIcon,
-            label: t('nav.fixed'),
-            owns: ['/caishen/operations'],
-            to: '/caishen/fixed',
-          },
-          { icon: FlagIcon, label: t('nav.payoff'), to: '/caishen/payoff' },
-        ],
         area: 'finance',
-        key: 'finances',
-        label: t('nav.finances'),
-      },
-      {
         items: [
-          { icon: CalendarIcon, label: t('nav.calendar'), to: '/personal/calendar' },
-          { icon: ListTodoIcon, label: t('nav.tasks'), to: '/personal/tasks' },
+          { icon: LayoutDashboardIcon, label: t('finance.overview'), to: '/caishen' },
+          { icon: ArrowLeftRightIcon, label: t('finance.transactions'), to: '/caishen/entries' },
+          {
+            icon: LayersIcon,
+            label: t('finance.installments'),
+            owns: ['/caishen/debts', '/caishen/operations', '/caishen/payoff'],
+            to: '/caishen/installments',
+          },
+          {
+            icon: CalendarSyncIcon,
+            label: t('finance.subscriptions'),
+            to: '/caishen/subscriptions',
+          },
+          { icon: TagsIcon, label: t('finance.categories'), to: '/caishen/categories' },
+          { icon: CreditCardIcon, label: t('finance.cards'), to: '/caishen/cards' },
+          { icon: ArrowDownLeftIcon, label: t('nav.income'), to: '/caishen/income' },
+          { icon: ReceiptIcon, label: t('finance.fixed'), to: '/caishen/fixed' },
         ],
-        area: 'personal',
-        key: 'personal',
-        label: t('nav.personal'),
-      },
-      {
-        items: [{ icon: DumbbellIcon, label: t('nav.workouts'), to: '/fitness/workouts' }],
-        area: 'fitness',
-        key: 'fitness',
-        label: t('nav.fitness'),
+        key: 'finance',
+        label: t('nav.finances'),
       },
     ],
     account: [
       { icon: UserIcon, label: t('nav.profile'), to: '/profile' },
-      { icon: CreditCardIcon, label: t('rail.plan'), to: '/plan' },
+      { icon: PlugIcon, label: t('nav.integrations'), to: '/integrations' },
+      { icon: WalletIcon, label: t('rail.plan'), to: '/plan' },
       { icon: SettingsIcon, label: t('nav.settings'), to: '/settings' },
     ],
     main: [
-      { icon: HouseIcon, label: t('nav.home'), to: '/' },
-      { icon: AgentIcon, label: t('nav.agent'), to: '/chat' },
-      { icon: WorkflowIcon, label: t('nav.workflows'), to: '/workflows' },
-      { icon: PlugIcon, label: t('nav.integrations'), to: '/integrations' },
+      { icon: MessageSquarePlusIcon, label: t('nav.talk'), to: '/chat' },
+      { icon: AgentIcon, label: t('nav.agents'), to: '/workflows' },
+      { icon: BarChart3Icon, label: t('nav.finances'), to: '/caishen' },
     ],
   };
 }
@@ -127,12 +119,4 @@ export function activeItem(items: NavItem[], pathname: string): NavItem | undefi
     }
   }
   return best?.item;
-}
-
-/** Screens with a column of their own beside the menu (the Agente's Conversations): opening one
- * shrinks the menu to its icons. */
-const RAIL_PATHS = ['/chat'];
-
-export function isRailPath(pathname: string): boolean {
-  return RAIL_PATHS.includes(pathname);
 }

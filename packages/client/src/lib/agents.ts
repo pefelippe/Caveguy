@@ -1,4 +1,4 @@
-import { MASCOT_NAME } from '@zapbots/finance';
+import { APP_NAME } from '@zapbots/finance';
 import { useQuery } from '@apollo/client/react';
 import { AgentsDocument, type BotFieldsFragment, type BotKey } from '@zapbots/graphql/client';
 import {
@@ -65,18 +65,18 @@ export function outfitOf(bot: Pick<BotFieldsFragment, 'key' | 'outfit'>): Cavema
   return bot.key === 'CUSTOM' ? (bot.outfit ?? 'EXPLORER') : bot.key;
 }
 
-/** Brutus's greeting while a Conversation is blank, the Hulk's way (docs/adr/0035). */
+/** The greeting while a Conversation is blank: the one place the app keeps the caveman's short talk (docs/adr/0039). */
 export function greetingOf(key: BotKey, name?: string): string {
   const who = name ? `${name}! ` : '';
   switch (key) {
     case 'FINANCE':
-      return `${who}${MASCOT_NAME} cuida dinheiro.`;
+      return `${who}${APP_NAME} cuida dinheiro.`;
     case 'PERSONAL':
-      return `${who}${MASCOT_NAME} lembra agenda.`;
+      return `${who}${APP_NAME} lembra agenda.`;
     case 'FITNESS':
-      return `${who}${MASCOT_NAME} treina junto.`;
+      return `${who}${APP_NAME} treina junto.`;
     case 'CUSTOM':
-      return `${who}${MASCOT_NAME} escuta.`;
+      return `${who}${APP_NAME} escuta.`;
   }
 }
 

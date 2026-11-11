@@ -1,4 +1,4 @@
-import { MASCOT_NAME } from '@zapbots/finance';
+import { APP_NAME } from '@zapbots/finance';
 import { closeDb, db, schema } from '@zapbots/database';
 import { eq } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
@@ -78,7 +78,7 @@ describe('Modelos de outros provedores', () => {
     expect(log).toHaveLength(1);
     expect(log[0]!.apiKey).toBe('test-anthropic-key');
     expect(log[0]!.body.model).toBe('claude-haiku-5-5');
-    expect(JSON.stringify(log[0]!.body.system)).toContain(`Você é o ${MASCOT_NAME}`);
+    expect(JSON.stringify(log[0]!.body.system)).toContain(`Você é o ${APP_NAME}`);
     expect(log[0]!.body.tools?.map(tool => tool.name)).toContain('period_summary');
     expect(done).toEqual(['Olá! Como estão as contas?']);
   });

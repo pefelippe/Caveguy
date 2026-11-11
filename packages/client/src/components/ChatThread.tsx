@@ -1,4 +1,4 @@
-import { MASCOT_NAME } from '@zapbots/finance';
+import { APP_NAME } from '@zapbots/finance';
 import { useQuery } from '@apollo/client/react';
 import {
   ConversationDocument,
@@ -53,6 +53,8 @@ import {
 } from '../lib/attachments';
 import { BotGlyph } from './BotGlyph';
 import { useChatReplies, type PendingReply } from './ChatReplies';
+import { AlertDigest } from './AlertDigest';
+import { useAlertsInbox } from './Alerts';
 import { ChatText } from './ChatText';
 import { FormError } from './FormError';
 import { ProposalCard } from './ProposalCard';
@@ -100,6 +102,14 @@ export function ChatThread({
   variant = 'panel',
 }: Props) {
   const location = useLocation();
+  const { conversationId: inbox } = useAlertsInbox();
+  // The Bot's daily Avisos open with a greeting and list them; its replies there are plain text.
+  const isDigest = (message: { content: string; role: string }) =>
+    conversationId !== null &&
+    conversationId === inbox &&
+    message.role === 'BOT' &&
+    message.content.includes('\n- ') &&
+    message.content.startsWith('Oi');
   const replies = useChatReplies();
   const [draft, setDraft] = useState('');
   // The input holds the last Message, to answer it again once edited.
@@ -295,11 +305,11 @@ export function ChatThread({
         {empty &&
           !page && (
             // The mark, the greeting and the suggestions as one block in the middle of the panel.
-            <div className="flex flex-1 flex-col justify-center gap-6 py-6">
+            <div className="my-auto flex flex-col gap-6 py-6">
               <div className="flex flex-col items-center gap-3 text-center">
                 <BotGlyph bot={bot.key} mood="happy" outfit={bot.outfit} size={88} />
                 <p className="text-2xl leading-tight font-semibold tracking-tight text-balance">
-                  {greeting ?? `${MASCOT_NAME} escuta.`}
+                  {greeting ?? `${APP_NAME} escuta.`}
                 </p>
               </div>
               {suggestions.length > 0 && (
@@ -321,39 +331,44 @@ export function ChatThread({
               )}
             </div>
           )}
-        {empty && page && (
-          <div className="flex flex-1 flex-col justify-center gap-8 py-6">
-            <div className="flex flex-col items-center gap-2 text-center">
-              <BotGlyph
-                bot={bot.key}
-                className="mb-3"
-                mood="happy"
-                outfit={bot.outfit}
-                size={112}
-              />
-              <p className="text-3xl font-semibold tracking-tight text-balance">
-                {greeting ?? `${MASCOT_NAME} escuta.`}
-              </p>
-              <p className="text-base text-muted-foreground">{bot.description}</p>
+        {empty &&
+          page && (
+            // my-auto, not justify-center: on a short screen (a 13" laptop) the block scrolls instead of
+            // losing its top behind the overflow.
+            <div className="my-auto flex flex-col gap-8 py-6 [@media(max-height:760px)]:gap-5 [@media(max-height:760px)]:py-2">
+              <div className="flex flex-col items-center gap-2 text-center">
+                <BotGlyph
+                  bot={bot.key}
+                  className="mb-3 [@media(max-height:760px)]:hidden"
+                  mood="happy"
+                  outfit={bot.outfit}
+                  size={112}
+                />
+                <p className="text-2xl font-semibold tracking-tight text-balance md:text-3xl">
+                  {greeting ?? `${APP_NAME} escuta.`}
+                </p>
+                <p className="text-base text-balance text-muted-foreground [@media(max-height:860px)]:hidden">
+                  {bot.description}
+                </p>
+              </div>
+              <ul className="grid gap-3 sm:grid-cols-2">
+                {suggestions.map(suggestion => (
+                  <li key={suggestion.text}>
+                    <Button
+                      className="h-full min-h-20 w-full items-start [@media(max-height:760px)]:min-h-0 [@media(max-height:760px)]:py-3 justify-start gap-3 rounded-2xl border bg-card p-4 text-left text-[0.9375rem] font-normal whitespace-normal text-foreground hover:bg-foreground/5"
+                      onClick={() => fill(suggestion.text)}
+                      variant="ghost"
+                    >
+                      <span className="grid size-8 shrink-0 place-items-center rounded-full bg-foreground/5 text-foreground">
+                        <suggestion.icon className="size-4" />
+                      </span>
+                      <span className="pt-1 leading-snug">{suggestion.text}</span>
+                    </Button>
+                  </li>
+                ))}
+              </ul>
             </div>
-            <ul className="grid gap-3 sm:grid-cols-2">
-              {suggestions.map(suggestion => (
-                <li key={suggestion.text}>
-                  <Button
-                    className="h-full min-h-20 w-full items-start justify-start gap-3 rounded-2xl border bg-card p-4 text-left text-[0.9375rem] font-normal whitespace-normal text-foreground hover:bg-foreground/5"
-                    onClick={() => fill(suggestion.text)}
-                    variant="ghost"
-                  >
-                    <span className="grid size-8 shrink-0 place-items-center rounded-full bg-foreground/5 text-foreground">
-                      <suggestion.icon className="size-4" />
-                    </span>
-                    <span className="pt-1 leading-snug">{suggestion.text}</span>
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+          )}
         {messages.map((message, index) => {
           // Only the last exchange can be answered again; never while the Bot is writing.
           const last = index === messages.length - 1 && !replying;
@@ -362,9 +377,10 @@ export function ChatThread({
             <Fragment key={message.id}>
               <Bubble
                 bot={bot}
+                digest={isDigest(message)}
                 message={message}
                 onEdit={lastUser && !editing ? () => edit(message) : undefined}
-                onRetry={last && message.role === 'BOT' ? retry : undefined}
+                onRetry={last && message.role === 'BOT' && !isDigest(message) ? retry : undefined}
                 saved
               />
               {message.proposals.map(proposal => (
@@ -499,38 +515,36 @@ export function ChatThread({
         </div>
       ) : (
         <>
-          {/* After Mercado Pago's: one rounded line, the + on the left and sending on the right. */}
+          {/* After Intercom's: a rounded box, the text on top, the + and sending on a row under it. */}
           <form
-            className="mt-4 flex shrink-0 flex-col gap-2 rounded-[28px] border bg-card p-2 transition-colors focus-within:border-foreground/30"
+            className="mt-4 flex shrink-0 flex-col gap-1 rounded-2xl border bg-card p-2 transition-colors focus-within:border-foreground/30"
             onSubmit={onSubmit}
           >
             <Waiting files={files} onRemove={remove} />
-            <div className="flex items-end gap-1">
+            <Textarea
+              aria-label={`Mensagem para ${bot.name}`}
+              data-chat-input
+              className="max-h-40 min-h-10 resize-none border-0 bg-transparent px-2 py-1.5 text-base shadow-none focus-visible:ring-0 md:text-[0.9375rem] dark:bg-transparent"
+              disabled={Boolean(unavailable)}
+              onChange={event => setDraft(event.target.value)}
+              onKeyDown={onKeyDown}
+              onPaste={onPaste}
+              placeholder="Faça uma pergunta…"
+              ref={input}
+              rows={1}
+              value={draft}
+            />
+            <div className="flex items-center justify-between gap-1">
               <AttachMenu
                 disabled={Boolean(unavailable) || files.length >= MAX_ATTACHMENTS}
                 onPick={() => picker.current?.click()}
               />
-              <Textarea
-                aria-label={`Mensagem para ${bot.name}`}
-                data-chat-input
-                className="max-h-40 min-h-10 flex-1 resize-none border-0 bg-transparent px-2 py-2 text-base shadow-none focus-visible:ring-0 md:text-[0.9375rem] dark:bg-transparent"
-                disabled={Boolean(unavailable)}
-                onChange={event => setDraft(event.target.value)}
-                onKeyDown={onKeyDown}
-                onPaste={onPaste}
-                placeholder={
-                  bot.key === 'FINANCE' ? 'Pergunte ou conte um gasto…' : `Fale com ${bot.name}…`
-                }
-                ref={input}
-                rows={1}
-                value={draft}
-              />
               {replying ? (
-                <StopButton className="size-10 shrink-0 rounded-full" onStop={stop} />
+                <StopButton className="size-9 shrink-0 rounded-full" onStop={stop} />
               ) : (
                 <Button
                   aria-label="Enviar"
-                  className={cn(SEND, 'shrink-0 transition-transform active:scale-95')}
+                  className={cn(SEND, 'size-9 shrink-0 transition-transform active:scale-95')}
                   disabled={!canSend}
                   size="icon"
                   type="submit"
@@ -679,13 +693,16 @@ export function AttachMenu({
 
 interface BubbleProps {
   bot: BotFieldsFragment;
-  message: Pick<MessageFieldsFragment, 'attachments' | 'content' | 'role'>;
+  message: Pick<MessageFieldsFragment, 'attachments' | 'content' | 'role'> &
+    Partial<Pick<MessageFieldsFragment, 'createdAt'>>;
   /** Editar, on the User's last Message. */
   onEdit?: () => void;
   /** Tentar de novo, on the Bot's last reply. */
   onRetry?: () => void;
   /** Saved Messages can be copied; the exchange still being written cannot. */
   saved?: boolean;
+  /** A daily Avisos Message (the Avisos Conversation's Bot Messages that are not replies). */
+  digest?: boolean;
 }
 
 /** A small action under a Message, shown on hover (always on a touch screen). */
@@ -754,8 +771,8 @@ function Typing() {
   );
 }
 
-/** The User's Messages sit right in a blue bubble; the Bot's are plain text beside its glyph. */
-function Bubble({ bot, message, onEdit, onRetry, saved }: BubbleProps) {
+/** The User's Messages sit right in an ink bubble; the Bot's left in a grey one, with who and when under it. */
+function Bubble({ bot, digest, message, onEdit, onRetry, saved }: BubbleProps) {
   const copyable = saved && Boolean(message.content);
   if (message.role === 'USER') {
     return (
@@ -782,19 +799,40 @@ function Bubble({ bot, message, onEdit, onRetry, saved }: BubbleProps) {
     );
   }
   return (
-    <div className="group flex gap-3">
-      <BotGlyph bot={bot.key} className="mt-0.5 shrink-0" outfit={bot.outfit} size={28} />
-      <div className="min-w-0 flex-1">
-        {message.content ? <ChatText text={message.content} /> : <Typing />}
-        {(copyable || onRetry) && (
-          <div className="mt-1 -ml-1.5 flex">
-            {copyable && <CopyButton text={message.content} />}
-            {onRetry && (
-              <MessageAction icon={RotateCcwIcon} label="Tentar de novo" onClick={onRetry} />
-            )}
-          </div>
-        )}
-      </div>
+    <div className="group flex max-w-[85%] flex-col items-start gap-1.5 self-start">
+      {!message.content ? (
+        <div className="rounded-2xl rounded-bl-md bg-muted px-4 py-2.5">
+          <Typing />
+        </div>
+      ) : digest ? (
+        <AlertDigest text={message.content} />
+      ) : (
+        <div className="min-w-0 rounded-2xl rounded-bl-md bg-muted px-4 py-2.5">
+          <ChatText text={message.content} />
+        </div>
+      )}
+      {message.content && (
+        <div className="flex items-center gap-1 pl-1 text-xs text-muted-foreground">
+          <span>
+            {bot.name} · Agente de IA · {sentAt(message.createdAt)}
+          </span>
+          {copyable && <CopyButton text={message.content} />}
+          {onRetry && (
+            <MessageAction icon={RotateCcwIcon} label="Tentar de novo" onClick={onRetry} />
+          )}
+        </div>
+      )}
     </div>
   );
+}
+
+/** "agora" within a minute, the hour today, the day and hour before. */
+function sentAt(iso: null | string | undefined) {
+  if (!iso) return 'agora';
+  const at = new Date(iso);
+  if (Date.now() - at.getTime() < 60_000) return 'agora';
+  const hour = at.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  return at.toDateString() === new Date().toDateString()
+    ? hour
+    : `${at.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} ${hour}`;
 }

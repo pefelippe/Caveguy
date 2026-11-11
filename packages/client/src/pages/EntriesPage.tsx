@@ -262,8 +262,8 @@ function entriesOf(statement: Statement): Entry[] {
             : line.kind === 'RECURRING'
               ? '/caishen/fixed#recurring'
               : line.kind === 'STATEMENT'
-                ? '/caishen/fixed#cards'
-                : '/caishen/fixed#loans',
+                ? '/caishen/cards'
+                : '/caishen/installments#loans',
     })),
     ...statement.onCard.map(line => ({
       amountCents: line.amountCents,
@@ -271,7 +271,10 @@ function entriesOf(statement: Statement): Entry[] {
       date: line.date,
       description: line.label,
       direction: 'OUT' as const,
-      informative: { label: 'No cartão', reason: 'Já contado na Fatura do cartão' },
+      informative: {
+        label: 'No cartão',
+        reason: 'Já contado na Fatura do cartão',
+      },
       owner: line.id ? { id: line.id, kind: 'RECURRING_EXPENSE' as const } : null,
       removable: null,
       source: 'No cartão',
@@ -311,10 +314,18 @@ function entriesOf(statement: Statement): Entry[] {
 type Filter = 'ALL' | 'IN' | 'OUT';
 
 /** "Sábado". */
+/** A line's source and category, the category left out when it only repeats the source
+ * ("Salário · Salário", "Recorrente · Recorrentes"). */
+function sourceAndCategory(source: string, category: string | null | undefined) {
+  const plain = (text: string) => text.toLowerCase().replace(/s$/, '');
+  return !category || plain(category) === plain(source) ? source : `${source} · ${category}`;
+}
+
 function weekday(iso: string) {
-  const name = new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC', weekday: 'long' }).format(
-    new Date(`${iso.slice(0, 10)}T00:00:00Z`)
-  );
+  const name = new Intl.DateTimeFormat('pt-BR', {
+    timeZone: 'UTC',
+    weekday: 'long',
+  }).format(new Date(`${iso.slice(0, 10)}T00:00:00Z`));
   return name[0]!.toUpperCase() + name.slice(1);
 }
 
@@ -370,7 +381,7 @@ function CategoryCard({
         </p>
         <p className="text-sm text-muted-foreground">{note}</p>
       </div>
-      <ul className="flex flex-col gap-4 border-t px-6 py-5">
+      <ul className="flex flex-col gap-4 px-6 pb-5">
         {rows.map(row => {
           const share = total ? Math.round((row.amountCents / total) * 100) : 0;
           return (
@@ -382,7 +393,9 @@ function CategoryCard({
               <div className="mt-1.5 h-1.5 rounded-full bg-muted">
                 <div
                   className="h-full min-w-1 rounded-full bg-primary"
-                  style={{ width: `${largest ? (row.amountCents / largest) * 100 : 0}%` }}
+                  style={{
+                    width: `${largest ? (row.amountCents / largest) * 100 : 0}%`,
+                  }}
                 />
               </div>
             </li>
@@ -400,6 +413,7 @@ function CategoryCard({
  * up by themselves (from Gastos); Receitas avulsas and Gastos are typed in here, or imported from a
  * file. It filters, totals, and exports as CSV or PDF.
  */
+/** Transações (once Fluxo de caixa): the period's lines, a pill of Finanças. */
 export function EntriesPage() {
   const [params, setParams] = useSearchParams();
   const { from, month, preset, to } = periodOf(params);
@@ -540,28 +554,34 @@ export function EntriesPage() {
     </>
   );
 
+  const actions = (
+    <div className="flex flex-col gap-3 @3xl:ml-auto print:hidden">
+      <div className="flex flex-wrap gap-2 sm:justify-end">
+        <ImportButton
+          holderId={holderId}
+          onError={setReadError}
+          owner={viewer.data?.viewerHolder.name ?? ''}
+        />
+        <Export file={file} statement={statement} />
+        <AddEntryButton direction="IN" month={isMonth ? month : undefined} />
+        <AddEntryButton direction="OUT" month={isMonth ? month : undefined} />
+      </div>
+      {readError && <FormError message={readError} />}
+    </div>
+  );
+
   return (
     // Laid out by the panel's own width (`@container`), which the menu and the chat both narrow.
     <div className="@container flex flex-col gap-6" data-bot="FINANCE">
       <header className="flex flex-wrap items-end gap-x-4 gap-y-3">
         <div className="min-w-0">
-          <h1>Fluxo de caixa</h1>
+          <h1>Transações</h1>
           <p className="mt-1 text-muted-foreground">
             Despesas, receitas e movimentações das suas contas.
           </p>
         </div>
-        <div className="flex flex-wrap gap-2 @3xl:ml-auto print:hidden">
-          <ImportButton
-            holderId={holderId}
-            onError={setReadError}
-            owner={viewer.data?.viewerHolder.name ?? ''}
-          />
-          <Export file={file} statement={statement} />
-          <AddEntryButton direction="IN" month={isMonth ? month : undefined} />
-          <AddEntryButton direction="OUT" month={isMonth ? month : undefined} />
-        </div>
+        {actions}
       </header>
-      {readError && <FormError message={readError} />}
 
       {body}
     </div>
@@ -860,7 +880,7 @@ function Ledger({ head, statement }: { head: ReactNode; statement: Statement }) 
 
   return (
     <Card aria-label="Fluxo de caixa" className="gap-0 overflow-hidden p-0" id="entries">
-      <div className="flex flex-wrap items-center gap-3 border-b px-4 py-4 md:px-6">
+      <div className="flex flex-wrap items-center gap-3 px-4 py-4 md:px-6">
         {head}
         <p className="ml-auto flex items-center gap-4 text-sm font-medium tabular-nums">
           <span className="flex items-center gap-1 text-success" title="Entradas do período">
@@ -928,7 +948,7 @@ function Ledger({ head, statement }: { head: ReactNode; statement: Statement }) 
 
       {/* The whole period is in the totals above; here only what a filter leaves. */}
       {filtered && shown.length > 0 && (
-        <p className="border-b px-4 py-2 text-sm text-muted-foreground tabular-nums md:px-6">
+        <p className="px-4 py-2 text-sm text-muted-foreground tabular-nums md:px-6">
           {shown.length} {shown.length === 1 ? 'lançamento' : 'lançamentos'} ·{' '}
           <strong
             className={cn('font-semibold', shownTotal < 0 ? 'text-destructive' : 'text-foreground')}
@@ -939,7 +959,7 @@ function Ledger({ head, statement }: { head: ReactNode; statement: Statement }) 
       )}
 
       {selected.size > 0 && (
-        <div className="flex items-center gap-3 border-b bg-accent px-4 py-2 md:px-6 print:hidden">
+        <div className="flex items-center gap-3 bg-accent px-4 py-2 md:px-6 print:hidden">
           <span className="text-sm">
             {selected.size}{' '}
             {selected.size === 1 ? 'lançamento selecionado' : 'lançamentos selecionados'}
@@ -956,9 +976,11 @@ function Ledger({ head, statement }: { head: ReactNode; statement: Statement }) 
 
       {[...days].map(([date, lines]) => (
         <section aria-label={formatDate(date)} key={date}>
-          <h3 className="flex items-baseline gap-2 bg-muted/60 px-4 py-2 md:px-6">
-            <span className="text-lg font-semibold tabular-nums">{date.slice(8, 10)}</span>
-            <span className="text-sm text-muted-foreground">
+          <h3 className="flex items-baseline gap-2 px-4 pt-4 pb-1 text-muted-foreground md:px-6">
+            <span className="text-sm font-semibold text-foreground tabular-nums">
+              {date.slice(8, 10)}
+            </span>
+            <span className="text-xs">
               {weekday(date)}
               {months > 1 && `, ${SHORT_MONTHS[Number(date.slice(5, 7)) - 1]} ${date.slice(0, 4)}`}
             </span>
@@ -970,7 +992,7 @@ function Ledger({ head, statement }: { head: ReactNode; statement: Statement }) 
               const Arrow = into ? ArrowDownLeftIcon : ArrowUpRightIcon;
               return (
                 <li
-                  className="group flex items-center gap-3 border-b px-4 py-3 last:border-b-0 hover:bg-muted/40 data-[state=selected]:bg-accent md:px-6"
+                  className="group flex items-center gap-3 rounded-lg px-4 py-1.5 hover:bg-muted data-[state=selected]:bg-accent md:px-6"
                   data-state={own && selected.has(own.id) ? 'selected' : undefined}
                   key={`${entry.source}-${own?.id ?? entry.description}-${index}`}
                 >
@@ -989,7 +1011,8 @@ function Ledger({ head, statement }: { head: ReactNode; statement: Statement }) 
                   </span>
                   <span
                     className={cn(
-                      'grid size-10 shrink-0 place-items-center rounded-xl',
+                      // Small; green coming in, red going out, grey for what does not count.
+                      'grid size-7 shrink-0 place-items-center rounded-md',
                       entry.informative
                         ? 'bg-muted text-muted-foreground'
                         : into
@@ -997,12 +1020,12 @@ function Ledger({ head, statement }: { head: ReactNode; statement: Statement }) 
                           : 'bg-destructive/10 text-destructive'
                     )}
                   >
-                    <Arrow className="size-4" />
+                    <Arrow className="size-3.5" />
                   </span>
                   <div className="min-w-0 flex-1">
                     {own ? (
                       <Button
-                        className="h-auto max-w-full justify-start p-0 text-left text-base font-medium whitespace-normal text-foreground"
+                        className="h-auto max-w-full justify-start p-0 text-left text-sm font-medium whitespace-normal text-foreground"
                         onClick={() => setEditing(entry)}
                         title="Editar"
                         variant="link"
@@ -1011,30 +1034,26 @@ function Ledger({ head, statement }: { head: ReactNode; statement: Statement }) 
                       </Button>
                     ) : entry.to ? (
                       <Link
-                        className="font-medium underline-offset-4 hover:underline"
+                        className="text-sm font-medium underline-offset-4 hover:underline"
                         title="Gerenciado em outra página"
                         to={entry.to}
                       >
                         {entry.description}
                       </Link>
                     ) : (
-                      <span className="font-medium">{entry.description}</span>
+                      <span className="text-sm font-medium">{entry.description}</span>
                     )}
                     <p
-                      className="truncate text-sm text-muted-foreground"
+                      className="truncate text-xs text-muted-foreground"
                       title={entry.informative?.reason}
                     >
-                      {entry.source} · {entry.informative?.label ?? entry.category}
+                      {sourceAndCategory(entry.source, entry.informative?.label ?? entry.category)}
                     </p>
                   </div>
                   <span
                     className={cn(
-                      'shrink-0 text-right font-medium tabular-nums',
-                      entry.informative
-                        ? 'font-normal text-muted-foreground'
-                        : into
-                          ? 'text-success'
-                          : 'text-destructive'
+                      'shrink-0 text-right text-sm font-medium tabular-nums',
+                      entry.informative && 'font-normal text-muted-foreground'
                     )}
                   >
                     {into ? '+' : '−'}

@@ -15,6 +15,11 @@
 }
 
 /* Each page opens with a light fade, sliding down a little. */
+/* Corners chipped like a stone, as on the landing page (landing.css). */
+:root {
+  --stone: 14px 4px 16px 3px / 4px 14px 3px 16px;
+}
+
 @keyframes page-enter {
   from {
     opacity: 0;

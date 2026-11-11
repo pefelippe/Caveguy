@@ -46,7 +46,7 @@ export function Logo({ className, size = 28 }: { className?: string; size?: numb
   );
 }
 
-/** Brutus on the seal: the app's sign, in the menu, on sign-in and while it loads (docs/adr/0035). */
+/** The caveman on the seal: the app's sign, in the menu, on sign-in and while it loads (docs/adr/0035). */
 export function LogoBadge({ className, size = 32 }: { className?: string; size?: number }) {
   return (
     <span className={cn('inline-grid shrink-0 [--ink:var(--seal)]', className)}>

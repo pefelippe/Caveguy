@@ -1,5 +1,5 @@
 import type { ConversationsQuery } from '@zapbots/graphql/client';
-import { MoreHorizontalIcon, PlusIcon, SearchIcon, Trash2Icon } from 'lucide-react';
+import { MoreHorizontalIcon, PlusIcon, SearchIcon, Trash2Icon, BellIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { Button } from '@zapbots/ui/components/button';
@@ -24,7 +24,7 @@ function localDay(moment: string | Date): string {
 }
 
 /** Conversations by when they last moved: today, yesterday, this week, before. */
-function byAge(conversations: Conversation[]): { items: Conversation[]; label: string }[] {
+export function byAge(conversations: Conversation[]): { items: Conversation[]; label: string }[] {
   const today = localToday();
   const daysAgo = (count: number) => {
     const at = new Date(`${today}T12:00:00`);
@@ -72,7 +72,12 @@ export function ConversationList({
         conversation.title.toLocaleLowerCase('pt-BR').includes(words) ||
         (conversation.lastMessage?.content.toLocaleLowerCase('pt-BR').includes(words) ?? false)
     );
-    return byAge(found.slice(0, 60));
+    // The Avisos stay on top, whatever their age.
+    const pinned = found.filter(conversation => conversation.alerts);
+    return [
+      ...(pinned.length ? [{ items: pinned, label: 'Fixada' }] : []),
+      ...byAge(found.filter(conversation => !conversation.alerts).slice(0, 60)),
+    ];
   }, [conversations, search]);
 
   return (
@@ -121,6 +126,7 @@ export function ConversationList({
                     onClick={() => onOpen(conversation.id)}
                     variant="ghost"
                   >
+                    {conversation.alerts && <BellIcon className="size-4 text-muted-foreground" />}
                     <span className="truncate">{conversation.title}</span>
                   </Button>
                   {/* On a touch screen, with no pointer to hover, the ⋯ always shows, 44px. */}

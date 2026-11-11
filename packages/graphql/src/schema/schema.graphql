@@ -334,6 +334,8 @@ type Mutation {
   markAlertsRead(bot: BotKey!, ids: [ID!]!): Bot!
   "Takes the Alert out of the Viewer's bell. It comes back only if it says something new."
   dismissAlert(bot: BotKey!, id: ID!): Bot!
+  "Posts the Bot's new Alerts in the Viewer's Avisos Conversation, at most once a day; the app calls it on load."
+  deliverAlerts(bot: BotKey!): Bot!
   "Hands work to a Bot. It runs in the background; poll `job` for the Deliverable."
   createJob(input: CreateJobInput!): Job!
   "Hands a failed Job over again as a new Job, with the same instructions and files."
@@ -591,6 +593,8 @@ type Bot {
   recentJobs(limit: Int = 3): [Job!]!
   "What the Bot points out on its own, most urgent first; computed, no Model involved. Leaves out those the Viewer removed."
   alerts: [Alert!]!
+  "The Viewer's Avisos Conversation with this Bot, where it posts its Alerts; null until the first."
+  alertsConversation: Conversation
 }
 
 enum AlertKind {
@@ -609,6 +613,8 @@ type Alert {
   kind: AlertKind!
   "Whether the Viewer opened it or marked it read."
   read: Boolean!
+  "Whether it was posted in the Viewer's Avisos Conversation."
+  sent: Boolean!
   "In pt-BR, amounts already formatted."
   message: String!
   "Where to look, inside the app."
@@ -640,6 +646,8 @@ type AiStatus {
 type Conversation {
   id: ID!
   title: String!
+  "The Viewer's Avisos, where the Bot posts its Alerts; pinned atop the list."
+  alerts: Boolean!
   channel: ConversationChannel!
   bot: Bot!
   messages: [Message!]!

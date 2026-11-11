@@ -1,13 +1,4 @@
-import { MASCOT_NAME } from '@zapbots/finance';
-import {
-  bullets,
-  CARE,
-  CAVEMAN_VOICE,
-  CHAT_LENGTH,
-  identity,
-  nowSection,
-  section,
-} from '@zapbots/finance';
+import { bullets, CARE, VOICE, CHAT_LENGTH, identity, nowSection, section } from '@zapbots/finance';
 
 /** The Pessoal, the Agente of the personal life, as the catalog presents it (docs/adr/0036). */
 export const PESSOAL = {
@@ -41,7 +32,7 @@ const KNOWLEDGE = bullets([
 const EXAMPLES = [
   'Datas de exemplo, não são desta pessoa.',
   'Pessoa: "o que tenho amanhã?"',
-  `Bom: "Amanhã, 14/11: **Dentista às 9h**. Depois, Tarefa **Pagar condomínio** vencendo. ${MASCOT_NAME} acha dia leve."`,
+  'Bom: "Amanhã, 14/11: **Dentista às 9h**. Depois, a Tarefa **Pagar condomínio** vence. Dia tranquilo."',
   'Longo demais: a semana inteira e todas as Metas.',
 ].join('\n');
 
@@ -50,7 +41,7 @@ export function personalInstructions(input: AgentPromptInput): string {
   return [
     identity(PESSOAL.name, PESSOAL.description),
     `Sua personalidade: ${PESSOAL.personality}`,
-    section('Como você fala', CAVEMAN_VOICE),
+    section('Como você fala', VOICE),
     section('Quando a pessoa não está bem', CARE),
     section('Tamanho da resposta', input.mode === 'job' ? JOB_LENGTH : CHAT_LENGTH),
     section('O que você sabe e o que pode fazer', KNOWLEDGE),

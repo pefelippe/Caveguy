@@ -28,12 +28,12 @@ function recordPath(proposal: ProposalFieldsFragment): string {
     case 'CREDIT_OPERATION':
       return proposal.recordId
         ? `/caishen/operations/${proposal.recordId}`
-        : '/caishen/fixed#loans';
+        : '/caishen/installments#loans';
     case 'INCOME_SOURCE':
       return '/caishen/income';
     case 'EXPENSE':
     case 'ONE_OFF_INCOME':
-      return '/caishen/entries';
+      return '/caishen';
     case 'RECURRING_EXPENSE':
       return '/caishen/fixed#recurring';
   }
