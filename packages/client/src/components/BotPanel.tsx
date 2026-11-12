@@ -130,7 +130,7 @@ function AgentPanel({
 
   return (
     <section className={cn('flex min-h-0 flex-col gap-3', className)} data-bot={bot.key}>
-      <header className="-mx-4 -mt-1 flex items-center gap-1 border-b px-2 pb-3 md:-mx-5 md:px-3">
+      <header className="-mx-4 -mt-1 flex items-center gap-1 px-2 pb-1 md:-mx-5 md:px-3">
         <Button
           aria-label="Conversas anteriores"
           aria-pressed={view === 'history'}
@@ -143,11 +143,18 @@ function AgentPanel({
           <ChevronLeftIcon />
         </Button>
         <div className="flex min-w-0 flex-1 items-center gap-2.5">
-          <BotGlyph bot={bot.key} outfit={bot.outfit} size={32} />
+          <span className="relative shrink-0">
+            <BotGlyph bot={bot.key} outfit={bot.outfit} size={34} />
+            <span className="absolute -right-0.5 -bottom-0.5 size-3 rounded-full border-2 border-card bg-success" />
+          </span>
           <div className="flex min-w-0 flex-col leading-tight">
-            <span className="truncate font-semibold">{APP_NAME}</span>
-            <span className="truncate text-xs text-muted-foreground">
-              Agente de IA · responde na hora
+            <span className="truncate font-semibold tracking-tight">{APP_NAME}</span>
+            <span className="flex items-center gap-1.5 truncate text-xs text-muted-foreground">
+              <span className="relative flex size-1.5">
+                <span className="absolute inset-0 animate-ping rounded-full bg-success/60 motion-reduce:hidden" />
+                <span className="relative size-1.5 rounded-full bg-success" />
+              </span>
+              Online · responde na hora
             </span>
           </div>
         </div>

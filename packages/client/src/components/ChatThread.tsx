@@ -21,6 +21,7 @@ import {
   XIcon,
   type LucideIcon,
 } from 'lucide-react';
+import { motion, useReducedMotion } from 'motion/react';
 import {
   Fragment,
   useEffect,
@@ -102,6 +103,7 @@ export function ChatThread({
   variant = 'panel',
 }: Props) {
   const location = useLocation();
+  const still = useReducedMotion();
   const { conversationId: inbox } = useAlertsInbox();
   // The Bot's daily Avisos open with a greeting and list them; its replies there are plain text.
   const isDigest = (message: { content: string; role: string }) =>
@@ -290,6 +292,10 @@ export function ChatThread({
   };
 
   const empty = messages.length === 0 && !replying;
+  const rise = {
+    hidden: still ? { opacity: 0 } : { opacity: 0, y: 14 },
+    shown: { opacity: 1, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] }, y: 0 },
+  } as const;
   const page = variant === 'page';
   const canSend = Boolean(draft.trim()) || files.length > 0;
   const remove = (index: number) => setFiles(current => current.filter((_, at) => at !== index));
@@ -304,32 +310,53 @@ export function ChatThread({
       >
         {empty &&
           !page && (
-            // The mark, the greeting and the suggestions as one block in the middle of the panel.
-            <div className="my-auto flex flex-col gap-6 py-6">
-              <div className="flex flex-col items-center gap-3 text-center">
-                <BotGlyph bot={bot.key} mood="happy" outfit={bot.outfit} size={88} />
-                <p className="text-2xl leading-tight font-semibold tracking-tight text-balance">
-                  {greeting ?? `${APP_NAME} escuta.`}
-                </p>
+            // The mark, the greeting and the suggestions as one block, rising in one after another.
+            <motion.div
+              animate="shown"
+              className="my-auto flex flex-col gap-7 py-6"
+              initial="hidden"
+              transition={{ delayChildren: 0.08, staggerChildren: still ? 0 : 0.06 }}
+            >
+              <div className="flex flex-col items-center gap-4 text-center">
+                <motion.div className="relative" variants={rise}>
+                  {/* A slow float: the Agente is there, listening. */}
+                  <motion.div
+                    animate={still ? undefined : { y: [0, -4, 0] }}
+                    transition={{ duration: 3.6, ease: 'easeInOut', repeat: Infinity }}
+                  >
+                    <BotGlyph bot={bot.key} mood="happy" outfit={bot.outfit} size={52} />
+                  </motion.div>
+                  <span className="absolute -right-0.5 -bottom-0.5 size-3.5 rounded-full border-[3px] border-card bg-success" />
+                </motion.div>
+                <motion.div className="flex flex-col gap-1.5" variants={rise}>
+                  <p className="text-2xl leading-tight font-semibold tracking-tight text-balance">
+                    {greeting ?? `${APP_NAME} escuta.`}
+                  </p>
+                  <p className="text-sm text-balance text-muted-foreground">
+                    Pergunte, conte um gasto ou mande um arquivo.
+                  </p>
+                </motion.div>
               </div>
               {suggestions.length > 0 && (
-                <ul className="flex flex-col gap-1">
+                <ul className="flex flex-col gap-1.5">
                   {suggestions.map(suggestion => (
-                    <li key={suggestion.text}>
+                    <motion.li key={suggestion.text} variants={rise}>
                       <Button
-                        className="group/suggestion h-auto w-full justify-start gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-normal whitespace-normal text-foreground hover:bg-foreground/5 active:scale-[0.99]"
+                        className="group/suggestion h-auto w-full justify-start gap-3 rounded-2xl bg-muted/70 px-3 py-2.5 text-left text-sm font-normal whitespace-normal text-foreground transition-[background-color,transform] duration-200 hover:-translate-y-px hover:bg-muted active:translate-y-0 active:scale-[0.99]"
                         onClick={() => fill(suggestion.text)}
                         variant="ghost"
                       >
-                        <suggestion.icon className="size-[18px] shrink-0 text-muted-foreground" />
+                        <span className="grid size-8 shrink-0 place-items-center rounded-full bg-card text-muted-foreground transition-colors group-hover/suggestion:text-foreground">
+                          <suggestion.icon className="size-4" />
+                        </span>
                         <span className="flex-1 leading-snug">{suggestion.text}</span>
-                        <ArrowRightIcon className="size-4 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover/suggestion:opacity-100 group-focus-visible/suggestion:opacity-100" />
+                        <ArrowRightIcon className="size-4 shrink-0 -translate-x-1 text-muted-foreground opacity-0 transition-[opacity,transform] duration-200 group-hover/suggestion:translate-x-0 group-hover/suggestion:opacity-100 group-focus-visible/suggestion:translate-x-0 group-focus-visible/suggestion:opacity-100" />
                       </Button>
-                    </li>
+                    </motion.li>
                   ))}
                 </ul>
               )}
-            </div>
+            </motion.div>
           )}
         {empty &&
           page && (
@@ -517,7 +544,7 @@ export function ChatThread({
         <>
           {/* After Intercom's: a rounded box, the text on top, the + and sending on a row under it. */}
           <form
-            className="mt-4 flex shrink-0 flex-col gap-1 rounded-2xl border bg-card p-2 transition-colors focus-within:border-foreground/30"
+            className="mt-4 flex shrink-0 flex-col gap-1 rounded-[20px] border border-transparent bg-muted p-2 transition-[background-color,border-color,box-shadow] duration-200 focus-within:border-ring/40 focus-within:bg-card focus-within:shadow-[0_0_0_4px_color-mix(in_oklab,var(--ring)_12%,transparent)]"
             onSubmit={onSubmit}
           >
             <Waiting files={files} onRemove={remove} />

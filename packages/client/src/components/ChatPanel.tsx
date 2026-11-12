@@ -161,7 +161,7 @@ export function ChatPanel({ greeting }: { greeting?: string }) {
   const hidden = still
     ? { opacity: 0 }
     : desktop
-      ? { opacity: 0, scale: 0.96, y: 16 }
+      ? { opacity: 0, scale: 0.9, y: 24 }
       : { opacity: 0, y: 24 };
 
   return (
@@ -171,7 +171,7 @@ export function ChatPanel({ greeting }: { greeting?: string }) {
           animate={shown}
           aria-label={t('chat.panel')}
           className={cn(
-            'fixed inset-0 z-40 flex flex-col overflow-hidden bg-card md:inset-auto md:right-6 md:rounded-[20px] md:border md:shadow-[0_24px_60px_-20px_rgb(0_0_0/0.25)]',
+            'fixed inset-0 z-40 flex flex-col overflow-hidden bg-card md:inset-auto md:right-6 md:rounded-[24px] md:shadow-[0_0_0_1px_rgb(0_0_0/0.06),0_8px_16px_-4px_rgb(0_0_0/0.08),0_32px_72px_-16px_rgb(0_0_0/0.28)] dark:md:shadow-[0_0_0_1px_rgb(255_255_255/0.08),0_32px_72px_-16px_rgb(0_0_0/0.6)]',
             // It rises out of the bottom right corner; the pill that opened it hides while it is open.
             'origin-bottom-right md:bottom-6 md:h-[min(40rem,calc(100svh-var(--header-height)-3rem))]'
           )}
@@ -179,7 +179,11 @@ export function ChatPanel({ greeting }: { greeting?: string }) {
           initial={hidden}
           key="chat"
           style={desktop ? { width: WIDTH } : undefined}
-          transition={{ duration: still ? 0.15 : 0.25, ease: EASE }}
+          transition={
+            still
+              ? { duration: 0.15, ease: EASE }
+              : { bounce: 0.18, duration: 0.45, type: 'spring' }
+          }
         >
           {/* Covering a phone's screen, it keeps clear of the notch and the home indicator. */}
           <div className="flex h-full min-h-0 w-full flex-col p-4 pt-[max(1rem,env(safe-area-inset-top))] pr-[max(1rem,env(safe-area-inset-right))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] md:p-5">
