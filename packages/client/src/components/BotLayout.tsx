@@ -8,24 +8,26 @@ import { cn } from '@zapbots/ui/lib/utils';
 
 import { activeItem, useNav } from '../lib/nav';
 import { PAGE, Scrolling } from './Layout';
+import { MoneyBand } from './MoneyBand';
 
-/** Finanças' screens as a row of pills, after Pierre's: the open one filled; it scrolls sideways
- * on a phone. */
+/** Finanças' screens as a segmented control (docs/design-guide.md): a grey rail, the open tab white;
+ * it scrolls sideways when it does not fit. On a phone only: a computer has them in the menu. */
 function FinanceTabs() {
   const { pathname } = useLocation();
-  const tabs = useNav().groups[0]!.items;
+  const nav = useNav();
+  // Visão geral sits atop the menu now, not in Finanças: put it back as the first tab
+  const tabs = [nav.main[0]!, ...nav.groups[0]!.items];
   const open = activeItem(tabs, pathname);
   return (
     <nav
       aria-label="Finanças"
-      className="-mx-4 mb-8 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:-mx-6 sm:px-6 md:mx-0 md:flex-wrap md:justify-center md:px-0 print:hidden"
+      className="mb-6 flex w-fit md:hidden max-w-full gap-1 overflow-x-auto rounded-lg border bg-muted p-1 [scrollbar-width:none] print:hidden"
     >
       {tabs.map(tab => (
         <NavLink
           className={cn(
-            'inline-flex h-10 shrink-0 items-center gap-2 rounded-full border px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground [&_svg]:size-4',
-            tab === open &&
-              'border-foreground bg-foreground text-background hover:bg-foreground hover:text-background'
+            'inline-flex h-8 shrink-0 items-center gap-2 rounded-md px-3 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground [&_svg]:size-4',
+            tab === open && 'bg-card text-foreground shadow-xs'
           )}
           key={tab.to}
           to={tab.to}
@@ -54,9 +56,11 @@ function Tabbed() {
   }, [pathname]);
   return (
     <div
-      className="relative h-full overflow-y-auto print:h-auto print:overflow-visible"
+      className="relative h-full overflow-y-auto bg-canvas print:h-auto print:overflow-visible"
       ref={scroller}
     >
+      {/* The Visão geral opens under its white band (docs/design-guide.md). */}
+      {pathname === '/caishen' && <MoneyBand />}
       <div className={PAGE}>
         <FinanceTabs />
         <motion.div

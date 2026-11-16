@@ -4,6 +4,7 @@ import { Navigate, Route, Routes, useLocation, useParams } from 'react-router-do
 import { Splash } from '@zapbots/ui/blocks/logo';
 
 import { Layout, Scrolling } from './components/Layout';
+import { ToasterProvider } from './components/Toaster';
 import { APP_BASE, IN_APP } from './lib/area';
 import { authClient } from './lib/auth';
 import { isLanguage, useI18n } from './lib/i18n';
@@ -40,6 +41,7 @@ const CategoriesPage = page(() => import('./pages/CategoriesPage'), 'CategoriesP
 const EntriesPage = page<'EntriesPage', object>(() => import('./pages/EntriesPage'), 'EntriesPage');
 const MoneyPage = page(() => import('./pages/MoneyPage'), 'MoneyPage');
 const PayoffPage = page(() => import('./pages/PayoffPage'), 'PayoffPage');
+const CalculatorsPage = page(() => import('./pages/CalculatorsPage'), 'CalculatorsPage');
 const WelcomePage = page(() => import('./pages/WelcomePage'), 'WelcomePage');
 const InvitePage = page(() => import('./pages/InvitePage'), 'InvitePage');
 const ChatPage = page(() => import('./pages/ChatPage'), 'ChatPage');
@@ -213,7 +215,10 @@ export function App() {
       <Route
         element={
           <Suspense fallback={<Splash />}>
-            <WelcomePage user={session.user} />
+            {/* Outside Layout, so it brings its own toasts. */}
+            <ToasterProvider>
+              <WelcomePage user={session.user} />
+            </ToasterProvider>
           </Suspense>
         }
         path="welcome"
@@ -264,7 +269,7 @@ export function App() {
           <Route element={<Navigate replace to="/caishen/fixed#taxes" />} path="taxes" />
           <Route element={<Navigate replace to="/caishen" />} path="reports" />
           <Route element={<PayoffPage />} path="payoff" />
-          <Route element={<Navigate replace to="/caishen" />} path="calculators" />
+          <Route element={<CalculatorsPage />} path="calculators" />
           {/* Old addresses: the tabs of Lançamentos, Visão geral, Relatório, Mês, Financeiro, Orçamento, Score. */}
           <Route element={<Navigate replace to="/caishen/income" />} path="entries/income" />
           <Route element={<LegacyFixed />} path="entries/fixed" />

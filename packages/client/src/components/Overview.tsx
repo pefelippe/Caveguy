@@ -75,7 +75,7 @@ export function Tile({
         <h2 className="text-sm font-medium text-muted-foreground">{title}</h2>
         {to && (
           <Link
-            className="inline-flex shrink-0 items-center gap-1 text-sm font-medium text-seal hover:underline"
+            className="inline-flex shrink-0 items-center gap-1 text-sm font-medium text-primary hover:underline"
             to={to}
           >
             {more ?? 'ver todas'}

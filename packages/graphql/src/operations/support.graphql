@@ -1,0 +1,3 @@
+mutation ContactTeam($kind: ContactKind!, $message: String!, $page: String) {
+  contactTeam(kind: $kind, message: $message, page: $page)
+}

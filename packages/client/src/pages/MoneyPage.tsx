@@ -1,5 +1,4 @@
-import { useQuery } from '@apollo/client/react';
-import { MoneyHomeDocument, type MoneyHomeQuery } from '@zapbots/graphql/client';
+import type { MoneyHomeQuery } from '@zapbots/graphql/client';
 import { ArrowDownRightIcon, ArrowUpRightIcon, CalendarIcon } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
@@ -11,23 +10,20 @@ import { cn } from '@zapbots/ui/lib/utils';
 
 import { FormError } from '../components/FormError';
 import { Accounts, Cards, Figure, Tile, useWidth } from '../components/Overview';
-import { localToday } from '../lib/bots';
 import { formatCents } from '../lib/format';
+import { EXTRA_CENTS, useMoneyHome } from '../lib/moneyHome';
+import { FirstSteps } from '../components/FirstSteps';
 import {
   byCategory,
   categoryMark,
   cumulative,
   nextCharge,
   niceStep,
-  previousMonth,
   spentByDay,
 } from '../lib/overview';
 
 type Holder = MoneyHomeQuery['viewerHolder'];
 type Expense = Holder['month']['expenses'][number];
-
-/** What the payoff plan tries a month on top of the installments. */
-const EXTRA_CENTS = 30_000;
 
 /** "25 nov". */
 const dayMonth = (date: string) =>
@@ -53,12 +49,7 @@ const isSubscription = (category: string | null | undefined) =>
  * Assinaturas and the Parcelamentos, each card leading to its tab.
  */
 export function MoneyPage() {
-  const today = localToday();
-  const month = today.slice(0, 7);
-  const { data, error } = useQuery(MoneyHomeDocument, {
-    fetchPolicy: 'cache-and-network',
-    variables: { month, monthlyExtraCents: EXTRA_CENTS, previous: previousMonth(month) },
-  });
+  const { data, error, today } = useMoneyHome();
   const holder = data?.viewerHolder;
 
   if (error && !holder) return <FormError error={error} />;
@@ -66,7 +57,7 @@ export function MoneyPage() {
     return (
       <div className="grid gap-5 lg:grid-cols-2">
         {[0, 1, 2, 3].map(index => (
-          <Skeleton className="h-80 rounded-[20px]" key={index} />
+          <Skeleton className="h-80 rounded-lg" key={index} />
         ))}
       </div>
     );
@@ -75,6 +66,7 @@ export function MoneyPage() {
   return (
     <div className="grid min-w-0 gap-5 lg:grid-cols-2" data-bot="FINANCE">
       <MonthWord holder={holder} today={today} />
+      <FirstSteps holder={holder} links={data.bankLinks} />
       <Pace holder={holder} today={today} />
       <Accounts links={data.bankLinks} />
       <Cards cards={holder.creditCards} />
@@ -117,14 +109,12 @@ function MonthWord({ holder, today }: { holder: Holder; today: string }) {
     <Card className="min-w-0 gap-6">
       <div className="flex items-start gap-4">
         <div className="flex min-w-0 flex-1 flex-col gap-3">
-          <h1 className="font-title text-3xl leading-none tracking-wide text-seal uppercase">
-            Seu mês
-          </h1>
-          <p className="text-lg">{word}</p>
+          <h1 className="text-lg">Seu mês</h1>
+          <p className="text-muted-foreground">{word}</p>
         </div>
         <Caveman mood={short ? 'thinking' : 'happy'} outfit="FINANCE" size={88} />
       </div>
-      <dl className="mt-auto grid gap-3 sm:grid-cols-3">
+      <dl className="mt-auto grid divide-y rounded-lg border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
         <Stat label={`Gasto em ${monthName(holder.month.month)}`}>{formatCents(spent)}</Stat>
         <Stat label="vs. mês anterior">
           {change === null ? (
@@ -151,9 +141,9 @@ function MonthWord({ holder, today }: { holder: Holder; today: string }) {
 
 function Stat({ children, label }: { children: ReactNode; label: string }) {
   return (
-    <div className="min-w-0 rounded-2xl bg-muted px-4 py-3">
+    <div className="min-w-0 px-4 py-3">
       <dt className="truncate text-xs text-muted-foreground">{label}</dt>
-      <dd className="mt-1 truncate text-lg font-semibold tabular-nums [&_svg]:size-4">
+      <dd className="mt-0.5 truncate text-[0.9375rem] font-semibold tabular-nums [&_svg]:size-4">
         {children}
       </dd>
     </div>
@@ -499,12 +489,15 @@ function dayTitle(date: string, today: string): string {
   });
 }
 
+// how many Gastos the tile lists; the rest are a click away in Transações
+const RECENT_ROWS = 6;
+
 /** Transações recentes: the latest Gastos of this month and the last, by day, with their category. */
 function Recent({ expenses, today }: { expenses: Expense[]; today: string }) {
   const latest = expenses
     .filter(expense => !expense.ownTransfer)
     .sort((a, b) => b.date.localeCompare(a.date))
-    .slice(0, 12);
+    .slice(0, RECENT_ROWS);
   const days: { date: string; items: Expense[] }[] = [];
   for (const expense of latest) {
     const last = days.at(-1);
@@ -644,7 +637,7 @@ function Installments({ holder }: { holder: Holder }) {
                 year: 'numeric',
               })}
               .{' '}
-              <Link className="font-medium text-seal hover:underline" to="/caishen/payoff">
+              <Link className="font-medium text-primary hover:underline" to="/caishen/payoff">
                 Montar plano
               </Link>
             </p>

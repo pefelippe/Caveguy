@@ -14,6 +14,7 @@ import { obligationResolvers } from './obligations';
 import { scalars } from './scalars';
 import { scrResolvers } from './scr';
 import { settingsResolvers } from './settings';
+import { supportResolvers } from './support';
 
 const modules: Resolvers[] = [
   holderResolvers,
@@ -29,6 +30,7 @@ const modules: Resolvers[] = [
   fitnessResolvers,
   billingResolvers,
   marketResolvers,
+  supportResolvers,
 ];
 
 /** Merges per type, so several modules can each add fields to the same type (e.g. Holder). */

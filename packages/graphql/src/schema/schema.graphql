@@ -2214,3 +2214,14 @@ extend type Mutation {
   startGoogleCalendarLink: String!
   unlinkGoogleCalendar: Boolean!
 }
+
+"What a message to the team is: a request for help or an opinion about the app."
+enum ContactKind {
+  SUPPORT
+  FEEDBACK
+}
+
+extend type Mutation {
+  "Sends the Viewer's support request or feedback to the team by e-mail, with who sent it and from which screen; at most 10 an hour per User."
+  contactTeam(kind: ContactKind!, message: String!, page: String): Boolean!
+}

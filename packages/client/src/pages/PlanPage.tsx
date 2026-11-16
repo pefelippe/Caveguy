@@ -248,7 +248,7 @@ function PlanCard({
   return (
     <div
       className={cn(
-        'flex flex-col gap-6 rounded-2xl p-6 md:p-8',
+        'flex flex-col gap-6 rounded-lg border p-6 md:p-8',
         pro ? 'bg-primary text-primary-foreground' : 'bg-card'
       )}
     >

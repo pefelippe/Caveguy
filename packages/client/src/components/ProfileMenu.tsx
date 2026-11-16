@@ -1,4 +1,5 @@
 import {
+  ChevronDownIcon,
   CreditCardIcon,
   LogOutIcon,
   MonitorIcon,
@@ -80,7 +81,7 @@ export function UserAvatar({ className, user }: { className?: string; user: Prof
 
 /** The account's menu, after WorkOS's: the name and e-mail, the theme (per browser, the choice
  * shown beside it), Perfil, the Organization's screens and signing out. At the menu's foot on a
- * computer (`AppSidebar`), behind the avatar in the header on a phone. */
+ * the avatar in the header (`ProfileMenu`). */
 export function AccountMenuItems({ user }: { user: ProfileUser }) {
   const { t } = useI18n();
   const { choice, setChoice } = useThemeChoice();
@@ -135,7 +136,7 @@ export function AccountMenuItems({ user }: { user: ProfileUser }) {
   );
 }
 
-/** The round avatar in the header, on a phone only (a computer has the account at the menu's foot). */
+/** The account in the header's last cell: the round avatar, and on a computer the name beside it. */
 export function ProfileMenu({ user }: { user: ProfileUser }) {
   const { t } = useI18n();
   return (
@@ -143,10 +144,12 @@ export function ProfileMenu({ user }: { user: ProfileUser }) {
       <DropdownMenuTrigger asChild>
         <Button
           aria-label={t('profile.label')}
-          className="ml-1 size-9 rounded-full p-0 md:hidden"
+          className="size-9 rounded-full p-0 data-[state=open]:bg-accent md:h-9 md:w-auto md:max-w-48 md:gap-2 md:rounded-md md:px-1.5"
           variant="ghost"
         >
-          <UserAvatar className={BLUE} user={user} />
+          <UserAvatar className={cn(BLUE, 'size-7')} user={user} />
+          <span className="hidden truncate font-semibold md:inline">{user.name.split(' ')[0]}</span>
+          <ChevronDownIcon className="hidden size-4 text-muted-foreground md:block" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-72 rounded-xl p-1.5" sideOffset={8}>

@@ -65,7 +65,7 @@ export function MonthSummary({
   ];
 
   return (
-    <section className="@container flex flex-col gap-6 rounded-2xl bg-card p-6 md:p-8">
+    <section className="@container flex flex-col gap-6 rounded-lg border bg-card p-6 md:p-8">
       {heading}
       <dl className="flex flex-col gap-4 @3xl:flex-row @3xl:items-end @3xl:gap-5">
         {terms.map((term, index) => (

@@ -2,6 +2,7 @@ import { CheckIcon, ChevronsUpDownIcon, PlusIcon } from 'lucide-react';
 import { useState } from 'react';
 
 import { Button } from '@zapbots/ui/components/button';
+import { cn } from '@zapbots/ui/lib/utils';
 import {
   Command,
   CommandEmpty,
@@ -23,7 +24,7 @@ import { NewOrganization } from './ProfileMenu';
  * Organization the User is a Member of (picking one reloads the app in it, docs/adr/0038) and
  * Nova organização.
  */
-export function OrganizationSwitcher() {
+export function OrganizationSwitcher({ className }: { className?: string }) {
   const { t } = useI18n();
   const { data: session } = authClient.useSession();
   const { data: organizations } = authClient.useListOrganizations();
@@ -38,7 +39,10 @@ export function OrganizationSwitcher() {
         <PopoverTrigger asChild>
           <Button
             aria-label={t('orgs.label')}
-            className="h-8 max-w-56 gap-1.5 rounded-lg px-2.5 font-semibold data-[state=open]:bg-accent"
+            className={cn(
+              'h-8 max-w-56 gap-1.5 rounded-md px-2.5 font-semibold data-[state=open]:bg-accent',
+              className
+            )}
             variant="ghost"
           >
             <span className="truncate">{name ?? t('orgs.label')}</span>

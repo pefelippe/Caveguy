@@ -1,22 +1,25 @@
 import {
   ArrowDownLeftIcon,
   ArrowLeftRightIcon,
-  BarChart3Icon,
-  CalendarSyncIcon,
+  CalculatorIcon,
+  CalendarIcon,
+  ChartPieIcon,
   CreditCardIcon,
+  HouseIcon,
   LayersIcon,
-  LayoutDashboardIcon,
-  MessageSquarePlusIcon,
+  ListIcon,
+  MessageSquareIcon,
   PlugIcon,
   ReceiptIcon,
   SettingsIcon,
-  TagsIcon,
+  SquareCheckIcon,
   UserIcon,
   WalletIcon,
+  WorkflowIcon,
   type LucideIcon,
 } from 'lucide-react';
 
-import { AgentIcon } from '@zapbots/ui/blocks/agent-icon';
+import { APP_NAME } from '@zapbots/finance';
 
 import { useI18n } from './i18n';
 
@@ -31,6 +34,10 @@ export interface NavItem {
   area?: NavGroup['area'];
   icon: LucideIcon;
   label: string;
+  /** A pill on the right: Novo (blue) or Beta (neutral). */
+  badge?: 'beta' | 'new';
+  /** A › on the right, as the design guide draws the entries that group several screens. */
+  chevron?: boolean;
   /** Other paths that belong to this item, e.g. an Operation's page to Dívidas. */
   owns?: string[];
   /** Shown with an "Em breve" pill, without a link. */
@@ -41,7 +48,7 @@ export interface NavItem {
 /** A titled part of the menu. */
 export interface NavGroup {
   /** Paints its icons in the area's colour. */
-  area: 'finance' | 'fitness' | 'personal';
+  area: 'finance' | 'fitness' | 'personal' | 'tools';
   items: NavItem[];
   key: string;
   label: string;
@@ -50,7 +57,7 @@ export interface NavGroup {
 export interface Nav {
   /** The account's screens: in the avatar's menu, not on the left; the phone's Mais lists them. */
   account: NavItem[];
-  /** The menu on the left: Fale com o Caveguy, Agentes and Finanças. */
+  /** The menu's top: Visão geral and Caveguy; Finanças, Pessoal and Ferramentas follow as sections. */
   main: NavItem[];
   /** Finanças' tabs (`FinanceTabs`), also in the command menu and the phone's Mais. */
   groups: NavGroup[];
@@ -67,38 +74,56 @@ export function useNav(): Nav {
       {
         area: 'finance',
         items: [
-          { icon: LayoutDashboardIcon, label: t('finance.overview'), to: '/caishen' },
-          { icon: ArrowLeftRightIcon, label: t('finance.transactions'), to: '/caishen/entries' },
+          { icon: ListIcon, label: t('finance.transactions'), to: '/caishen/entries' },
           {
+            chevron: true,
             icon: LayersIcon,
             label: t('finance.installments'),
             owns: ['/caishen/debts', '/caishen/operations', '/caishen/payoff'],
             to: '/caishen/installments',
           },
           {
-            icon: CalendarSyncIcon,
+            badge: 'new',
+            icon: ArrowLeftRightIcon,
             label: t('finance.subscriptions'),
             to: '/caishen/subscriptions',
           },
-          { icon: TagsIcon, label: t('finance.categories'), to: '/caishen/categories' },
-          { icon: CreditCardIcon, label: t('finance.cards'), to: '/caishen/cards' },
+          { icon: ChartPieIcon, label: t('finance.categories'), to: '/caishen/categories' },
+          { chevron: true, icon: CreditCardIcon, label: t('finance.cards'), to: '/caishen/cards' },
           { icon: ArrowDownLeftIcon, label: t('nav.income'), to: '/caishen/income' },
           { icon: ReceiptIcon, label: t('finance.fixed'), to: '/caishen/fixed' },
         ],
         key: 'finance',
         label: t('nav.finances'),
       },
+      {
+        area: 'personal',
+        items: [
+          { icon: CalendarIcon, label: t('nav.calendar'), soon: true, to: '/personal/calendar' },
+          { icon: SquareCheckIcon, label: t('nav.tasks'), soon: true, to: '/personal/tasks' },
+        ],
+        key: 'personal',
+        label: t('nav.personal'),
+      },
+      {
+        area: 'tools',
+        items: [
+          { chevron: true, icon: PlugIcon, label: t('nav.integrations'), to: '/integrations' },
+          { icon: CalculatorIcon, label: t('nav.calculators'), to: '/caishen/calculators' },
+          { badge: 'beta', icon: WorkflowIcon, label: t('nav.workflows'), to: '/workflows' },
+        ],
+        key: 'tools',
+        label: t('nav.tools'),
+      },
     ],
     account: [
       { icon: UserIcon, label: t('nav.profile'), to: '/profile' },
-      { icon: PlugIcon, label: t('nav.integrations'), to: '/integrations' },
       { icon: WalletIcon, label: t('rail.plan'), to: '/plan' },
       { icon: SettingsIcon, label: t('nav.settings'), to: '/settings' },
     ],
     main: [
-      { icon: MessageSquarePlusIcon, label: t('nav.talk'), to: '/chat' },
-      { icon: AgentIcon, label: t('nav.agents'), to: '/workflows' },
-      { icon: BarChart3Icon, label: t('nav.finances'), to: '/caishen' },
+      { icon: HouseIcon, label: t('finance.overview'), to: '/caishen' },
+      { icon: MessageSquareIcon, label: APP_NAME, to: '/chat' },
     ],
   };
 }

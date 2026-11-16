@@ -90,7 +90,7 @@ export function ImportsCard({ holderId }: { holderId: string }) {
   return (
     <section
       aria-label="Arquivos importados"
-      className="flex flex-col gap-4 rounded-2xl bg-card p-6 md:p-8"
+      className="flex flex-col gap-4 rounded-lg border bg-card p-6 md:p-8"
       id="imports"
     >
       <div className="flex flex-col gap-1">

@@ -1,15 +1,15 @@
-import { useMutation, useQuery } from '@apollo/client/react';
-import { ConversationsDocument, DeleteConversationDocument } from '@zapbots/graphql/client';
 import { APP_NAME } from '@zapbots/finance';
 import {
-  BellIcon,
-  ChevronDownIcon,
-  ChevronsUpDownIcon,
-  MoreHorizontalIcon,
-  Trash2Icon,
+  ChevronRightIcon,
+  CircleHelpIcon,
+  ExternalLinkIcon,
+  MessageSquareIcon,
+  PanelLeftIcon,
+  ShieldIcon,
 } from 'lucide-react';
-import { useMemo, type ReactNode } from 'react';
-import { Link, NavLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import type { ContactKind } from '@zapbots/graphql/client';
+import { useState } from 'react';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 
 import {
   Sidebar,
@@ -20,42 +20,46 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
-  SidebarMenuAction,
   SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarSeparator,
-  SidebarTrigger,
   useSidebar,
 } from '@zapbots/ui/components/sidebar';
 import { LogoBadge } from '@zapbots/ui/blocks/logo';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@zapbots/ui/components/collapsible';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@zapbots/ui/components/dropdown-menu';
 import { cn } from '@zapbots/ui/lib/utils';
 
-import { useAgents } from '../lib/agents';
 import { useI18n } from '../lib/i18n';
 import { activeItem, useNav, type NavItem } from '../lib/nav';
-import { byAge, type Conversation } from './ConversationList';
-import { AccountMenuItems, BLUE, UserAvatar, type ProfileUser } from './ProfileMenu';
-import { useUndoableDelete } from './Toaster';
+import { ContactDialog } from './ContactDialog';
+import { OrganizationSwitcher } from './OrganizationSwitcher';
 
-// Entries 40px tall with 18px icons; the open one a grey step. Collapsed, each is its icon alone.
+// Entries 34px tall with 16px icons; the open one a grey step (docs/design-guide.md). Collapsed,
+// each is its icon alone.
 const ITEM =
-  'h-10 gap-3 rounded-lg px-3 text-[0.9375rem] font-normal text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:font-medium data-[active=true]:text-sidebar-accent-foreground hover:data-[active=true]:bg-sidebar-accent [&>svg]:size-[18px] group-data-[collapsible=icon]:size-10! group-data-[collapsible=icon]:p-[11px]!';
+  'h-[34px] gap-2.5 rounded-md px-2.5 text-sm font-normal text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:font-medium data-[active=true]:text-sidebar-accent-foreground hover:data-[active=true]:bg-sidebar-accent [&>svg]:size-4 [&>svg]:text-muted-foreground data-[active=true]:[&>svg]:text-foreground group-data-[collapsible=icon]:size-9! group-data-[collapsible=icon]:p-2.5!';
+
+// The pill on an entry's right: Em breve and Beta neutral, Novo in soft blue (design guide § 7.4)
+const PILL = 'top-2 h-[18px] rounded border px-1.5 text-[11px] font-medium';
+
+function Pill({ kind }: { kind: 'beta' | 'new' | 'soon' }) {
+  const { t } = useI18n();
+  return (
+    <SidebarMenuBadge
+      className={cn(
+        PILL,
+        kind === 'new'
+          ? 'border-primary/20 bg-primary/10 text-primary'
+          : 'bg-sidebar text-muted-foreground'
+      )}
+    >
+      {t(kind === 'new' ? 'nav.new' : kind === 'beta' ? 'nav.beta' : 'nav.soon')}
+    </SidebarMenuBadge>
+  );
+}
 
 function NavItems({ active, items }: { active: NavItem | undefined; items: NavItem[] }) {
   const { isMobile, setOpenMobile } = useSidebar();
-  const { t } = useI18n();
 
   return (
     <SidebarMenu className="gap-0.5 group-data-[collapsible=icon]:items-center">
@@ -72,22 +76,28 @@ function NavItems({ active, items }: { active: NavItem | undefined; items: NavIt
                 <item.icon />
                 <span>{item.label}</span>
               </SidebarMenuButton>
-              <SidebarMenuBadge className="top-2.5 h-5 rounded-full bg-sidebar-accent px-2 text-[11px] font-medium text-sidebar-primary">
-                {t('nav.soon')}
-              </SidebarMenuBadge>
+              <Pill kind="soon" />
             </>
           ) : (
-            <SidebarMenuButton
-              asChild
-              className={ITEM}
-              isActive={item === active}
-              tooltip={item.label}
-            >
-              <NavLink onClick={() => isMobile && setOpenMobile(false)} to={item.to}>
-                <item.icon />
-                <span>{item.label}</span>
-              </NavLink>
-            </SidebarMenuButton>
+            <>
+              <SidebarMenuButton
+                asChild
+                className={cn(ITEM, (item.badge || item.chevron) && 'pr-14')}
+                isActive={item === active}
+                tooltip={item.label}
+              >
+                <NavLink onClick={() => isMobile && setOpenMobile(false)} to={item.to}>
+                  <item.icon />
+                  <span>{item.label}</span>
+                </NavLink>
+              </SidebarMenuButton>
+              {item.badge && <Pill kind={item.badge} />}
+              {item.chevron && (
+                <SidebarMenuBadge className="top-2 text-muted-foreground">
+                  <ChevronRightIcon aria-hidden className="size-4" />
+                </SidebarMenuBadge>
+              )}
+            </>
           )}
         </SidebarMenuItem>
       ))}
@@ -95,202 +105,106 @@ function NavItems({ active, items }: { active: NavItem | undefined; items: NavIt
   );
 }
 
-/** A titled part of the history that folds away; hidden when the menu is collapsed to icons. */
-function Fold({ children, label }: { children: ReactNode; label: string }) {
-  return (
-    <Collapsible className="group/fold group-data-[collapsible=icon]:hidden" defaultOpen>
-      <SidebarGroup className="p-0">
-        <SidebarGroupLabel
-          asChild
-          className="mt-4 h-7 gap-1 px-3 text-[0.8125rem] font-normal text-sidebar-foreground/60 hover:text-sidebar-foreground"
-        >
-          <CollapsibleTrigger>
-            {label}
-            <ChevronDownIcon className="size-3.5 transition-transform group-data-[state=closed]/fold:-rotate-90" />
-          </CollapsibleTrigger>
-        </SidebarGroupLabel>
-        <CollapsibleContent>
-          <SidebarGroupContent>{children}</SidebarGroupContent>
-        </CollapsibleContent>
-      </SidebarGroup>
-    </Collapsible>
-  );
-}
-
-/**
- * The Conversations under the menu, after Pierre's: the WhatsApp ones, then the rest by age (the
- * Avisos pinned on top), each opening on the Agente page (`/chat?c=`), with ⋯ to delete it.
- */
-function History() {
-  const { t } = useI18n();
-  const { active } = useAgents();
-  const { pathname } = useLocation();
-  const [params] = useSearchParams();
-  const navigate = useNavigate();
-  const { isMobile, setOpenMobile } = useSidebar();
-  const { data } = useQuery(ConversationsDocument, {
-    skip: !active,
-    variables: { botId: active?.id ?? '' },
-  });
-  const [removeConversation] = useMutation(DeleteConversationDocument, {
-    refetchQueries: [ConversationsDocument],
-  });
-  // A deleted Conversation leaves the list at once; its toast can bring it back for a moment.
-  const { hidden, remove: removeLater } = useUndoableDelete();
-  const chosen = pathname === '/chat' ? params.get('c') : null;
-
-  const { recent, whatsapp } = useMemo(() => {
-    const shown = (data?.conversations ?? []).filter(item => !hidden.has(item.id));
-    const others = shown.filter(item => item.channel !== 'WHATSAPP');
-    const pinned = others.filter(item => item.alerts);
-    return {
-      recent: [
-        ...(pinned.length ? [{ items: pinned, label: 'Fixada' }] : []),
-        ...byAge(others.filter(item => !item.alerts).slice(0, 60)),
-      ],
-      whatsapp: shown.filter(item => item.channel === 'WHATSAPP'),
-    };
-  }, [data, hidden]);
-
-  const remove = (conversation: Conversation) => {
-    if (conversation.id === chosen) navigate('/chat');
-    removeLater({
-      commit: () => removeConversation({ variables: { id: conversation.id } }),
-      ids: [conversation.id],
-      message: `Conversa excluída: ${conversation.title}`,
-    });
-  };
-
-  const items = (list: Conversation[]) => (
-    <SidebarMenu className="gap-0">
-      {list.map(conversation => (
-        <SidebarMenuItem key={conversation.id}>
-          <SidebarMenuButton
-            asChild
-            className="h-9 rounded-lg px-3 text-[0.875rem] font-normal"
-            isActive={conversation.id === chosen}
-          >
-            <Link
-              onClick={() => isMobile && setOpenMobile(false)}
-              to={`/chat?c=${conversation.id}`}
-            >
-              {conversation.alerts && <BellIcon />}
-              <span className="truncate">{conversation.title}</span>
-            </Link>
-          </SidebarMenuButton>
-          <DropdownMenu modal={false}>
-            <DropdownMenuTrigger asChild>
-              <SidebarMenuAction aria-label={`Opções de “${conversation.title}”`} showOnHover>
-                <MoreHorizontalIcon />
-              </SidebarMenuAction>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-44" side="right">
-              <DropdownMenuItem onSelect={() => remove(conversation)} variant="destructive">
-                <Trash2Icon />
-                Excluir
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </SidebarMenuItem>
-      ))}
-    </SidebarMenu>
-  );
-
-  return (
-    <>
-      <Fold label="WhatsApp">
-        {whatsapp.length ? (
-          items(whatsapp)
-        ) : (
-          <p className="px-3 py-1 text-xs leading-relaxed text-sidebar-foreground/50">
-            {t('nav.whatsappEmpty')}
-          </p>
-        )}
-      </Fold>
-      <Fold label={t('nav.recent')}>
-        {recent.map(group => (
-          <div className="mt-2 first:mt-0" key={group.label}>
-            <p className="px-3 pb-1 text-xs text-sidebar-foreground/50">{group.label}</p>
-            {items(group.items)}
-          </div>
-        ))}
-      </Fold>
-    </>
-  );
-}
-
-/** Atop the menu, after WorkOS's: the mark and the name, and the button that collapses it; its
- * line runs level with the header's. Collapsed, the button alone. */
+/** Atop the menu, after the Nylas console: the mark and the Organization (a switcher); its line
+ * runs level with the header's. Collapsed, the mark alone. */
 function MenuTop() {
   return (
-    <SidebarHeader className="h-(--header-height) shrink-0 flex-row items-center gap-2.5 border-b border-sidebar-border px-4 py-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
-      <Link
-        className="flex min-w-0 flex-1 items-center gap-2.5 group-data-[collapsible=icon]:hidden"
-        to="/"
-      >
+    <SidebarHeader className="h-(--header-height) shrink-0 flex-row items-center gap-1.5 border-b border-sidebar-border px-3 py-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
+      <Link aria-label={APP_NAME} className="shrink-0" to="/">
         <LogoBadge size={28} />
-        <span className="truncate text-[0.9375rem] font-semibold text-sidebar-accent-foreground">
-          {APP_NAME}
-        </span>
       </Link>
-      <SidebarTrigger className="size-8 text-muted-foreground hover:text-foreground" />
+      <OrganizationSwitcher className="max-w-full min-w-0 flex-1 justify-between group-data-[collapsible=icon]:hidden" />
     </SidebarHeader>
   );
 }
 
-/** At the menu's foot, after WorkOS's: who is signed in, their photo and name, the account's menu
- * rising from it (`AccountMenuItems`). Collapsed, the photo alone. */
-function MenuFoot({ user }: { user: ProfileUser }) {
+/** At the menu's foot (design guide § 7.12): Suporte, Privacidade (a new tab, so ↗),
+ * Enviar feedback, a line, and Recolher menu (⌘B/Ctrl+B). Suporte and Enviar feedback open a form
+ * in the app (`ContactDialog`). The account is in the header. */
+function MenuFoot() {
+  const { toggleSidebar } = useSidebar();
+  const { t } = useI18n();
+  const [contact, setContact] = useState<ContactKind | null>(null);
   return (
-    <SidebarFooter className="p-3 group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:px-2">
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
+    <SidebarFooter className="gap-0 border-t border-sidebar-border p-2.5 group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:px-2">
+      <SidebarMenu className="gap-0.5 group-data-[collapsible=icon]:items-center">
+        <SidebarMenuItem>
           <SidebarMenuButton
-            className="h-11 gap-2.5 rounded-lg px-2 data-[state=open]:bg-sidebar-accent group-data-[collapsible=icon]:size-10! group-data-[collapsible=icon]:p-1.5!"
-            tooltip={user.name}
+            className={ITEM}
+            onClick={() => setContact('SUPPORT')}
+            tooltip={t('nav.support')}
           >
-            <UserAvatar className={cn(BLUE, 'size-7')} user={user} />
-            <span className="truncate font-medium">{user.name}</span>
-            <ChevronsUpDownIcon className="ml-auto size-4 text-muted-foreground" />
+            <CircleHelpIcon />
+            <span>{t('nav.support')}</span>
           </SidebarMenuButton>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent
-          align="start"
-          className="w-64 rounded-xl p-1.5"
-          side="top"
-          sideOffset={8}
-        >
-          <AccountMenuItems user={user} />
-        </DropdownMenuContent>
-      </DropdownMenu>
+        </SidebarMenuItem>
+        <SidebarMenuItem>
+          <SidebarMenuButton asChild className={ITEM} tooltip={t('nav.privacy')}>
+            {/* the legal pages live on the site, outside the app's router: a full page in a new tab */}
+            <a href="/privacy" rel="noopener noreferrer" target="_blank">
+              <ShieldIcon />
+              <span>{t('nav.privacy')}</span>
+              <ExternalLinkIcon aria-hidden className="size-3.5! text-muted-foreground" />
+            </a>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+        <SidebarMenuItem>
+          <SidebarMenuButton
+            className={ITEM}
+            onClick={() => setContact('FEEDBACK')}
+            tooltip={t('nav.feedback')}
+          >
+            <MessageSquareIcon />
+            <span>{t('nav.feedback')}</span>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      </SidebarMenu>
+      {contact && <ContactDialog kind={contact} onClose={() => setContact(null)} />}
+      <SidebarSeparator className="mx-0 my-1.5" />
+      <SidebarMenu className="group-data-[collapsible=icon]:items-center">
+        <SidebarMenuItem>
+          <SidebarMenuButton className={ITEM} onClick={toggleSidebar} tooltip={t('nav.collapse')}>
+            <PanelLeftIcon />
+            <span>{t('nav.collapseMenu')}</span>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      </SidebarMenu>
     </SidebarFooter>
   );
 }
 
 /**
- * The menu on the left, the full height of the window, after Pierre's: the mark on top, Fale com o
- * Fale com o Caveguy, Agentes and Finanças, then the Conversations (WhatsApp and Recentes). ⌘B/Ctrl+B (or the
- * command menu) collapses it to its icons, hiding the Conversations.
+ * The menu on the left, after the Nylas console (docs/design-guide.md): the mark and the
+ * Organization on top, Visão geral and Caveguy, then each group under its small title (Finanças,
+ * Pessoal, Ferramentas), and the foot. ⌘B/Ctrl+B (or the command menu) collapses it to its icons,
+ * hiding the titles.
  */
-export function AppSidebar({ user }: { user: ProfileUser }) {
+export function AppSidebar() {
   const { pathname } = useLocation();
   const nav = useNav();
-  // Only the three entries light here: Finanças for every one of its tabs.
-  const active = activeItem(nav.main, pathname);
+  const active = activeItem([...nav.main, ...nav.groups.flatMap(group => group.items)], pathname);
 
   return (
     <Sidebar className="overflow-hidden border-r border-sidebar-border" collapsible="icon">
       <MenuTop />
-      <SidebarContent className="gap-0 px-3 pt-3 pb-6 [scrollbar-width:none] group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:px-2">
+      <SidebarContent className="gap-0 px-2.5 pt-3 pb-6 [scrollbar-width:none] group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:px-2">
         <SidebarGroup className="p-0">
           <SidebarGroupContent>
             <NavItems active={active} items={nav.main} />
           </SidebarGroupContent>
         </SidebarGroup>
-        <SidebarSeparator className="mx-0 mt-4 group-data-[collapsible=icon]:hidden" />
-        <History />
+        {nav.groups.map(group => (
+          <SidebarGroup className="mt-3 p-0" data-area={group.area} key={group.key}>
+            <SidebarGroupLabel className="h-7 px-2.5 text-xs font-medium text-muted-foreground">
+              {group.label}
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <NavItems active={active} items={group.items} />
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
       </SidebarContent>
-      <MenuFoot user={user} />
+      <MenuFoot />
     </Sidebar>
   );
 }

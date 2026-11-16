@@ -10,7 +10,7 @@ import { refreshOnReturn } from '../lib/apollo';
 import { useOrganizationReload } from '../lib/organizations';
 import { useDeliverAlerts } from './Alerts';
 import { AlertPreview } from './AlertPreview';
-import { AddButton, AppHeader } from './AppHeader';
+import { AppHeader } from './AppHeader';
 import { AppSidebar } from './AppSidebar';
 import { ChatPanel, ChatPanelProvider } from './ChatPanel';
 import { ChatRepliesProvider } from './ChatReplies';
@@ -74,8 +74,8 @@ export function Layout({ user }: Props) {
               open={open}
               style={
                 {
-                  '--header-height': 'calc(4rem + env(safe-area-inset-top))',
-                  '--sidebar-width': '14.5rem',
+                  '--header-height': 'calc(3.5rem + env(safe-area-inset-top))',
+                  '--sidebar-width': '16rem',
                   '--sidebar-width-icon': '4.5rem',
                 } as CSSProperties
               }
@@ -83,7 +83,7 @@ export function Layout({ user }: Props) {
               <CommandMenu>
                 {/* The menu down the left, the full height; on a phone the tabs along the bottom. */}
                 <div className="contents print:hidden">
-                  <AppSidebar user={user} />
+                  <AppSidebar />
                 </div>
                 {/* The header over the screen only; the menu runs the full height beside them. */}
                 <div className="flex min-w-0 flex-1 flex-col overflow-hidden print:overflow-visible">
@@ -100,8 +100,6 @@ export function Layout({ user }: Props) {
                     >
                       <Outlet />
                     </Suspense>
-                    {/* Centred over the screen, not the window: the menu takes the left. */}
-                    <AddButton />
                   </main>
                   <MobileNav />
                 </div>
@@ -122,7 +120,7 @@ export function Layout({ user }: Props) {
 export function Scrolling({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
   return (
-    <div className="relative h-full overflow-y-auto print:h-auto print:overflow-visible">
+    <div className="relative h-full overflow-y-auto bg-canvas print:h-auto print:overflow-visible">
       <div className={cn('page-enter', PAGE)} key={pathname}>
         <Suspense fallback={<PageSkeleton />}>{children}</Suspense>
       </div>

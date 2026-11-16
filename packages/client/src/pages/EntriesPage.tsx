@@ -627,10 +627,10 @@ function MonthSkeleton() {
     <div aria-busy className="flex flex-col gap-6" role="status">
       <span className="sr-only">Carregando o período…</span>
       <div className="grid gap-4 @3xl:grid-cols-2">
-        <Skeleton className="h-72 w-full rounded-[20px]" />
-        <Skeleton className="h-72 w-full rounded-[20px]" />
+        <Skeleton className="h-72 w-full rounded-lg" />
+        <Skeleton className="h-72 w-full rounded-lg" />
       </div>
-      <Skeleton className="h-96 w-full rounded-[20px]" />
+      <Skeleton className="h-96 w-full rounded-lg" />
     </div>
   );
 }
